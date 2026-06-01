@@ -5,7 +5,7 @@ export class Ticket {
     public readonly id: string,
     public readonly codigoTicket: string,
     public readonly idEspacio: string,
-    public readonly cedula: string,
+    public readonly cedula: string | undefined,
     public readonly placa: string,
     public estado: TicketStatus,
     public readonly fechaIngreso: Date,
@@ -19,7 +19,7 @@ export class Ticket {
     id: string,
     codigoTicket: string,
     idEspacio: string,
-    cedula: string,
+    cedula: string | undefined,
     placa: string,
     idEmpleado: string,
   ): Ticket {

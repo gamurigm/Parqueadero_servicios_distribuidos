@@ -238,7 +238,7 @@ export class AsignacionService {
      * RF3: Obtiene la flota de vehículos de un propietario con detalles de tipo y categoría.
      * Comunica con el Microservicio de Vehículos para enriquecer la respuesta.
      */
-    async obtenerFlotaPorPropietario(userId: string): Promise<any[]> {
+    async obtenerFlotaPorPropietario(userId: string, authHeader?: string): Promise<any[]> {
         const uid = this.utils.validateUUID(userId);
 
         // 1. Obtener todas las asignaciones activas del propietario
@@ -256,6 +256,7 @@ export class AsignacionService {
             asignaciones.map(async (asignacion) => {
                 const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(
                     asignacion.vehicleId,
+                    authHeader,
                 );
 
                 if (vehiculoDetalle) {

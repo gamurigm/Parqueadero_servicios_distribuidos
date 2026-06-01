@@ -19,5 +19,5 @@ export declare class AsignacionService {
     eliminar(userId: string, vehicleId: string): Promise<{
         message: string;
     }>;
-    obtenerFlotaPorPropietario(userId: string): Promise<any[]>;
+    obtenerFlotaPorPropietario(userId: string, authHeader?: string): Promise<any[]>;
 }

@@ -86,6 +86,30 @@ export class TicketsController {
     return result as TicketResponseDto;
   }
 
+  @Get()
+  @Resource('tickets.read')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Listar todos los tickets' })
+  @ApiResponse({ status: 200, description: 'Lista de tickets', type: TicketResponseDto, isArray: true })
+  async listarTodos(): Promise<TicketResponseDto[]> {
+    const tickets = await this.ticketRepo.findAll();
+    return tickets as unknown as TicketResponseDto[];
+  }
+
+  @Get('codigo/:codigo')
+  @Resource('tickets.read')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Obtener un ticket por codigo unico' })
+  @ApiResponse({ status: 200, description: 'Ticket encontrado', type: TicketResponseDto })
+  @ApiResponse({ status: 404, description: 'Ticket no encontrado' })
+  async obtenerPorCodigo(@Param('codigo') codigo: string): Promise<TicketResponseDto> {
+    const ticket = await this.ticketRepo.findByCodigo(codigo);
+    if (!ticket) {
+      throw new NotFoundException('Ticket no encontrado');
+    }
+    return ticket as unknown as TicketResponseDto;
+  }
+
   @Get(':id')
   @Resource('tickets.read')
   @HttpCode(HttpStatus.OK)
@@ -94,20 +118,6 @@ export class TicketsController {
   @ApiResponse({ status: 404, description: 'Ticket no encontrado' })
   async obtener(@Param('id') id: string): Promise<TicketResponseDto> {
     const ticket = await this.ticketRepo.findById(id);
-    if (!ticket) {
-      throw new NotFoundException('Ticket no encontrado');
-    }
-    return ticket as unknown as TicketResponseDto;
-  }
-
-  @Get('codigo/:codigo')
-  @Resource('tickets.read')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Obtener un ticket por código único' })
-  @ApiResponse({ status: 200, description: 'Ticket encontrado', type: TicketResponseDto })
-  @ApiResponse({ status: 404, description: 'Ticket no encontrado' })
-  async obtenerPorCodigo(@Param('codigo') codigo: string): Promise<TicketResponseDto> {
-    const ticket = await this.ticketRepo.findByCodigo(codigo);
     if (!ticket) {
       throw new NotFoundException('Ticket no encontrado');
     }

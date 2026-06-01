@@ -14,6 +14,12 @@ export class TicketRepository implements ITicketRepository {
     private readonly dataSource: DataSource,
   ) {}
 
+  async findAll(): Promise<Ticket[]> {
+    const entities = await this.repo.find({
+      order: { fechaIngreso: 'DESC' },
+    });
+    return entities.map((entity) => this.toDomain(entity));
+  }
   async findById(id: string): Promise<Ticket | null> {
     const entity = await this.repo.findOne({ where: { id } });
     return entity ? this.toDomain(entity) : null;

@@ -31,6 +31,16 @@ export class PersonaController {
     return this.personaService.findAll();
   }
 
+  @Get('/cedula/:cedula')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('personas.read')
+  @ApiOperation({ summary: 'Obtener una persona por cedula' })
+  @ApiParam({ name: 'cedula', description: 'Cedula de la persona', example: '1000000003' })
+  @ApiResponse({ status: 200, description: 'Persona encontrada' })
+  @ApiResponse({ status: 404, description: 'Persona no encontrada' })
+  findByCedula(@Param('cedula') cedula: string) {
+    return this.personaService.findByCedula(cedula);
+  }
   @Get('/:id')
   @ApiBearerAuth('JWT-auth')
   @Resource('personas.read')

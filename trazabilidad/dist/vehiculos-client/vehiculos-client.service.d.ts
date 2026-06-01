@@ -15,6 +15,6 @@ export declare class VehiculosClientService {
     private readonly logger;
     private readonly vehiculosBaseUrl;
     constructor(httpService: HttpService, configService: ConfigService);
-    getVehiculo(vehicleId: string): Promise<VehiculoDetalle | null>;
+    getVehiculo(vehicleId: string, authHeader?: string): Promise<VehiculoDetalle | null>;
     checkHealth(): Promise<boolean>;
 }

@@ -36,7 +36,7 @@ export interface EmitirTicketOutput {
   id: string;
   codigoTicket: string;
   idEspacio: string;
-  cedula: string;
+  cedula?: string;
   placa: string;
   estado: string;
   fechaIngreso: Date;
@@ -151,23 +151,37 @@ export class EmitirTicketUseCase {
     cedula?: string,
     placa?: string,
     authHeader?: string,
-  ): Promise<{ cedula: string; placa: string }> {
+  ): Promise<{ cedula?: string; placa: string }> {
     if (placa) {
       const vehiculo = await this.vehiculosClient.buscarPorPlaca(placa, authHeader);
       if (!vehiculo) {
-        throw new BusinessError(`Vehículo con placa ${placa} no encontrado`);
+        throw new BusinessError(`Vehiculo con placa ${placa} no encontrado`);
       }
+
+      const placaResuelta = vehiculo.placa || placa.trim().toUpperCase();
+
       if (cedula) {
-        return { cedula, placa: vehiculo.placa || placa };
+        const vehiculosCedula = await this.usuariosClient.obtenerVehiculosPorCedula(cedula, authHeader);
+        if (vehiculosCedula.length === 0) {
+          throw new BusinessError(`La cedula ${cedula} no tiene vehiculos asociados`);
+        }
+
+        const placaPerteneceACedula = vehiculosCedula.some(
+          (v) => String(v.placa ?? '').trim().toUpperCase() === placaResuelta.trim().toUpperCase(),
+        );
+
+        if (!placaPerteneceACedula) {
+          throw new BusinessError(`La placa ${placaResuelta} no esta asociada a la cedula ${cedula}`);
+        }
+
+        return { cedula, placa: placaResuelta };
       }
-      if (!vehiculo.cedulaPropietario) {
-        throw new BusinessError(`La placa ${placa} no tiene un propietario asignado. Envie tambien la cedula para emitir el ticket.`);
-      }
-      return { cedula: vehiculo.cedulaPropietario, placa: vehiculo.placa || placa };
+
+      return { cedula: vehiculo.cedulaPropietario, placa: placaResuelta };
     }
 
     if (cedula) {
-      const vehiculos = await this.usuariosClient.obtenerVehiculosPorCedula(cedula);
+      const vehiculos = await this.usuariosClient.obtenerVehiculosPorCedula(cedula, authHeader);
       if (vehiculos.length === 0) {
         throw new BusinessError(`La cédula ${cedula} no tiene vehículos asociados`);
       }

@@ -126,7 +126,7 @@ let AsignacionService = class AsignacionService {
         await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.ELIMINACION, uid, vid, `Se eliminó asignación usuario=${uid} / vehículo=${vid}`, payloadAnterior, null);
         return { message: `Asignación usuario=${uid} / vehículo=${vid} eliminada exitosamente` };
     }
-    async obtenerFlotaPorPropietario(userId) {
+    async obtenerFlotaPorPropietario(userId, authHeader) {
         const uid = this.utils.validateUUID(userId);
         const asignaciones = await this.asignacionRepo.find({
             where: { userId: uid, estado: 1 },
@@ -136,7 +136,7 @@ let AsignacionService = class AsignacionService {
             return [];
         }
         const flota = await Promise.all(asignaciones.map(async (asignacion) => {
-            const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(asignacion.vehicleId);
+            const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(asignacion.vehicleId, authHeader);
             if (vehiculoDetalle) {
                 return {
                     id: vehiculoDetalle.id,

@@ -8,7 +8,7 @@ export declare class AsignacionController {
     constructor(asignacionService: AsignacionService, trazabilidadService: TrazabilidadService);
     crear(dto: CreateAsignacionDto): Promise<import("./entities/asignacion.entity").Asignacion>;
     listar(): Promise<import("./entities/asignacion.entity").Asignacion[]>;
-    obtenerFlota(userId: string): Promise<any[]>;
+    obtenerFlota(userId: string, authHeader?: string): Promise<any[]>;
     listarTrazabilidad(): Promise<any[]>;
     listarTrazabilidadPorPropietario(userId: string): Promise<any[]>;
     listarTrazabilidadPorAsignacion(userId: string, vehicleId: string): Promise<any[]>;

@@ -9,6 +9,7 @@ import {
     HttpCode,
     HttpStatus,
     UseGuards,
+    Headers,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -84,8 +85,11 @@ export class AsignacionController {
     @ApiParam({ name: 'userId', description: 'UUID del propietario', example: 'a3f1b2c4-1234-4abc-89de-1234567890ab' })
     @ApiResponse({ status: 200, description: 'Lista de vehículos asignados con tipo y categoría' })
     @ApiResponse({ status: 400, description: 'UUID inválido' })
-    obtenerFlota(@Param('userId') userId: string) {
-        return this.asignacionService.obtenerFlotaPorPropietario(userId);
+    obtenerFlota(
+        @Param('userId') userId: string,
+        @Headers('authorization') authHeader?: string,
+    ) {
+        return this.asignacionService.obtenerFlotaPorPropietario(userId, authHeader);
     }
 
     // ──────────────────────────────────────────────────

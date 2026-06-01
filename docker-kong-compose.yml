@@ -369,7 +369,7 @@ services:
     container_name: swagger-ui
     environment:
       - URLS_PRIMARY_NAME=Usuarios
-      - URLS=[{"name":"Vehículos","url":"http://172.21.110.197:8000/vehiculos/api-json"},{"name":"Usuarios","url":"http://172.21.110.197:8000/usuarios/docs-json"},{"name":"Zonas","url":"http://172.21.110.197:8000/zonas/v3/api-docs"},{"name":"Trazabilidad","url":"http://172.21.110.197:8000/trazabilidad/docs-json"},{"name":"Tickets","url":"http://172.21.110.197:8000/tickets/docs-json"}]
+      - URLS=[{"name":"Vehículos","url":"http://localhost:8000/vehiculos/api-json"},{"name":"Usuarios","url":"http://localhost:8000/usuarios/docs-json"},{"name":"Zonas","url":"http://localhost:8000/zonas/v3/api-docs"},{"name":"Trazabilidad","url":"http://localhost:8000/trazabilidad/docs-json"},{"name":"Tickets","url":"http://localhost:8000/tickets/docs-json"}]
     ports:
       - "8085:8080"
     networks:
@@ -442,6 +442,8 @@ services:
         curl -s -X POST http://kong:8001/services \
           --data name=zonas-service \
           --data url=http://zonas:8080
+        curl -s -X PATCH http://kong:8001/services/zonas-service \
+          --data path=
         
         # Servicio de Trazabilidad
         curl -s -X POST http://kong:8001/services \
@@ -496,7 +498,32 @@ services:
         # CORS
         curl -s -X POST http://kong:8001/plugins \
           --data name=cors \
-          --data "config.origins=*" \
+          --data "config.origins=http://localhost:8085" \
+          --data "config.origins=http://127.0.0.1:8085" \
+          --data "config.origins=http://localhost:8000" \
+          --data "config.origins=http://127.0.0.1:8000" \
+          --data "config.origins=http://host.docker.internal:8000" \
+          --data "config.origins=http://localhost:5000" \
+          --data "config.origins=http://127.0.0.1:5000" \
+          --data "config.origins=http://host.docker.internal:5000" \
+          --data "config.origins=http://localhost:3000" \
+          --data "config.origins=http://127.0.0.1:3000" \
+          --data "config.origins=http://host.docker.internal:3000" \
+          --data "config.origins=http://localhost:3001" \
+          --data "config.origins=http://127.0.0.1:3001" \
+          --data "config.origins=http://host.docker.internal:3001" \
+          --data "config.origins=http://localhost:3002" \
+          --data "config.origins=http://127.0.0.1:3002" \
+          --data "config.origins=http://host.docker.internal:3002" \
+          --data "config.origins=http://localhost:3003" \
+          --data "config.origins=http://127.0.0.1:3003" \
+          --data "config.origins=http://host.docker.internal:3003" \
+          --data "config.origins=http://localhost:8080" \
+          --data "config.origins=http://127.0.0.1:8080" \
+          --data "config.origins=http://host.docker.internal:8080" \
+          --data "config.origins=http://localhost:8081" \
+          --data "config.origins=http://127.0.0.1:8081" \
+          --data "config.origins=http://host.docker.internal:8081" \
           --data "config.methods=GET" \
           --data "config.methods=POST" \
           --data "config.methods=PUT" \

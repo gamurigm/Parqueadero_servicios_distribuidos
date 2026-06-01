@@ -12,10 +12,10 @@ export declare class TrazabilidadService {
     constructor(trazabilidadRepo: Repository<EventoTrazabilidad>, vehiculosClientService: VehiculosClientService, usuariosClientService: UsuariosClientService);
     registrarEvento(dto: RegistrarEventoDto): Promise<EventoTrazabilidad>;
     registrar(tipo: TipoAccion, userId: string, vehicleId: string, descripcion: string, payloadAnterior: Record<string, any> | null, payloadNuevo: Record<string, any> | null): Promise<EventoTrazabilidad>;
-    listarPorAsignacion(userId: string, vehicleId: string): Promise<any[]>;
-    listarPorPropietario(userId: string): Promise<any[]>;
-    listarTodos(): Promise<any[]>;
-    listarPorMicroservicio(microservicio: Microservicio): Promise<any[]>;
+    listarPorAsignacion(userId: string, vehicleId: string, authHeader?: string): Promise<any[]>;
+    listarPorPropietario(userId: string, authHeader?: string): Promise<any[]>;
+    listarTodos(authHeader?: string): Promise<any[]>;
+    listarPorMicroservicio(microservicio: Microservicio, authHeader?: string): Promise<any[]>;
     private enriquecerEventos;
     static serializarAsignacion(asignacion: Asignacion): Record<string, any>;
 }

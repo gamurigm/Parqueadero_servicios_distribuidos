@@ -26,8 +26,8 @@ export class TicketEntity {
   @Column({ name: 'id_espacio', length: 50 })
   idEspacio: string;
 
-  @Column({ length: 20 })
-  cedula: string;
+  @Column({ length: 20, nullable: true })
+  cedula?: string;
 
   @Column({ length: 20 })
   placa: string;

@@ -32,8 +32,8 @@ let AsignacionController = class AsignacionController {
     listar() {
         return this.asignacionService.listar();
     }
-    obtenerFlota(userId) {
-        return this.asignacionService.obtenerFlotaPorPropietario(userId);
+    obtenerFlota(userId, authHeader) {
+        return this.asignacionService.obtenerFlotaPorPropietario(userId, authHeader);
     }
     listarTrazabilidad() {
         return this.trazabilidadService.listarTodos();
@@ -97,8 +97,9 @@ __decorate([
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Lista de vehículos asignados con tipo y categoría' }),
     (0, swagger_1.ApiResponse)({ status: 400, description: 'UUID inválido' }),
     __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Headers)('authorization')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], AsignacionController.prototype, "obtenerFlota", null);
 __decorate([

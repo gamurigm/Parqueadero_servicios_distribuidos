@@ -67,34 +67,34 @@ let TrazabilidadService = TrazabilidadService_1 = class TrazabilidadService {
             payloadNuevo,
         });
     }
-    async listarPorAsignacion(userId, vehicleId) {
+    async listarPorAsignacion(userId, vehicleId, authHeader) {
         const eventos = await this.trazabilidadRepo.find({
             where: { userId, vehicleId },
             order: { timestamp: 'DESC' },
         });
-        return this.enriquecerEventos(eventos);
+        return this.enriquecerEventos(eventos, authHeader);
     }
-    async listarPorPropietario(userId) {
+    async listarPorPropietario(userId, authHeader) {
         const eventos = await this.trazabilidadRepo.find({
             where: { userId },
             order: { timestamp: 'DESC' },
         });
-        return this.enriquecerEventos(eventos);
+        return this.enriquecerEventos(eventos, authHeader);
     }
-    async listarTodos() {
+    async listarTodos(authHeader) {
         const eventos = await this.trazabilidadRepo.find({
             order: { timestamp: 'DESC' },
         });
-        return this.enriquecerEventos(eventos);
+        return this.enriquecerEventos(eventos, authHeader);
     }
-    async listarPorMicroservicio(microservicio) {
+    async listarPorMicroservicio(microservicio, authHeader) {
         const eventos = await this.trazabilidadRepo.find({
             where: { microservicio },
             order: { timestamp: 'DESC' },
         });
-        return this.enriquecerEventos(eventos);
+        return this.enriquecerEventos(eventos, authHeader);
     }
-    async enriquecerEventos(eventos) {
+    async enriquecerEventos(eventos, authHeader) {
         const userIds = [...new Set(eventos.map(e => e.userId).filter(Boolean))];
         const vehicleIds = [...new Set(eventos.map(e => e.vehicleId).filter(Boolean))];
         const usersMap = new Map();
@@ -102,7 +102,7 @@ let TrazabilidadService = TrazabilidadService_1 = class TrazabilidadService {
         await Promise.all([
             ...userIds.map(async (uid) => {
                 try {
-                    const userData = await this.usuariosClientService.obtenerUsuario(uid);
+                    const userData = await this.usuariosClientService.obtenerUsuario(uid, authHeader);
                     if (userData)
                         usersMap.set(uid, userData);
                 }
@@ -112,7 +112,7 @@ let TrazabilidadService = TrazabilidadService_1 = class TrazabilidadService {
             }),
             ...vehicleIds.map(async (vid) => {
                 try {
-                    const vehiculoData = await this.vehiculosClientService.getVehiculo(vid);
+                    const vehiculoData = await this.vehiculosClientService.getVehiculo(vid, authHeader);
                     if (vehiculoData)
                         vehiclesMap.set(vid, vehiculoData);
                 }
