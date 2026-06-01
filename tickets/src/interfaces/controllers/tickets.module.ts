@@ -41,7 +41,6 @@ import { TARIFA_PROVIDER } from '../../application/ports/tarifa-provider.interfa
     { provide: USUARIOS_CLIENT, useExisting: UsuariosClientService },
     { provide: VEHICULOS_CLIENT, useExisting: VehiculosClientService },
     { provide: ZONAS_CLIENT, useExisting: ZonasClientService },
-    { provide: TRAZABILIDAD_CLIENT, useExisting: TrazabilidadClientService },
     { provide: TICKET_CODE_GENERATOR, useExisting: TicketCodeGeneratorService },
     { provide: TARIFA_PROVIDER, useExisting: TarifaProviderService },
     EmitirTicketUseCase,

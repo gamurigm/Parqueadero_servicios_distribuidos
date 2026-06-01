@@ -4,10 +4,13 @@ import * as fs from 'fs';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { OpaModule } from '../opa/opa.module';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    OpaModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -28,7 +31,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       },
     }),
   ],
-  providers: [JwtStrategy],
-  exports: [JwtModule, PassportModule, JwtStrategy],
+  providers: [JwtStrategy, JwtAuthGuard],
+  exports: [JwtModule, PassportModule, JwtStrategy, JwtAuthGuard],
 })
 export class AuthModule {}

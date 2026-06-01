@@ -29,6 +29,7 @@ export interface EmitirTicketInput {
   cedula?: string;
   placa?: string;
   idEmpleado: string;
+  authHeader?: string;
 }
 
 export interface EmitirTicketOutput {
@@ -62,11 +63,11 @@ export class EmitirTicketUseCase {
   ) {}
 
   async execute(input: EmitirTicketInput): Promise<EmitirTicketOutput> {
-    const { idEspacio, cedula, placa, idEmpleado } = input;
+    const { idEspacio, cedula, placa, idEmpleado, authHeader } = input;
 
-    const resolved = await this.resolverClaveCompuesta(cedula, placa);
+    const resolved = await this.resolverClaveCompuesta(cedula, placa, authHeader);
 
-    const espacio = await this.zonasClient.obtenerEspacio(idEspacio);
+    const espacio = await this.zonasClient.obtenerEspacio(idEspacio, authHeader);
     if (!espacio) {
       throw new BusinessError(`El espacio ${idEspacio} no existe`);
     }
@@ -109,7 +110,7 @@ export class EmitirTicketUseCase {
     let retries = 3;
     while (retries > 0) {
       try {
-        await this.zonasClient.marcarOcupado(idEspacio);
+        await this.zonasClient.marcarOcupado(idEspacio, authHeader);
         break; // Éxito
       } catch (error) {
         retries--;
@@ -149,16 +150,20 @@ export class EmitirTicketUseCase {
   private async resolverClaveCompuesta(
     cedula?: string,
     placa?: string,
+    authHeader?: string,
   ): Promise<{ cedula: string; placa: string }> {
     if (placa) {
-      const vehiculo = await this.vehiculosClient.buscarPorPlaca(placa);
+      const vehiculo = await this.vehiculosClient.buscarPorPlaca(placa, authHeader);
       if (!vehiculo) {
         throw new BusinessError(`Vehículo con placa ${placa} no encontrado`);
       }
-      if (!vehiculo.cedulaPropietario) {
-        throw new BusinessError(`La placa ${placa} no tiene un propietario asignado`);
+      if (cedula) {
+        return { cedula, placa: vehiculo.placa || placa };
       }
-      return { cedula: vehiculo.cedulaPropietario, placa };
+      if (!vehiculo.cedulaPropietario) {
+        throw new BusinessError(`La placa ${placa} no tiene un propietario asignado. Envie tambien la cedula para emitir el ticket.`);
+      }
+      return { cedula: vehiculo.cedulaPropietario, placa: vehiculo.placa || placa };
     }
 
     if (cedula) {

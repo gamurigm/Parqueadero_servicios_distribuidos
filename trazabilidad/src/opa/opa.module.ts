@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { OpaService } from './opa.service';
 
+@Global()
 @Module({
   providers: [OpaService],
   exports: [OpaService],

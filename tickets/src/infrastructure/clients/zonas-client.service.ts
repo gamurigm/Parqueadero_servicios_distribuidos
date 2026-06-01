@@ -13,50 +13,56 @@ export class ZonasClientService implements IZonasClient {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.baseUrl = this.configService.get<string>('ZONAS_SERVICE_URL', 'http://localhost:8080');
+    const configuredUrl = this.configService.get<string>('ZONAS_SERVICE_URL', 'http://localhost:8080');
+    this.baseUrl = configuredUrl.replace(/\/$/, '');
   }
 
-  async obtenerEspacio(idEspacio: string): Promise<EspacioInfo | null> {
-    try {
-      const url = `${this.baseUrl}/espacios/${idEspacio}`;
-      this.logger.log(`Consultando espacio: ${url}`);
-      const res = await firstValueFrom(this.httpService.get(url));
-      const data = res.data;
+  async obtenerEspacio(idEspacio: string, authHeader?: string): Promise<EspacioInfo | null> {
+    const headers = authHeader ? { Authorization: authHeader } : undefined;
 
-      return {
-        id: data.id || idEspacio,
-        tipo: (data.tipo || 'regular').toLowerCase(),
-        estado: (data.estado || 'libre').toLowerCase(),
-      };
-    } catch (error) {
-      if (error.response?.status === 404) {
+    try {
+      const url = `${this.apiBase}/espacios/`;
+      this.logger.log(`Consultando espacios: ${url}`);
+      const res = await firstValueFrom(this.httpService.get(url, { headers }));
+      const espacios: any[] = Array.isArray(res.data) ? res.data : [];
+      const data = espacios.find((e) => String(e.id) === idEspacio || String(e.codigo) === idEspacio);
+
+      if (!data) {
         this.logger.warn(`Espacio ${idEspacio} no encontrado`);
         return null;
       }
+
+      return this.mapEspacio(data, idEspacio);
+    } catch (error) {
       this.logger.error(`Error al consultar espacio ${idEspacio}: ${error.message}`);
       return null;
     }
   }
 
-  async marcarOcupado(idEspacio: string): Promise<void> {
-    try {
-      const url = `${this.baseUrl}/espacios/${idEspacio}/ocupar`;
-      this.logger.log(`Marcando espacio como ocupado: ${url}`);
-      await firstValueFrom(this.httpService.patch(url));
-    } catch (error) {
-      this.logger.error(`Error al marcar espacio ${idEspacio} como ocupado: ${error.message}`);
-      throw error;
-    }
+  async marcarOcupado(idEspacio: string, authHeader?: string): Promise<void> {
+    await this.cambiarEstado(idEspacio, 'OCUPADO', authHeader);
   }
 
-  async marcarLibre(idEspacio: string): Promise<void> {
-    try {
-      const url = `${this.baseUrl}/espacios/${idEspacio}/liberar`;
-      this.logger.log(`Marcando espacio como libre: ${url}`);
-      await firstValueFrom(this.httpService.patch(url));
-    } catch (error) {
-      this.logger.error(`Error al liberar espacio ${idEspacio}: ${error.message}`);
-      throw error;
-    }
+  async marcarLibre(idEspacio: string, authHeader?: string): Promise<void> {
+    await this.cambiarEstado(idEspacio, 'DISPONIBLE', authHeader);
+  }
+
+  private async cambiarEstado(idEspacio: string, estado: 'DISPONIBLE' | 'OCUPADO', authHeader?: string): Promise<void> {
+    const headers = authHeader ? { Authorization: authHeader } : undefined;
+    const url = `${this.apiBase}/espacios/${encodeURIComponent(idEspacio)}/estado?estado=${estado}`;
+    this.logger.log(`Cambiando estado de espacio: ${url}`);
+    await firstValueFrom(this.httpService.patch(url, undefined, { headers }));
+  }
+
+  private get apiBase(): string {
+    return this.baseUrl.endsWith('/api/v1') ? this.baseUrl : `${this.baseUrl}/api/v1`;
+  }
+
+  private mapEspacio(data: any, fallbackId: string): EspacioInfo {
+    return {
+      id: data.id || fallbackId,
+      tipo: String(data.tipoEspacio || data.tipo || 'regular').toLowerCase(),
+      estado: String(data.estado || 'disponible').toLowerCase(),
+    };
   }
 }

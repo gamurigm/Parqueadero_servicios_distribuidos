@@ -49,6 +49,7 @@ export class TicketsController {
       cedula: dto.cedula?.trim(),
       placa: dto.placa?.trim(),
       idEmpleado: req.user.id,
+      authHeader: req.headers.authorization,
     });
     return result as TicketResponseDto;
   }
@@ -65,6 +66,7 @@ export class TicketsController {
       idTicket: dto.idTicket?.trim(),
       codigoTicket: dto.codigoTicket?.trim(),
       idEmpleado: req.user.id,
+      authHeader: req.headers.authorization,
     });
   }
 

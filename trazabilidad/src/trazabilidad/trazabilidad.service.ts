@@ -95,45 +95,45 @@ export class TrazabilidadService {
      * Obtiene el historial de auditoría completo de una asignación específica.
      * Enriquece los datos con información amigable.
      */
-    async listarPorAsignacion(userId: string, vehicleId: string): Promise<any[]> {
+    async listarPorAsignacion(userId: string, vehicleId: string, authHeader?: string): Promise<any[]> {
         const eventos = await this.trazabilidadRepo.find({
             where: { userId, vehicleId },
             order: { timestamp: 'DESC' },
         });
-        return this.enriquecerEventos(eventos);
+        return this.enriquecerEventos(eventos, authHeader);
     }
 
     /**
      * Obtiene todo el historial de auditoría de un propietario.
      * Enriquece los datos con información amigable.
      */
-    async listarPorPropietario(userId: string): Promise<any[]> {
+    async listarPorPropietario(userId: string, authHeader?: string): Promise<any[]> {
         const eventos = await this.trazabilidadRepo.find({
             where: { userId },
             order: { timestamp: 'DESC' },
         });
-        return this.enriquecerEventos(eventos);
+        return this.enriquecerEventos(eventos, authHeader);
     }
 
     /**
      * Obtiene todos los eventos de trazabilidad (enriquecidos).
      */
-    async listarTodos(): Promise<any[]> {
+    async listarTodos(authHeader?: string): Promise<any[]> {
         const eventos = await this.trazabilidadRepo.find({
             order: { timestamp: 'DESC' },
         });
-        return this.enriquecerEventos(eventos);
+        return this.enriquecerEventos(eventos, authHeader);
     }
 
     /**
      * Obtiene eventos de trazabilidad filtrados por microservicio.
      */
-    async listarPorMicroservicio(microservicio: Microservicio): Promise<any[]> {
+    async listarPorMicroservicio(microservicio: Microservicio, authHeader?: string): Promise<any[]> {
         const eventos = await this.trazabilidadRepo.find({
             where: { microservicio },
             order: { timestamp: 'DESC' },
         });
-        return this.enriquecerEventos(eventos);
+        return this.enriquecerEventos(eventos, authHeader);
     }
 
     /**
@@ -141,7 +141,7 @@ export class TrazabilidadService {
      * Consulta los microservicios de Usuarios y Vehículos para obtener
      * nombres, placas, marcas, etc. en lugar de solo mostrar UUIDs.
      */
-    private async enriquecerEventos(eventos: EventoTrazabilidad[]): Promise<any[]> {
+    private async enriquecerEventos(eventos: EventoTrazabilidad[], authHeader?: string): Promise<any[]> {
         // Recopilar todos los userIds y vehicleIds únicos
         const userIds = [...new Set(eventos.map(e => e.userId).filter(Boolean))];
         const vehicleIds = [...new Set(eventos.map(e => e.vehicleId).filter(Boolean))];
@@ -154,7 +154,7 @@ export class TrazabilidadService {
             // Obtener datos de usuarios
             ...userIds.map(async (uid) => {
                 try {
-                    const userData = await this.usuariosClientService.obtenerUsuario(uid);
+                    const userData = await this.usuariosClientService.obtenerUsuario(uid, authHeader);
                     if (userData) usersMap.set(uid, userData);
                 } catch (error) {
                     this.logger.warn(`No se pudo obtener datos del usuario ${uid}: ${error.message}`);
@@ -163,7 +163,7 @@ export class TrazabilidadService {
             // Obtener datos de vehículos
             ...vehicleIds.map(async (vid) => {
                 try {
-                    const vehiculoData = await this.vehiculosClientService.getVehiculo(vid);
+                    const vehiculoData = await this.vehiculosClientService.getVehiculo(vid, authHeader);
                     if (vehiculoData) vehiclesMap.set(vid, vehiculoData);
                 } catch (error) {
                     this.logger.warn(`No se pudo obtener datos del vehículo ${vid}: ${error.message}`);

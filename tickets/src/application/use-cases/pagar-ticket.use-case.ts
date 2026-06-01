@@ -22,6 +22,7 @@ export interface PagarTicketInput {
   idTicket?: string;
   codigoTicket?: string;
   idEmpleado: string;
+  authHeader?: string;
 }
 
 export interface PagarTicketOutput {
@@ -70,10 +71,10 @@ export class PagarTicketUseCase {
     const diffHoras = Math.ceil(diffMs / (1000 * 60 * 60));
     const horasCobradas = Math.max(diffHoras, 1);
 
-    const vehiculo = await this.vehiculosClient.buscarPorPlaca(ticket.placa);
+    const vehiculo = await this.vehiculosClient.buscarPorPlaca(ticket.placa, input.authHeader);
     const tipoVehiculo = vehiculo?.tipo || 'Automóvil';
 
-    const espacio = await this.zonasClient.obtenerEspacio(ticket.idEspacio);
+    const espacio = await this.zonasClient.obtenerEspacio(ticket.idEspacio, input.authHeader);
     const tipoEspacio = espacio?.tipo || 'regular';
 
     const tarifaPorHora = this.tarifaProvider.obtenerTarifaPorHora(tipoVehiculo, tipoEspacio);
@@ -85,7 +86,7 @@ export class PagarTicketUseCase {
     let retries = 3;
     while (retries > 0) {
       try {
-        await this.zonasClient.marcarLibre(ticket.idEspacio);
+        await this.zonasClient.marcarLibre(ticket.idEspacio, input.authHeader);
         break;
       } catch (error) {
         retries--;

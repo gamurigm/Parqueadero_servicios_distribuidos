@@ -5,11 +5,12 @@ import { CreateVehiculoDto } from './dto/create-vehiculo.dto';
 import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
 import { SanitizePipe } from './utils/SanitizePipe';
 import type { UUID } from 'crypto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Resource } from '../opa/decorators/resource.decorator';
 
 @ApiTags('Vehiculos')
+@ApiBearerAuth('access-token')
 @Controller('vehiculos')
 @UseGuards(JwtAuthGuard) 
 export class VehiculosController {

@@ -7,7 +7,7 @@ export interface EspacioInfo {
 }
 
 export interface IZonasClient {
-  obtenerEspacio(idEspacio: string): Promise<EspacioInfo | null>;
-  marcarOcupado(idEspacio: string): Promise<void>;
-  marcarLibre(idEspacio: string): Promise<void>;
+  obtenerEspacio(idEspacio: string, authHeader?: string): Promise<EspacioInfo | null>;
+  marcarOcupado(idEspacio: string, authHeader?: string): Promise<void>;
+  marcarLibre(idEspacio: string, authHeader?: string): Promise<void>;
 }

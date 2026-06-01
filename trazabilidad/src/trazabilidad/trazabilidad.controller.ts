@@ -7,6 +7,7 @@ import {
     HttpCode,
     HttpStatus,
     BadRequestException,
+    Headers,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -62,8 +63,9 @@ export class TrazabilidadController {
             'enriquecidos con datos legibles (nombres de usuario, placas de vehículo).',
     })
     @ApiResponse({ status: 200, description: 'Historial completo de auditoría enriquecido' })
-    async listarTodos() {
-        return this.trazabilidadService.listarTodos();
+    async listarTodos(@Headers('authorization') authHeader: string) {
+        console.log('--- AUTH HEADER RECEIVED IN TRAZABILIDAD ---', authHeader);
+        return this.trazabilidadService.listarTodos(authHeader);
     }
 
     @Get('microservicio/:nombre')
@@ -80,14 +82,17 @@ export class TrazabilidadController {
     })
     @ApiResponse({ status: 200, description: 'Eventos filtrados por microservicio' })
     @ApiResponse({ status: 400, description: 'Nombre de microservicio inválido' })
-    async listarPorMicroservicio(@Param('nombre') nombre: string) {
+    async listarPorMicroservicio(
+        @Param('nombre') nombre: string,
+        @Headers('authorization') authHeader: string,
+    ) {
         const microservicioUpper = nombre.toUpperCase() as Microservicio;
         if (!Object.values(Microservicio).includes(microservicioUpper)) {
             throw new BadRequestException(
                 `Microservicio inválido: "${nombre}". Valores válidos: ${Object.values(Microservicio).join(', ')}`,
             );
         }
-        return this.trazabilidadService.listarPorMicroservicio(microservicioUpper);
+        return this.trazabilidadService.listarPorMicroservicio(microservicioUpper, authHeader);
     }
 
     @Get('propietario/:userId')
@@ -99,8 +104,11 @@ export class TrazabilidadController {
     })
     @ApiParam({ name: 'userId', description: 'UUID del propietario' })
     @ApiResponse({ status: 200, description: 'Eventos de trazabilidad del propietario' })
-    async listarPorPropietario(@Param('userId') userId: string) {
-        return this.trazabilidadService.listarPorPropietario(userId);
+    async listarPorPropietario(
+        @Param('userId') userId: string,
+        @Headers('authorization') authHeader: string,
+    ) {
+        return this.trazabilidadService.listarPorPropietario(userId, authHeader);
     }
 
     @Get(':userId/:vehicleId')
@@ -116,7 +124,8 @@ export class TrazabilidadController {
     async listarPorAsignacion(
         @Param('userId') userId: string,
         @Param('vehicleId') vehicleId: string,
+        @Headers('authorization') authHeader: string,
     ) {
-        return this.trazabilidadService.listarPorAsignacion(userId, vehicleId);
+        return this.trazabilidadService.listarPorAsignacion(userId, vehicleId, authHeader);
     }
 }
