@@ -1,33 +1,28 @@
-import { Calsificacion } from '../entities/vehiculo.entity';
-import { TipoMoto } from '../entities/motocicleta.entity';
+import { TipoMoto } from "../entities/tipos/motocicleta.entity";
 
-export class ResponseVehiculoDto {
-  id: string;
-  placa: string;
-  marca: string;
-  modelo: string;
-  color: string;
-  anio: number;
-  clasificacion: Calsificacion;
+export class VehiculoResponseDto{
 
-  // Auto / Carro specific
-  numeroPuertas?: number;
-  capacidadMaletero?: number;
-  tipoCombustible?: string;
+        id!: string;
+    
+        placa!: string;
+    
+        marca!: string;
+    
+        modelo!: string;
+    
+        color!: string;
+    
+        anio!: number;
 
-  // Moto specific
-  tipoMoto?: TipoMoto;
+        clasificacion!: string;
 
-  // Camioneta specific
-  cabina?: string;
-  capacidadCarga?: number;
+        numeroPuertas!: number;
+        
+        capacidadMaletero!:number;
 
-  // Bus / Buseta specific
-  capacidadPasajeros?: number;
-  tieneAccesibilidad?: boolean;
-  rutaAsignada?: string;
+        cabina!: string;
 
-  constructor(partial?: Partial<ResponseVehiculoDto>) {
-    Object.assign(this, partial);
-  }
+        capacidadCarga!: number;
+
+        tipo!: TipoMoto;
 }
