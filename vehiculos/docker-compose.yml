@@ -1,0 +1,15 @@
+services:
+  postgres_vehiculos:
+    image: postgres:15
+    container_name: postgres_vehiculos
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: vehiculos
+    ports:
+      - "5436:5432"
+    volumes:
+      - vehiculos_data:/var/lib/postgresql/data
+
+volumes:
+  vehiculos_data:
