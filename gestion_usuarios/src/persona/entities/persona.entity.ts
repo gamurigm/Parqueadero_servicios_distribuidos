@@ -1,44 +1,41 @@
-import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { User } from '../../usuario/entities/usuario.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, TableInheritance } from 'typeorm';
 
-@Entity('persons')
-export class Person {
+@Entity('personas')
+@TableInheritance({ column: { name: 'tipo', type: 'varchar', length: 50 }, pattern: 'STI' })
+export abstract class Person {
     @PrimaryGeneratedColumn('uuid')
-    id!: string;
+    id: string;
 
     @Column({ default: true })
-    active!: boolean;
+    active: boolean;
 
     @Column('text')
-    address!: string;
+    address: string;
 
     @Column({ length: 30, unique: true })
-    dni!: string;
+    dni: string;
 
     @Column({ length: 50, unique: true })
-    email!: string;
+    email: string;
 
     @Column({ name: 'first_name', length: 30 })
-    firstName!: string;
+    firstName: string;
 
     @Column({ name: 'middle_name', length: 30, nullable: true })
     middleName?: string;
 
     @Column({ name: 'last_name', length: 30 })
-    lastName!: string;
+    lastName: string;
 
     @Column({ length: 30 })
-    nationality!: string;
+    nationality: string;
 
     @Column({ length: 15 })
-    phone!: string;
+    phone: string;
 
-    @CreateDateColumn({ type: 'timestamp',name: 'created_at',default: () => 'CURRENT_TIMESTAMP'})
-    createdAt!: Date;
+    @CreateDateColumn({ name: 'created_at' })
+    createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamp',name: 'updated_at',default: () => 'CURRENT_TIMESTAMP'})
-    updatedAt!: Date;
-
-    @OneToOne(() => User, user => user.person)
-    user!: User;
+    @UpdateDateColumn({ name: 'updated_at' })
+    updatedAt: Date;
 }

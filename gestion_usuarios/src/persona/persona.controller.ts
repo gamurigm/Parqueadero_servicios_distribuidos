@@ -27,14 +27,9 @@ export class PersonaController {
     return this.personaService.update(id, updatePersonaDto);
   }
 
-  @Patch(':id/activar')
-  activar(@Param('id') id: string) {
-    return this.personaService.activar(id);
-  }
-
-  @Patch(':id/desactivar')
-  desactivar(@Param('id') id: string) {
-    return this.personaService.desactivar(id);
+  @Patch(':id/cambio-de-estado')
+  cambioDeEstado(@Param('id') id: string) {
+    return this.personaService.cambioDeEstado(id);
   }
 
   @Delete(':id')

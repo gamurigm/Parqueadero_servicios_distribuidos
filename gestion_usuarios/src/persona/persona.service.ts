@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePersonaDto } from './dto/create-persona.dto';
 import { UpdatePersonaDto } from './dto/update-persona.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +6,7 @@ import { Person } from './entities/persona.entity';
 import { Repository } from 'typeorm';
 import { User } from '../usuario/entities/usuario.entity';
 import { UsuarioService } from '../usuario/usuario.service';
+import { CreateUsuarioDto } from '../usuario/dto/create-usuario.dto';
 
 @Injectable()
 export class PersonaService {
@@ -43,7 +44,7 @@ export class PersonaService {
     return username;
   }
 
-  async activar(id: string){
+  async cambioDeEstado(id: string){
     const person = await this.personRepository.findOne({
       where: { id },
     });
@@ -54,36 +55,7 @@ export class PersonaService {
       );
     }
 
-    person.active = true;
-
-    return await this.personRepository.save(person);
-  }
-
-  async desactivar(id: string){
-
-    const person = await this.personRepository.findOne({
-      where: { id },
-    });
-
-    if(!person){
-      throw new NotFoundException(
-        'Persona no encontrada',
-      );
-    }
-
-    const user = await this.userRepository.findOne({
-      where: {
-        id,
-      },
-    });
-
-    if(user?.active){
-      throw new BadRequestException(
-        'Debe desactivar primero el usuario asociado',
-      );
-    }
-
-    person.active = false;
+    person.active = !person.active;
 
     return await this.personRepository.save(person);
   }
@@ -120,17 +92,13 @@ export class PersonaService {
       );
     }
 
-    const person = this.personRepository.create(createPersonaDto);
-
-    const savedPerson = await this.personRepository.save(person);
-
-    await this.usuarioService.create({
-      id: savedPerson.id,
+    const createUsuarioDto: CreateUsuarioDto = {
+      ...createPersonaDto,
       username,
       password: createPersonaDto.dni,
-    });
+    } as CreateUsuarioDto;
 
-    return savedPerson;
+    return await this.usuarioService.create(createUsuarioDto);
   }
 
   async findAll() {
