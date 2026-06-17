@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Roles } from './entities/role.entity';
+import { Role } from './entities/role.entity';
 import { Not, Repository } from 'typeorm';
 import { RolesUsuarios } from '../roles_usuario/entities/roles_usuario.entity';
 
@@ -10,10 +10,10 @@ import { RolesUsuarios } from '../roles_usuario/entities/roles_usuario.entity';
 export class RolesService {
 
   constructor(
-    @InjectRepository(Roles)
-    private repositorioRoles: Repository<Roles>,
-  @InjectRepository(RolesUsuarios)
-  private repositorioRolesUsuario: Repository<RolesUsuarios>) {}
+    @InjectRepository(Role)
+    private repositorioRoles: Repository<Role>,
+    @InjectRepository(RolesUsuarios)
+    private repositorioRolesUsuario: Repository<RolesUsuarios>) {}
 
   async create(createRoleDto: CreateRoleDto) {
     const existe = await this.repositorioRoles.findOne({
@@ -24,7 +24,7 @@ export class RolesService {
 
     if(existe) throw new Error('Nombre de rol existente')
     
-    const nuevoRol = new Roles();
+    const nuevoRol = new Role();
     nuevoRol.nombre = createRoleDto.nombre;
     nuevoRol.descripcion = createRoleDto.descripcion;
     
@@ -41,7 +41,7 @@ export class RolesService {
         id,      
         },
     })
-  
+
     if (!existe) throw new Error('Rol no encontrado');
 
     return existe;
@@ -71,8 +71,8 @@ export class RolesService {
         }
     }
 
-    const datosActualizar: Partial<Roles> = {
-        updated_at: new Date()
+    const datosActualizar: Partial<Role> = {
+        updatedAt: new Date()
     };
 
     if (updateRoleDto.nombre && updateRoleDto.nombre !== existe.nombre) {
@@ -94,15 +94,15 @@ export class RolesService {
     await this.repositorioRoles.update(id, datosActualizar);
 
     return this.findOne(id);
-}
+  }
 
- async activarDesactivar(id: string) {
+  async activarDesactivar(id: string) {
     const rol = await this.findOne(id);
 
     const nuevoEstado = !rol.activo;
 
     const tieneUsuarios = await this.repositorioRolesUsuario.count({
-     where:{ id_rol : id,}
+      where:{ id_rol : id,}
     });
 
     if (tieneUsuarios > 0 && nuevoEstado === false) {
@@ -111,7 +111,7 @@ export class RolesService {
 
     await this.repositorioRoles.update(id, { 
       activo: nuevoEstado,
-      updated_at: new Date() 
+      updatedAt: new Date() 
     });
 
     return this.findOne(id);
@@ -126,9 +126,9 @@ export class RolesService {
        where: { id_rol: id }
      });
 
-     if (tieneUsuarios > 0) {
-       throw new ConflictException('No se puede eliminar un rol que tiene usuarios asignados');
-     }
+      if (tieneUsuarios > 0) {
+        throw new ConflictException('No se puede eliminar un rol que tiene usuarios asignados');
+      }
 
     await this.repositorioRoles.delete(id);
     return { message: 'Rol eliminado correctamente' };

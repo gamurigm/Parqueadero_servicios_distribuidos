@@ -1,8 +1,8 @@
-import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { User } from '../../usuario/entities/usuario.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, TableInheritance } from 'typeorm';
 
-@Entity('persons')
-export class Person {
+@Entity('personas')
+@TableInheritance({ column: { name: 'tipo', type: 'varchar', length: 50 }, pattern: 'STI' })
+export abstract class Person {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
 
@@ -33,12 +33,9 @@ export class Person {
     @Column({ length: 15 })
     phone!: string;
 
-    @CreateDateColumn({ type: 'timestamp',name: 'created_at',default: () => 'CURRENT_TIMESTAMP'})
+    @CreateDateColumn({ name: 'created_at' })
     createdAt!: Date;
 
-    @UpdateDateColumn({ type: 'timestamp',name: 'updated_at',default: () => 'CURRENT_TIMESTAMP'})
+    @UpdateDateColumn({ name: 'updated_at' })
     updatedAt!: Date;
-
-    @OneToOne(() => User, user => user.person)
-    user!: User;
 }

@@ -1,12 +1,14 @@
-import { IsString, IsUUID, MinLength, IsNotEmpty } from 'class-validator';
+import { IsString, IsUUID, MinLength, IsNotEmpty, IsOptional, MaxLength } from 'class-validator';
+import { CreatePersonaDto } from '../../persona/dto/create-persona.dto';
 
-export class CreateUsuarioDto {
+export class CreateUsuarioDto extends CreatePersonaDto {
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  id!: string;
+  id?: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(10)
   username!: string;
 
   @IsString()

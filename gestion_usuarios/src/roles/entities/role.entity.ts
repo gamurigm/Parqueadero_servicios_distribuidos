@@ -1,23 +1,26 @@
-import { Entity, PrimaryGeneratedColumn, Column, UpdateDateColumn, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany } from 'typeorm';
+import { User } from '../../usuario/entities/usuario.entity';
 
 @Entity('roles')
-export class Roles {
-    
-    @PrimaryGeneratedColumn("uuid")
-    id!: string;
+export class Role {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
 
     @Column({ type: 'boolean', default: true })
-    activo!: boolean;
+    activo: boolean;
 
-    @CreateDateColumn({ type: 'timestamp',default: () => 'CURRENT_TIMESTAMP'})
-    created_at!: Date;
+    @CreateDateColumn({ name: 'created_at' })
+    createdAt: Date;
 
-    @UpdateDateColumn({ type: 'timestamp',default: () => 'CURRENT_TIMESTAMP'})
-    updated_at!: Date;
+    @UpdateDateColumn({ name: 'updated_at' })
+    updatedAt: Date;
 
     @Column({ type: 'text' })
-    descripcion!: string;
+    descripcion: string;
 
-    @Column({ type: 'varchar', length: 50, unique: true})
-    nombre!: string;
+    @Column({ type: 'varchar', length: 50, unique: true })
+    nombre: string;
+
+    @ManyToMany(() => User, (user) => user.roles)
+    users: User[];
 }

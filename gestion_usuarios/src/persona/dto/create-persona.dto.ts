@@ -31,7 +31,7 @@ export class CreatePersonaDto {
   lastName!: string;
 
   @IsString()
-  @Matches(/^\d{10}$/)
+  @Matches(/^\d[0-9]{10}$/)
   dni!: string;
 
   @IsEmail()
@@ -49,6 +49,6 @@ export class CreatePersonaDto {
   nationality!: string;
 
   @IsString()
-  @Matches(/^\d{7,15}$/)
+  @Matches(/^\d[0-9]{7,15}$/)
   phone!: string;
 }
