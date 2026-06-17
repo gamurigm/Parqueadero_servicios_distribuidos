@@ -1,60 +1,44 @@
 import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { User } from '../../usuario/entities/usuario.entity';
 
-@Entity('personas')
+@Entity('persons')
 export class Person {
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn('uuid')
     id!: string;
 
-    @Column({ length: 30 })
-    firstName!: string;
+    @Column({ default: true })
+    active!: boolean;
 
-    @Column({ length: 30, nullable: true })
-    middleName!: string;
-
-    @Column({ length: 30 })
-    lastName: string;
+    @Column('text')
+    address!: string;
 
     @Column({ length: 30, unique: true })
-    dni: string;
+    dni!: string;
 
-    @Column({ length: 50 })
-    email: string;
+    @Column({ length: 50, unique: true })
+    email!: string;
 
-    @CreateDateColumn()
-    createdAt: Date;
+    @Column({ name: 'first_name', length: 30 })
+    firstName!: string;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+    @Column({ name: 'middle_name', length: 30, nullable: true })
+    middleName?: string;
+
+    @Column({ name: 'last_name', length: 30 })
+    lastName!: string;
+
+    @Column({ length: 30 })
+    nationality!: string;
+
+    @Column({ length: 15 })
+    phone!: string;
+
+    @CreateDateColumn({ name: 'created_at' })
+    createdAt!: Date;
+
+    @UpdateDateColumn({ name: 'updated_at' })
+    updatedAt!: Date;
 
     @OneToOne(() => User, user => user.person)
-    user: User;
-}
-
-function Entity(arg0: string): (target: typeof Person, context: ClassDecoratorContext<typeof Person>) => void | typeof Person {
-    throw new Error("Function not implemented.");
-}
-
-
-function PrimaryGeneratedColumn(): (target: undefined, context: ClassFieldDecoratorContext<Person, number> & { name: "id"; private: false; static: false; }) => void | ((this: Person, value: number) => number) {
-    throw new Error("Function not implemented.");
-}
-
-
-function Column(arg0: { length: number; }): (target: undefined, context: ClassFieldDecoratorContext<Person, string> & { name: "firstName"; private: false; static: false; }) => void | ((this: Person, value: string) => string) {
-    throw new Error("Function not implemented.");
-}
-
-
-function CreateDateColumn(): (target: undefined, context: ClassFieldDecoratorContext<Person, Date> & { name: "createdAt"; private: false; static: false; }) => void | ((this: Person, value: Date) => Date) {
-    throw new Error("Function not implemented.");
-}
-
-
-function UpdateDateColumn(): (target: undefined, context: ClassFieldDecoratorContext<Person, Date> & { name: "updatedAt"; private: false; static: false; }) => void | ((this: Person, value: Date) => Date) {
-    throw new Error("Function not implemented.");
-}
-
-
-function OneToOne(arg0: () => any, arg1: (user: any) => any): (target: undefined, context: ClassFieldDecoratorContext<Person, User> & { name: "user"; private: false; static: false; }) => void | ((this: Person, value: User) => User) {
-    throw new Error("Function not implemented.");
+    user!: User;
 }

@@ -19,16 +19,26 @@ export class PersonaController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.personaService.findOne(+id);
+    return this.personaService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePersonaDto: UpdatePersonaDto) {
-    return this.personaService.update(+id, updatePersonaDto);
+    return this.personaService.update(id, updatePersonaDto);
+  }
+
+  @Patch(':id/activar')
+  activar(@Param('id') id: string) {
+    return this.personaService.activar(id);
+  }
+
+  @Patch(':id/desactivar')
+  desactivar(@Param('id') id: string) {
+    return this.personaService.desactivar(id);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.personaService.remove(+id);
+    return this.personaService.remove(id);
   }
 }
