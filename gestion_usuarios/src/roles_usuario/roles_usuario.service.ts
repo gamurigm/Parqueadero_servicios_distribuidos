@@ -6,6 +6,8 @@ import { RolesUsuarios } from './entities/roles_usuario.entity';
 import { Repository } from 'typeorm';
 import { User } from '../usuario/entities/usuario.entity';
 import { Roles } from '../roles/entities/role.entity';
+import { error } from 'console';
+import { ActiveDeactiveRolesUsuarioDto } from './dto/active-deactive-roles_usuario.dto';
 
 @Injectable()
 export class RolesUsuarioService {
@@ -95,22 +97,67 @@ export class RolesUsuarioService {
   }
 
   async update(updateRolesUsuarioDto: UpdateRolesUsuarioDto) {
-    const userRole = await this.repositorioRolesUsuario.findOne({
-            where: {
-                id_usuario: updateRolesUsuarioDto.id_user,
-                id_rol: updateRolesUsuarioDto.id_rol
-            }
-        });
-
-        if (!userRole) {
-            throw new NotFoundException('El usuario no tiene este rol asignado');
+    const existNewRole = await this.repositorioRoles.findOne({
+        where: {
+            id: updateRolesUsuarioDto.id_nuevo_rol
         }
+    });
 
-        userRole.activo = !userRole.activo;
-        userRole.updated_at = new Date();
+    if (!existNewRole) throw new NotFoundException('El nuevo rol no existe');
 
-        return this.repositorioRolesUsuario.save(userRole);
-  }
+    const userRole = await this.repositorioRolesUsuario.findOne({
+        where: {
+            id_usuario: updateRolesUsuarioDto.id_user,
+            id_rol: updateRolesUsuarioDto.id_rol
+        }
+    });
+
+    if (!userRole) throw new NotFoundException('El usuario no tiene este rol asignado');
+    
+    const existingNewRole = await this.repositorioRolesUsuario.findOne({
+        where: {
+            id_usuario: updateRolesUsuarioDto.id_user,
+            id_rol: updateRolesUsuarioDto.id_nuevo_rol
+        }
+    });
+
+    if (existingNewRole)throw new ConflictException('El usuario ya tiene el nuevo rol asignado');
+
+    await this.repositorioRolesUsuario.delete({
+        id_usuario: updateRolesUsuarioDto.id_user,
+        id_rol: updateRolesUsuarioDto.id_rol
+    });
+
+    const newUserRole = this.repositorioRolesUsuario.create({
+        id_usuario: updateRolesUsuarioDto.id_user,
+        id_rol: updateRolesUsuarioDto.id_nuevo_rol,
+    });
+
+    return this.repositorioRolesUsuario.save(newUserRole);
+}
+
+  async activarDesactivar(activeDeactiveRolesUsuarioDTO: ActiveDeactiveRolesUsuarioDto) {
+    const userRole = await this.repositorioRolesUsuario.findOne({
+        where: {
+            id_usuario: activeDeactiveRolesUsuarioDTO.id_user,
+            id_rol: activeDeactiveRolesUsuarioDTO.id_rol
+        }
+    });
+
+    if (!userRole) {
+        throw new NotFoundException('El usuario no tiene este rol asignado');
+    }
+
+    userRole.activo = !userRole.activo;
+    userRole.updated_at = new Date();
+
+    await this.repositorioRolesUsuario.save(userRole);
+
+    return {
+        message: `Rol ${userRole.activo ? 'activado' : 'desactivado'} correctamente al usuario`,
+        userRole
+    };
+}
 
   async remove(updateRolesUsuarioDto: UpdateRolesUsuarioDto) {
     const existe = await this.repositorioRolesUsuario.findOne({

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { RolesUsuarioService } from './roles_usuario.service';
 import { CreateRolesUsuarioDto } from './dto/create-roles_usuario.dto';
 import { UpdateRolesUsuarioDto } from './dto/update-roles_usuario.dto';
+import { ActiveDeactiveRolesUsuarioDto } from './dto/active-deactive-roles_usuario.dto';
 
 @Controller('roles-Usuario')
 export class RolesUsuarioController {
@@ -29,12 +30,17 @@ export class RolesUsuarioController {
 
   @Get('roles/:id_user')
   findRolesByUser(@Param('id_user') id_user : string) {
-    return this.rolesUsuarioService.findUsersByRoles(id_user);
+    return this.rolesUsuarioService.findRolesByUser(id_user);
   }
 
   @Patch()
   update(@Body() updateRolesUsuarioDto: UpdateRolesUsuarioDto) {
     return this.rolesUsuarioService.update(updateRolesUsuarioDto);
+  }
+
+  @Patch("activar-desactivar")
+  active_deactive(@Body() activeDeactiveRolesUsuarioDTO : ActiveDeactiveRolesUsuarioDto) {
+    return this.rolesUsuarioService.activarDesactivar(activeDeactiveRolesUsuarioDTO);
   }
 
   @Delete()
