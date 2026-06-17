@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Person } from './entities/persona.entity';
 import { Repository } from 'typeorm';
 import { User } from '../usuario/entities/usuario.entity';
+import { UsuarioService } from '../usuario/usuario.service';
 
 @Injectable()
 export class PersonaService {
@@ -15,6 +16,8 @@ export class PersonaService {
 
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+
+    private readonly usuarioService: UsuarioService,
   ){}
 
   private async generateUsername(
@@ -121,15 +124,15 @@ export class PersonaService {
 
     const person = this.personRepository.create(createPersonaDto);
 
-    //const user = this.userRepository.create({
-      //id: savedPerson.id,
-      //username,
-      //passwordHash: 'TEMPORAL',
-      //active: true,
-      //person: savedPerson,
-    //});
+    const savedPerson = await this.personRepository.save(person);
 
-    return await this.personRepository.save(person);
+    await this.usuarioService.create({
+      id: savedPerson.id,
+      username,
+      password: createPersonaDto.dni,
+    });
+
+    return savedPerson;
   }
 
   async findAll() {
