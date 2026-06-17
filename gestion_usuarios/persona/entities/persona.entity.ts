@@ -1,3 +1,12 @@
+<<<<<<< HEAD
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
+import { User } from '../../usuario/entities/usuario.entity';
+
+@Entity('personas')
+export class Person {
+    @PrimaryGeneratedColumn('uuid')
+    id: string;
+=======
 import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { User } from '../../usuario/entities/usuario.entity';
 
@@ -5,6 +14,7 @@ import { User } from '../../usuario/entities/usuario.entity';
 export class Person {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
+>>>>>>> 54702e9f86ee1b79af36032c69b6de79af6ac270
 
     @Column({ default: true })
     active!: boolean;
@@ -40,5 +50,10 @@ export class Person {
     updatedAt!: Date;
 
     @OneToOne(() => User, user => user.person)
+<<<<<<< HEAD
     user!: User;
 }
+=======
+    user: User;
+}
+>>>>>>> 0d2fad668cf260401eff1d05e5a5ca756ad11ec6
