@@ -96,8 +96,6 @@ export class PersonaService {
       createPersonaDto.lastName,
     );
 
-    console.log(username);
-
     const dniExists = await this.personRepository.findOne({
       where: {
         dni: createPersonaDto.dni,
