@@ -14,28 +14,24 @@ export class UsuarioService {
   ) {}
 
   async create(createUsuarioDto: CreateUsuarioDto) {
-    const { password, id, ...userData } = createUsuarioDto;
-    
-    // ponytail: using native crypto.scryptSync for password hashing to avoid external dependencies
+    const { password, ...userData } = createUsuarioDto;
+
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = crypto.scryptSync(password, salt, 64).toString('hex');
     const passwordHash = `${salt}:${hash}`;
-    
+
     const user = this.userRepository.create({
-      id,
       ...userData,
       passwordHash,
     });
-    
+
     const savedUser = await this.userRepository.save(user);
     delete (savedUser as any).passwordHash;
     return savedUser;
   }
 
   async findAll() {
-    const users = await this.userRepository.find({
-      relations: { person: true }
-    });
+    const users = await this.userRepository.find();
     return users.map(user => {
       delete (user as any).passwordHash;
       return user;
@@ -45,30 +41,29 @@ export class UsuarioService {
   async findOne(id: string) {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: { person: true }
     });
-    
+
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
-    
+
     delete (user as any).passwordHash;
     return user;
   }
 
   async update(id: string, updateUsuarioDto: UpdateUsuarioDto) {
     const user = await this.findOne(id);
-    
+
     const { password, ...userData } = updateUsuarioDto;
-    
+
     if (password) {
       const salt = crypto.randomBytes(16).toString('hex');
       const hash = crypto.scryptSync(password, salt, 64).toString('hex');
       (userData as any).passwordHash = `${salt}:${hash}`;
     }
-    
+
     Object.assign(user, userData);
-    
+
     const updatedUser = await this.userRepository.save(user);
     delete (updatedUser as any).passwordHash;
     return updatedUser;

@@ -5,8 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { RolesUsuarios } from './entities/roles_usuario.entity';
 import { Repository } from 'typeorm';
 import { User } from '../usuario/entities/usuario.entity';
-import { Roles } from '../roles/entities/role.entity';
-import { error } from 'console';
+import { Role } from '../roles/entities/role.entity';
 import { ActiveDeactiveRolesUsuarioDto } from './dto/active-deactive-roles_usuario.dto';
 
 @Injectable()
@@ -16,11 +15,10 @@ export class RolesUsuarioService {
         private repositorioRolesUsuario: Repository<RolesUsuarios>,
         @InjectRepository(User)
         private repositorioUsuario: Repository<User>,
-        @InjectRepository(Roles)
-        private repositorioRoles: Repository<Roles>,
+        @InjectRepository(Role)
+        private repositorioRoles: Repository<Role>,
     ) {}
 
-  //asignarRol
   async create(createRolesUsuarioDto: CreateRolesUsuarioDto) {
         const user = await this.repositorioUsuario.findOne({
             where: { id: createRolesUsuarioDto.id_user}
@@ -61,38 +59,38 @@ export class RolesUsuarioService {
 
   async findOne(updateRolesUsuarioDto: UpdateRolesUsuarioDto) {
     const existe =this.repositorioRolesUsuario.findOne({
-      where: { 
-        id_rol:updateRolesUsuarioDto.id_rol,  
+      where: {
+        id_rol:updateRolesUsuarioDto.id_rol,
         id_usuario:updateRolesUsuarioDto.id_user
         },
     })
 
     if (!existe) throw new Error('Rol no encontrado');
-    
+
     return existe;
   }
 
   async findRolesByUser(id_usuario:string) {
     const existe =this.repositorioRolesUsuario.find({
-      where: { 
+      where: {
         id_usuario
         },
     })
 
     if (!existe) throw new Error('Roles no encontrados');
-    
+
     return existe;
   }
 
   async findUsersByRoles(id_rol:string) {
     const existe =this.repositorioRolesUsuario.find({
-      where: { 
+      where: {
         id_rol
         },
     })
 
     if (!existe) throw new Error('Usuarios no encontrados');
-    
+
     return existe;
   }
 
@@ -113,7 +111,7 @@ export class RolesUsuarioService {
     });
 
     if (!userRole) throw new NotFoundException('El usuario no tiene este rol asignado');
-    
+
     const existingNewRole = await this.repositorioRolesUsuario.findOne({
         where: {
             id_usuario: updateRolesUsuarioDto.id_user,
@@ -149,7 +147,7 @@ export class RolesUsuarioService {
     }
 
     userRole.activo = !userRole.activo;
-    userRole.updated_at = new Date();
+    userRole.updatedAt = new Date();
 
     await this.repositorioRolesUsuario.save(userRole);
 
@@ -161,7 +159,7 @@ export class RolesUsuarioService {
 
   async remove(updateRolesUsuarioDto: UpdateRolesUsuarioDto) {
     const existe = await this.repositorioRolesUsuario.findOne({
-            where: { 
+            where: {
               id_usuario: updateRolesUsuarioDto.id_user,
               id_rol: updateRolesUsuarioDto.id_rol
             }
