@@ -1,15 +1,16 @@
-import { IsString, IsUUID, MinLength, IsNotEmpty } from 'class-validator';
+import { IsString, IsUUID, MinLength, IsNotEmpty, Max, maxLength, MaxLength } from 'class-validator';
 
 export class CreateUsuarioDto {
   @IsUUID()
   @IsNotEmpty()
-  id: string;
+  id!: string;
 
   @IsString()
   @IsNotEmpty()
-  username: string;
+  @MaxLength(10)
+  username!: string;
 
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 }
