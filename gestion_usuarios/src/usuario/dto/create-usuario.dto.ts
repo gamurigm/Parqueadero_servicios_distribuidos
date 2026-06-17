@@ -3,13 +3,13 @@ import { IsString, IsUUID, MinLength, IsNotEmpty } from 'class-validator';
 export class CreateUsuarioDto {
   @IsUUID()
   @IsNotEmpty()
-  id: string;
+  id!: string;
 
   @IsString()
   @IsNotEmpty()
-  username: string;
+  username!: string;
 
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 }
