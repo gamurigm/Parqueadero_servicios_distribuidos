@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
 import { User } from '../../usuario/entities/usuario.entity';
 
@@ -5,12 +6,20 @@ import { User } from '../../usuario/entities/usuario.entity';
 export class Person {
     @PrimaryGeneratedColumn('uuid')
     id: string;
+=======
+import { Column, CreateDateColumn, Entity, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+
+@Entity('personas')
+export class Person {
+    @PrimaryGeneratedColumn()
+    id!: string;
+>>>>>>> 54702e9f86ee1b79af36032c69b6de79af6ac270
 
     @Column({ length: 30 })
-    firstName: string;
+    firstName!: string;
 
     @Column({ length: 30, nullable: true })
-    middleName: string;
+    middleName!: string;
 
     @Column({ length: 30 })
     lastName: string;
