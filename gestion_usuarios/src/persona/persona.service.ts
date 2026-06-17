@@ -210,6 +210,19 @@ export class PersonaService {
 
   async remove(id: string) {
 
+    const userExist = await this.userRepository.findOne({
+      where:{
+        id,
+        active: false
+      },
+    });
+
+    if(!userExist){
+      throw new NotFoundException(
+        'Usuario no encontrado o esta aun activo',
+      );
+    }
+
     const person = await this.personRepository.findOne({
       where: { id },
     });

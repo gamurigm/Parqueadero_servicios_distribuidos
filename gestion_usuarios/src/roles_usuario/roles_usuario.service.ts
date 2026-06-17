@@ -4,8 +4,8 @@ import { UpdateRolesUsuarioDto } from './dto/update-roles_usuario.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RolesUsuarios } from './entities/roles_usuario.entity';
 import { Repository } from 'typeorm';
-import { User } from 'usuario/entities/usuario.entity';
-import { Roles } from 'roles/entities/role.entity';
+import { User } from '../usuario/entities/usuario.entity';
+import { Roles } from '../roles/entities/role.entity';
 
 @Injectable()
 export class RolesUsuarioService {

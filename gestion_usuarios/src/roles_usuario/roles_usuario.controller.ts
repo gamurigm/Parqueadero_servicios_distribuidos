@@ -22,12 +22,12 @@ export class RolesUsuarioController {
     return this.rolesUsuarioService.findOne(updateRolesUsuarioDto);
   }
 
-  @Get('/:id_rol')
+  @Get('usuarios/:id_rol')
   findUsersByRol(@Param('id_rol') id_rol : string) {
     return this.rolesUsuarioService.findUsersByRoles(id_rol);
   }
 
-  @Get('/:id_user')
+  @Get('roles/:id_user')
   findRolesByUser(@Param('id_user') id_user : string) {
     return this.rolesUsuarioService.findUsersByRoles(id_user);
   }

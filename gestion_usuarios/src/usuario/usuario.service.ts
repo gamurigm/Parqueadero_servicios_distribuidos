@@ -34,7 +34,7 @@ export class UsuarioService {
 
   async findAll() {
     const users = await this.userRepository.find({
-      relations: ['person'],
+      relations: { person: true }
     });
     return users.map(user => {
       delete (user as any).passwordHash;
@@ -45,7 +45,7 @@ export class UsuarioService {
   async findOne(id: string) {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['person'],
+      relations: { person: true }
     });
     
     if (!user) {
