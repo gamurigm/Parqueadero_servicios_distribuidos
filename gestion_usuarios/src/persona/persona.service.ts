@@ -62,15 +62,21 @@ export class PersonaService {
       where: { id:idPerson },
     });
 
-    if(!person){
-      throw new NotFoundException(
-        'Persona no encontrada',
-      );
-    }
+    if(!person) throw new NotFoundException('Persona no encontrada',);
+    
+
+    const afiliatedUser = await this.userRepository.find({
+      where:{
+        id:idPerson,
+        active:true
+      }
+    })
+
+    if(!afiliatedUser) throw new ConflictException("La persona tiene un usuario activo afiliado")
 
     person.active = !person.active;
-
-    return await this.personRepository.save(person);
+    await this.personRepository.update(idPerson,person);
+    return this.personRepository.findOne({where:{id:idPerson}});
   }
 
   async create(createPersonaDto: CreatePersonaDto) {
@@ -83,11 +89,8 @@ export class PersonaService {
       },
     });
 
-    if(dniExists){
-      throw new ConflictException(
-        'La cedula ya existe'
-      );
-    }
+    if(dniExists)throw new ConflictException('La cedula ya existe');
+    
     const emailSnt= createPersonaDto.email.trim().replace(/\s+/g, ' ');
     const emailExists = await this.personRepository.findOne({
       where: {
@@ -95,11 +98,8 @@ export class PersonaService {
       },
     });
 
-    if(emailExists){
-      throw new ConflictException(
-        'El correo ya existe',
-      );
-    }
+    if(emailExists) throw new ConflictException('El correo ya existe',);
+    
     const phoneSnt = this.utils.sanitizeString("telefono",createPersonaDto.phone);
 
     const phoneExists = await this.personRepository.findOne({
@@ -108,11 +108,7 @@ export class PersonaService {
       },
     });
 
-    if(phoneExists){
-      throw new ConflictException(
-        'El Telefono ya existe',
-      );
-    } 
+    if(phoneExists) throw new ConflictException('El Telefono ya existe',);
 
     const firstNameSnt = this.utils.sanitizeString("nombre",createPersonaDto.firstName); 
     const secondNameSnt = this.utils.sanitizeString("nombre intermedio",createPersonaDto.middleName); 
@@ -155,12 +151,8 @@ export class PersonaService {
       where: { id:idPerson },
     });
 
-    if(!person){
-      throw new NotFoundException(
-        'Persona no encontrada'
-      );
-    }
-
+    if(!person) throw new NotFoundException('Persona no encontrada');
+    
     return person;
   }
 
@@ -171,10 +163,7 @@ export class PersonaService {
         where: { id: idPerson },
       });
       
-      if (!person) {
-        throw new NotFoundException('Persona no encontrada');
-      }
-      
+      if (!person) throw new NotFoundException('Persona no encontrada');      
       
       const sanitizedData: any = {};
       
@@ -196,9 +185,8 @@ export class PersonaService {
           where: { phone: sanitizedData.phone},
         });
 
-        if (phoneExists) {
-          throw new ConflictException('El telefono ya existe');
-        }
+        if (phoneExists) throw new ConflictException('El telefono ya existe');
+        
       }
 
       if (sanitizedData.email && sanitizedData.email !== person.email) {
@@ -206,9 +194,8 @@ export class PersonaService {
           where: { email: sanitizedData.email },
         });
 
-        if (emailExists) {
-          throw new ConflictException('El correo ya existe');
-        }
+        if (emailExists) throw new ConflictException('El correo ya existe');
+        
       }
 
       if (sanitizedData.dni && sanitizedData.dni !== person.dni) {
@@ -216,9 +203,8 @@ export class PersonaService {
           where: { dni: sanitizedData.dni },
         });
 
-        if (dniExists) {
-          throw new ConflictException('La cédula ya existe');
-        }
+        if (dniExists) throw new ConflictException('La cédula ya existe');
+        
       }
 
       if (sanitizedData.tipo && sanitizedData.tipo !== person.obtenerTipo()) {
@@ -255,28 +241,21 @@ export class PersonaService {
 
   async remove(id: string) {
     const idPerson = this.utils.validateUUID(id);
+
     const userExist = await this.userRepository.findOne({
       where:{
         id:idPerson,
-        active: false
+        active: true
       },
     });
 
-    if(!userExist){
-      throw new NotFoundException(
-        'Usuario no encontrado o esta aun activo',
-      );
-    }
-
+    if(userExist) throw new NotFoundException ('Usuario tiene un usuario anexado aun activo',);
+    
     const person = await this.personRepository.findOne({
       where: { id:idPerson },
     });
 
-    if(!person){
-      throw new NotFoundException(
-        'Persona no encontrada',
-      );
-    }
+    if(!person)throw new NotFoundException('Persona no encontrada');
 
     await this.personRepository.remove(person);
 

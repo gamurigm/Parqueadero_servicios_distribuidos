@@ -32,18 +32,18 @@ export class RolesUsuarioService {
             where: { id: idUser}
         });
 
-        if (!user) {
-            throw new NotFoundException('Usuario no encontrado');
-        }
+        if (!user) throw new NotFoundException('Usuario no encontrado');
+
+        if(!user.active) throw new ConflictException("No se puede asignar un rol a un usuario inactivo");
 
         const role = await this.repositorioRoles.findOne({
             where: { id: idRol }
         });
 
-        if (!role) {
-            throw new NotFoundException('Rol no encontrado');
-        }
+        if (!role) throw new NotFoundException('Rol no encontrado');
 
+        if (!role.activo) throw new NotFoundException('No se puede asignar a un usuario un rol inactivo');
+        
         const exists = await this.repositorioRolesUsuario.findOne({
             where: {
                 id_usuario: idUser,
@@ -51,9 +51,7 @@ export class RolesUsuarioService {
             }
         });
 
-        if (exists) {
-            throw new ConflictException('El usuario ya tiene este rol asignado');
-        }
+        if (exists)  throw new ConflictException('El usuario ya tiene este rol asignado');
 
         const userRole = this.repositorioRolesUsuario.create({
             id_usuario: idUser,
@@ -79,13 +77,13 @@ export class RolesUsuarioService {
         },
     })
 
-    if (!existe) throw new Error('Rol no encontrado');
+    if (!existe) throw new Error('Asigniacion no encontrado');
 
     return existe;
   }
 
   async findRolesByUser(id_usuario:string) {
-    const idUser = this.utils.sanitizeString("id usuario",id_usuario);
+    const idUser = this.utils.validateUUID(id_usuario);
 
     const existe =this.repositorioRolesUsuario.find({
       where: {
@@ -93,20 +91,20 @@ export class RolesUsuarioService {
         },
     })
 
-    if (!existe) throw new Error('Roles no encontrados');
+    if (!existe) throw new NotFoundException('Roles no encontrados');
 
     return existe;
   }
 
   async findUsersByRoles(id_rol:string) {
-    const idRol = this.utils.sanitizeString("id rol",id_rol);
+    const idRol = this.utils.validateUUID(id_rol);
     const existe =this.repositorioRolesUsuario.find({
       where: {
         id_rol: idRol
         },
     })
 
-    if (!existe) throw new Error('Usuarios no encontrados');
+    if (!existe) throw new NotFoundException('Usuarios con el rol asigndo no encontrados');
 
     return existe;
   }
@@ -135,11 +133,11 @@ export class RolesUsuarioService {
     const existingNewRole = await this.repositorioRolesUsuario.findOne({
         where: {
             id_usuario: idUser,
-            id_rol: idRol
+            id_rol: idNuevoRol
         }
     });
 
-    if (existingNewRole)throw new ConflictException('El usuario ya tiene el nuevo rol asignado');
+     if (await existingNewRole)throw new ConflictException('El usuario ya tiene el nuevo rol asignado');
 
     await this.repositorioRolesUsuario.delete({
         id_usuario: idUser,
@@ -148,7 +146,7 @@ export class RolesUsuarioService {
 
     const newUserRole = this.repositorioRolesUsuario.create({
         id_usuario: idUser,
-        id_rol: idRol
+        id_rol: idNuevoRol
     });
 
     return this.repositorioRolesUsuario.save(newUserRole);

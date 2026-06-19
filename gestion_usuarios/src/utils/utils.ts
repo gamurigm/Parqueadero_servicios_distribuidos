@@ -18,7 +18,7 @@ export class Utils{
       throw new BadRequestException(name+' no fue definido');
     }
     
-    let cleaned = value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+    let cleaned = value.trim().replace(/\s+/g, '').toLocaleLowerCase();
     
     cleaned = cleaned.replace(/<[^>]*>/g, '');
     

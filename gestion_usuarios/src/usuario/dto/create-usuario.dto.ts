@@ -3,7 +3,7 @@ import { IsString, IsUUID, MinLength, IsNotEmpty, IsOptional, MaxLength } from '
 export class CreateUsuarioDto{
   @IsOptional()
   @IsUUID()
-  id?: string;
+  id!: string;
 
   @IsString()
   @IsNotEmpty()
