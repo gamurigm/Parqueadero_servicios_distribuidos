@@ -1,7 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, TableInheritance } from 'typeorm';
+// persona.entity.ts
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, TableInheritance, OneToOne } from 'typeorm';
+import { User } from '../../usuario/entities/usuario.entity';
 
 @Entity('personas')
-@TableInheritance({ column: { name: 'tipo', type: 'varchar', length: 50 }, pattern: 'STI' })
+@TableInheritance({ column: { name: 'tipo', type: 'varchar', length: 50 } }) 
 export abstract class Person {
     @PrimaryGeneratedColumn('uuid')
     id!: string;
@@ -38,4 +40,9 @@ export abstract class Person {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt!: Date;
+
+    @OneToOne(() => User, (user) => user.persona)
+    user?: User;
+
+    abstract obtenerTipo(): string;
 }

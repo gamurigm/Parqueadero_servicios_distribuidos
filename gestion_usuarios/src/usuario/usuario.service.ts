@@ -1,27 +1,61 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import { User } from './entities/usuario.entity';
 import * as crypto from 'crypto';
+import { Utils } from '../utils/utils';
+import { Person } from '../persona/entities/persona.entity';
 
 @Injectable()
 export class UsuarioService {
+  private utils : Utils;
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+    @InjectRepository(Person)
+    private readonly personRepository: Repository<Person>
+  ) {
+    this.utils = new Utils();
+  }
 
   async create(createUsuarioDto: CreateUsuarioDto) {
-    const { password, ...userData } = createUsuarioDto;
+    const idSnt = this.utils.sanitizeString("id",createUsuarioDto.id)
+    const existPerson = await this.personRepository.findOne({
+        where: {
+          id:idSnt,
+        }
+      });
+    
+    if(!existPerson) throw new BadRequestException("No existe esta persona para generar el usuario con este id")
+      
+    const existUser = await this.userRepository.findOne({
+      where: {
+          id:idSnt,
+        }
+    });
+
+    if(existUser) throw new BadRequestException("La persona ya esta registrada con ese id, no es posible generar el usuario");
+
+    const usernameSnt = this.utils.sanitizeString("nombre usuario",createUsuarioDto.username);
+    const existUsername= await this.userRepository.findOne({
+      where: {
+          username:usernameSnt
+        }
+    });
+
+    if(existUsername) throw new BadRequestException("Ya existe una persona con ese nombre de usuario");
+
+    const { password } = createUsuarioDto;
 
     const salt = crypto.randomBytes(16).toString('hex');
     const hash = crypto.scryptSync(password, salt, 64).toString('hex');
     const passwordHash = `${salt}:${hash}`;
 
     const user = this.userRepository.create({
-      ...userData,
+      id : idSnt,
+      username: usernameSnt,
       passwordHash,
     });
 

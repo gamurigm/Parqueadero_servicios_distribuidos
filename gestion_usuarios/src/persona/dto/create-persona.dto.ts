@@ -1,9 +1,11 @@
+import { Transform } from 'class-transformer';
 import {
   IsString,
   IsEmail,
   Length,
   Matches,
   IsOptional,
+  IsNotEmpty,
 } from 'class-validator';
 
 export class CreatePersonaDto {
@@ -30,8 +32,10 @@ export class CreatePersonaDto {
     })
   lastName!: string;
 
-  @IsString()
-  @Matches(/^\d[0-9]{10}$/)
+  @Length(10, 10, { message: 'El DNI debe tener exactamente 10 dígitos' })
+  @Matches(/^\d{10}$/, { 
+    message: 'El DNI debe contener solo números (10 dígitos)' 
+  })
   dni!: string;
 
   @IsEmail()
@@ -49,6 +53,14 @@ export class CreatePersonaDto {
   nationality!: string;
 
   @IsString()
+  @Length(10, 10, { message: 'El celular debe tener exactamente 10 dígitos' })
   @Matches(/^\d[0-9]{7,15}$/)
   phone!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^[A-Za-z\s\-áéíóúÁÉÍÓÚñÑ]+$/,{
+        message: 'El tipo solo es letras'
+    })
+  tipo!:string;
 }

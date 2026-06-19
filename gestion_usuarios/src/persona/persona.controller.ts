@@ -17,22 +17,22 @@ export class PersonaController {
     return this.personaService.findAll();
   }
 
-  @Get(':id')
+  @Get('/:id')
   findOne(@Param('id') id: string) {
     return this.personaService.findOne(id);
   }
 
-  @Patch(':id')
+  @Patch('/:id')
   update(@Param('id') id: string, @Body() updatePersonaDto: UpdatePersonaDto) {
     return this.personaService.update(id, updatePersonaDto);
   }
 
-  @Patch(':id/cambio-de-estado')
+  @Patch('/:id/cambio-de-estado')
   cambioDeEstado(@Param('id') id: string) {
     return this.personaService.cambioDeEstado(id);
   }
 
-  @Delete(':id')
+  @Delete('/:id')
   remove(@Param('id') id: string) {
     return this.personaService.remove(id);
   }

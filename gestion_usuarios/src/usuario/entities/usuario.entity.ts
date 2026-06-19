@@ -1,23 +1,34 @@
-import { ChildEntity, Column, ManyToMany, JoinTable } from 'typeorm';
+import { Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, Entity, OneToOne, JoinColumn, OneToMany } from 'typeorm';
 import { Person } from '../../persona/entities/persona.entity';
-import { Role } from '../../roles/entities/role.entity';
+import { RolesUsuarios } from '../../roles_usuario/entities/roles_usuario.entity';
 
-@ChildEntity('Usuario')
-export class User extends Person {
+@Entity('usuarios')
+export class User {
+    @PrimaryColumn('uuid')
+    id!: string; 
+
+    @OneToOne(() => Person)
+    @JoinColumn({ name: 'id' }) 
+    persona!: Person;
+
     @Column({ unique: true, length: 15 })
-    username: string;
+    username!: string;
 
     @Column()
-    passwordHash: string;
+    passwordHash!: string;
 
     @Column({ nullable: true })
-    lastLogin: Date;
+    lastLogin!: Date;
 
-    @ManyToMany(() => Role, (role) => role.users)
-    @JoinTable({
-        name: 'users_roles',
-        joinColumn: { name: 'user_id', referencedColumnName: 'id' },
-        inverseJoinColumn: { name: 'role_id', referencedColumnName: 'id' }
-    })
-    roles: Role[];
+    @CreateDateColumn({ name: 'created_at', })
+    createdAt!: Date;
+    
+    @UpdateDateColumn({ name: 'updated_at' })
+    updatedAt!: Date;
+
+    @Column({default:true})
+    active!: boolean;
+
+    @OneToMany(() => RolesUsuarios, (rolesUsuario) => rolesUsuario.user)
+    rolesUsuarios!: RolesUsuarios[];
 }
