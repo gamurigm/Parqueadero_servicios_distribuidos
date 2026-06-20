@@ -1,6 +1,7 @@
 package ec.edu.espe.zonas.Servicios.Impl;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -64,7 +65,7 @@ public class ZonaServicioImpl implements ZonaServicio {
         }
 
         // Parte 1: primeras 3 letras del TipoZona → VIP, REG, EXT, INT, PRE...
-        String parteTipo = req.getTipoZona().name().substring(0, 3); // e.g. "VIP", "REG"
+        String parteTipo = req.getTipoZona().name().substring(0, 3);
 
         // Parte 2: iniciales de las palabras del nombre (solo letras, ignorar números)
         String[] palabras = req.getNombre().trim().split("\\s+");
@@ -77,14 +78,28 @@ public class ZonaServicioImpl implements ZonaServicio {
         if (iniciales.length() < 2 && req.getNombre().replaceAll("[^a-zA-Z]", "").length() >= 2) {
             iniciales.append(req.getNombre().toUpperCase().replaceAll("[^A-Z]", "").charAt(1));
         }
-        String parteNombre = iniciales.length() > 0 ? iniciales.toString() : "X"; // e.g. "ZN"
+        String parteNombre = iniciales.length() > 0 ? iniciales.toString() : "X";
 
-        // Parte 3: número secuencial de 3 dígitos
-        long count = zonaRepositorio.countByTipoZona(req.getTipoZona());
-        String numero = String.format("%03d", count + 1); // e.g. "001"
+        // Parte 3: número secuencial basado en el ÚLTIMO código existente (no en count)
+        // Buscar el código más alto que empiece con el prefijo
+        String prefijo = parteTipo + "-" + parteNombre + "-";
+        Optional<Zona> ultimaZona = zonaRepositorio.findTopByCodigoStartingWithOrderByCodigoDesc(prefijo);
+
+        int siguienteNumero = 1;
+        if (ultimaZona.isPresent()) {
+            String ultimoCodigo = ultimaZona.get().getCodigo();
+            // Extraer la parte numérica final: "VIP-ZN-009" → "009" → 9 + 1 = 10
+            String parteNumerica = ultimoCodigo.substring(ultimoCodigo.lastIndexOf("-") + 1);
+            try {
+                siguienteNumero = Integer.parseInt(parteNumerica) + 1;
+            } catch (NumberFormatException e) {
+                siguienteNumero = 1;
+            }
+        }
+        String numero = String.format("%03d", siguienteNumero);
 
         // Código final: TIPO-INICIALES-NNN e.g. "VIP-ZN-001"
-        return parteTipo + "-" + parteNombre + "-" + numero;
+        return prefijo + numero;
     }
 
     @Override
@@ -153,6 +168,17 @@ public class ZonaServicioImpl implements ZonaServicio {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Zona no encontrada con id: " + idZona));
 
+        // 5. Validar que al menos un campo haya cambiado
+        boolean sinCambios = java.util.Objects.equals(zona.getNombre(), req.getNombre())
+                && java.util.Objects.equals(zona.getDescripcion(), req.getDescripcion())
+                && java.util.Objects.equals(zona.getTipoZona(), req.getTipoZona())
+                && zona.getCapacidad() == req.getCapacidad();
+
+        if (sinCambios) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No se detectaron cambios en los valores enviados. La zona '" + zona.getNombre() + "' ya tiene esos datos.");
+        }
+
         zona.setNombre(req.getNombre());
         zona.setDescripcion(req.getDescripcion());
         zona.setTipoZona(req.getTipoZona());
@@ -164,7 +190,7 @@ public class ZonaServicioImpl implements ZonaServicio {
     }
 
     @Override
-    public void eliminarZona(UUID idZona) {
+    public String eliminarZona(UUID idZona) {
         Zona zona = zonaRepositorio.findById(idZona)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Zona no encontrada con id: " + idZona));
@@ -174,7 +200,10 @@ public class ZonaServicioImpl implements ZonaServicio {
                     "No se puede eliminar la zona '" + zona.getNombre() + "' porque tiene espacios asignados. Elimine o mueva los espacios primero.");
         }
 
+        String nombreZona = zona.getNombre();
+        String codigoZona = zona.getCodigo();
         zonaRepositorio.delete(zona);
+        return "Zona '" + nombreZona + "' (código: " + codigoZona + ") eliminada exitosamente.";
     }
 
     @Override

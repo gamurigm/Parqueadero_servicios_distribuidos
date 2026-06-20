@@ -24,7 +24,7 @@ public interface ZonaServicio {
 
     ZonaResponseDTO actualizarZona(UUID idZona, ZonaRequestDTO req);
 
-    void eliminarZona(UUID idZona);
+    String eliminarZona(UUID idZona);
 
     Boolean activarDesactivar(UUID idZona, boolean forzar);
 }

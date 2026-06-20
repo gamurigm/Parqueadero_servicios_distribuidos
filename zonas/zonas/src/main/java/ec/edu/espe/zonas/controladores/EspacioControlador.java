@@ -22,9 +22,13 @@ public class EspacioControlador {
     private final EspacioServicio espacioServicio;
 
     @GetMapping("/")
-    public ResponseEntity<org.springframework.data.domain.Page<EspacioResponseDTO>> obtenerEspacios(
-            @org.springframework.data.web.PageableDefault(size = 10) org.springframework.data.domain.Pageable pageable) {
-        return ResponseEntity.ok(espacioServicio.obtenerEspacios(pageable));
+    public ResponseEntity<List<EspacioResponseDTO>> obtenerEspacios() {
+        return ResponseEntity.ok(espacioServicio.obtenerTodosLosEspacios());
+    }
+
+    @GetMapping("/zona/{idZona}")
+    public ResponseEntity<List<EspacioResponseDTO>> obtenerEspaciosPorZona(@PathVariable UUID idZona) {
+        return ResponseEntity.ok(espacioServicio.obtenerEspaciosPorZona(idZona));
     }
 
     @PostMapping("/")
@@ -39,13 +43,19 @@ public class EspacioControlador {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarEspacio(@PathVariable UUID id) {
-        espacioServicio.eliminarEspacio(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<String> eliminarEspacio(@PathVariable UUID id) {
+        String mensaje = espacioServicio.eliminarEspacio(id);
+        return ResponseEntity.ok(mensaje);
     }
 
     @PatchMapping("/{id}/estado")
     public ResponseEntity<EspacioResponseDTO> cambiarEstado(@PathVariable UUID id, @RequestParam @jakarta.validation.constraints.NotNull EstadoEspacio estado) {
         return ResponseEntity.ok(espacioServicio.cambiarEstado(id, estado));
+    }
+
+    @PatchMapping("/{id}/activar-desactivar")
+    public ResponseEntity<String> activarDesactivar(@PathVariable UUID id) {
+        espacioServicio.toggleActivo(id);
+        return ResponseEntity.ok("Estado de activación del espacio actualizado exitosamente.");
     }
 }

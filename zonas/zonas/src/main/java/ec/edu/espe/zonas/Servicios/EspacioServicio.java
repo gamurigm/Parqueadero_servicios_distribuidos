@@ -11,13 +11,15 @@ import ec.edu.espe.zonas.entidades.EstadoEspacio;
 
 public interface EspacioServicio {
 
+    List<EspacioResponseDTO> obtenerTodosLosEspacios();
+
     Page<EspacioResponseDTO> obtenerEspacios(Pageable pageable);
 
     EspacioResponseDTO crearEspacio(EspacioRequestDTO dto);
 
     EspacioResponseDTO actualizarEspacio(UUID id, EspacioRequestDTO dto);
 
-    void eliminarEspacio(UUID id);
+    String eliminarEspacio(UUID id);
 
     EspacioResponseDTO cambiarEstado(UUID id, EstadoEspacio estado);
 
@@ -28,6 +30,8 @@ public interface EspacioServicio {
     List<EspacioResponseDTO> obtenerEspaciosPorZona(UUID idZona);
 
     void cambiarActivo(UUID id, boolean activo);
+
+    void toggleActivo(UUID id);
 
     int cambiarActivoMasivo(UUID idZona, boolean activo);
 

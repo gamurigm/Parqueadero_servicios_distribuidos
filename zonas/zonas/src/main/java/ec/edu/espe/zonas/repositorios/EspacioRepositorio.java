@@ -25,4 +25,10 @@ public interface EspacioRepositorio extends JpaRepository<Espacio, UUID> {
     @org.springframework.data.jpa.repository.Query("UPDATE Espacio e SET e.activo = :estado, e.fechaModificacion = CURRENT_TIMESTAMP WHERE e.zona.id = :idZona")
     int actualizarActivoPorZona(@org.springframework.data.repository.query.Param("idZona") UUID idZona, @org.springframework.data.repository.query.Param("estado") boolean estado);
 
+    /**
+     * Busca el espacio con el código más alto dentro de una zona específica.
+     * Ej: zona con código "VIP-ZN-001" → devuelve espacio "VIP-ZN-001-ESP-005"
+     */
+    java.util.Optional<Espacio> findTopByZonaIdOrderByCodigoDesc(UUID idZona);
+
 }

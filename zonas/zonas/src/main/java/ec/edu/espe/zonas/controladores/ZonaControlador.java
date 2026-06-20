@@ -56,9 +56,9 @@ public class ZonaControlador {
     }
 
     @DeleteMapping("/{idZona}")
-    public ResponseEntity<Void> eliminarZona(@PathVariable UUID idZona) {
-        zonaServicio.eliminarZona(idZona);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<String> eliminarZona(@PathVariable UUID idZona) {
+        String mensaje = zonaServicio.eliminarZona(idZona);
+        return ResponseEntity.ok(mensaje);
     }
 
 }

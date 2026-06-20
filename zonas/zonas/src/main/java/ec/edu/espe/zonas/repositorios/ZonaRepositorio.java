@@ -15,4 +15,10 @@ public interface ZonaRepositorio extends JpaRepository<Zona, UUID> {
 
     long countByTipoZona(ec.edu.espe.zonas.entidades.TipoZona tipoZona);
 
+    /**
+     * Busca la zona cuyo código empiece con el prefijo dado y tenga el número más alto.
+     * Ej: prefijo "VIP-ZN-" → devuelve la zona con código "VIP-ZN-005" (la más alta).
+     */
+    java.util.Optional<Zona> findTopByCodigoStartingWithOrderByCodigoDesc(String prefijo);
+
 }
