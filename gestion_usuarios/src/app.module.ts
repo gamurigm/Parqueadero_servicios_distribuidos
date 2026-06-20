@@ -11,6 +11,8 @@ import { Person } from './persona/entities/persona.entity';
 import { User } from './usuario/entities/usuario.entity';
 import { Role } from './roles/entities/role.entity';
 import { RolesUsuarios } from './roles_usuario/entities/roles_usuario.entity';
+import { Natural } from './persona/entities/tipos/natural.entity';
+import { Juridica } from './persona/entities/tipos/juridica.entity';
 
 @Module({
   imports: [
@@ -22,7 +24,7 @@ import { RolesUsuarios } from './roles_usuario/entities/roles_usuario.entity';
       username: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'usuarios',
-      entities: [Person, User, Role, RolesUsuarios],
+      entities: [Person, User, Role, RolesUsuarios,Natural, Juridica],
       synchronize: true,
       logging: true,
     }),

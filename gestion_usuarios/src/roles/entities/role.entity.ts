@@ -1,26 +1,26 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany } from 'typeorm';
-import { User } from '../../usuario/entities/usuario.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { RolesUsuarios } from '../../roles_usuario/entities/roles_usuario.entity';
 
 @Entity('roles')
 export class Role {
     @PrimaryGeneratedColumn('uuid')
-    id: string;
+    id!: string;
 
     @Column({ type: 'boolean', default: true })
-    activo: boolean;
+    activo!: boolean;
 
     @CreateDateColumn({ name: 'created_at' })
-    createdAt: Date;
+    createdAt!: Date;
 
     @UpdateDateColumn({ name: 'updated_at' })
-    updatedAt: Date;
+    updatedAt!: Date;
 
     @Column({ type: 'text' })
-    descripcion: string;
+    descripcion!: string;
 
     @Column({ type: 'varchar', length: 50, unique: true })
-    nombre: string;
+    nombre!: string;
 
-    @ManyToMany(() => User, (user) => user.roles)
-    users: User[];
+    @OneToMany(() => RolesUsuarios, (rolesUsuario) => rolesUsuario.role)
+    rolesUsuarios!: RolesUsuarios[];
 }

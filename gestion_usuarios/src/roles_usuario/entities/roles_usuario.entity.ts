@@ -5,25 +5,25 @@ import { Role } from '../../roles/entities/role.entity';
 @Entity('roles_usuario')
 export class RolesUsuarios {
     @PrimaryColumn('uuid')
-    id_rol: string;
+    id_rol!: string;
 
     @PrimaryColumn('uuid')
-    id_usuario: string;
+    id_usuario!: string;
 
     @Column({ type: 'boolean', default: true })
-    activo: boolean;
+    activo!: boolean;
 
     @CreateDateColumn({ name: 'assigned_at' })
-    assignedAt: Date;
+    assignedAt!: Date;
 
     @UpdateDateColumn({ name: 'updated_at' })
-    updatedAt: Date;
+    updatedAt!: Date;
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'id_usuario' })
-    user: User;
+    user!: User;
 
     @ManyToOne(() => Role)
     @JoinColumn({ name: 'id_rol' })
-    role: Role;
+    role!: Role;
 }
