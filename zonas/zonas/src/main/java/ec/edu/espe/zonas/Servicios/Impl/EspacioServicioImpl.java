@@ -40,6 +40,14 @@ public class EspacioServicioImpl implements EspacioServicio {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<EspacioResponseDTO> obtenerTodosLosEspacios() {
+        return repositorioEspacio.findAll().stream()
+                .map(mapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public EspacioResponseDTO crearEspacio(EspacioRequestDTO dto) {
 
         Zona objZona = zonaRepositorio.findById(dto.getIdZona())
@@ -69,8 +77,8 @@ public class EspacioServicioImpl implements EspacioServicio {
         nuevoEspacio.setZona(objZona);
         nuevoEspacio.setEstado(EstadoEspacio.DISPONIBLE);
         
-        // Generar código de espacio
-        String codigoGenerado = objZona.getCodigo() + "-ESP-" + String.format("%03d", numeroEspaciosActuales + 1);
+        // Generar código basado en el Último código existente en la zona
+        String codigoGenerado = generarCodigoEspacio(objZona);
         nuevoEspacio.setCodigo(codigoGenerado);
         
         nuevoEspacio.setFechaCreacion(LocalDateTime.now());
@@ -80,6 +88,28 @@ public class EspacioServicioImpl implements EspacioServicio {
 
         return mapper.toResponseDTO(espacioGuardado);
 
+    }
+
+    /**
+     * Genera el código de un espacio basándose en el último código existente en la zona.
+     * Si la zona tiene código "VIP-ZN-001" y el último espacio es "VIP-ZN-001-ESP-003",
+     * genera "VIP-ZN-001-ESP-004".
+     */
+    private String generarCodigoEspacio(Zona zona) {
+        String prefijo = zona.getCodigo() + "-ESP-";
+        java.util.Optional<Espacio> ultimoEspacio = repositorioEspacio.findTopByZonaIdOrderByCodigoDesc(zona.getId());
+
+        int siguienteNumero = 1;
+        if (ultimoEspacio.isPresent()) {
+            String ultimoCodigo = ultimoEspacio.get().getCodigo();
+            String parteNumerica = ultimoCodigo.substring(ultimoCodigo.lastIndexOf("-") + 1);
+            try {
+                siguienteNumero = Integer.parseInt(parteNumerica) + 1;
+            } catch (NumberFormatException e) {
+                siguienteNumero = 1;
+            }
+        }
+        return prefijo + String.format("%03d", siguienteNumero);
     }
 
     @Override
@@ -102,21 +132,22 @@ public class EspacioServicioImpl implements EspacioServicio {
             }
         }
 
-        espacio.setCodigo(dto.getCodigo());
+        // Si cambió de zona, regenerar el código para la nueva zona
+        if (!espacio.getZona().getId().equals(objZona.getId())) {
+            espacio.setCodigo(generarCodigoEspacio(objZona));
+        }
+
         espacio.setDescripcion(dto.getDescripcion());
         espacio.setTipoEspacio(dto.getTipoEspacio());
         espacio.setZona(objZona);
         espacio.setFechaModificacion(LocalDateTime.now());
-
-        // Nota: Si deseas actualizar el estado aquí también, puedes descomentar la siguiente línea:
-        // espacio.setEstado(dto.getEstado());
 
         Espacio espacioGuardado = repositorioEspacio.save(espacio);
         return mapper.toResponseDTO(espacioGuardado);
     }
 
     @Override
-    public void eliminarEspacio(UUID id) {
+    public String eliminarEspacio(UUID id) {
         Espacio espacio = repositorioEspacio.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
         
@@ -124,7 +155,10 @@ public class EspacioServicioImpl implements EspacioServicio {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede eliminar un espacio que está OCUPADO");
         }
 
+        String codigoEspacio = espacio.getCodigo();
+        String nombreZona = espacio.getZona().getNombre();
         repositorioEspacio.delete(espacio);
+        return "Espacio '" + codigoEspacio + "' de la zona '" + nombreZona + "' eliminado exitosamente.";
     }
 
     @Override
@@ -185,6 +219,16 @@ public class EspacioServicioImpl implements EspacioServicio {
         Espacio espacio = repositorioEspacio.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
         espacio.setActivo(activo);
+        espacio.setFechaModificacion(LocalDateTime.now());
+        repositorioEspacio.save(espacio);
+    }
+
+    @Override
+    @Transactional
+    public void toggleActivo(UUID id) {
+        Espacio espacio = repositorioEspacio.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
+        espacio.setActivo(!espacio.isActivo());
         espacio.setFechaModificacion(LocalDateTime.now());
         repositorioEspacio.save(espacio);
     }
