@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # Base de Datos para el Microservicio Zonas
+  db_zonas:
+    image: postgres:15
+    container_name: postgres_zonas
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zonas
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data_zonas:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Base de Datos para el Microservicio Vehiculos
+  db_vehiculos:
+    image: postgres:15
+    container_name: postgres_vehiculos
+    environment:
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: xasmdno123XAW2342as
+      POSTGRES_DB: VehiculosDB
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_data_vehiculos:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # Base de Datos para el Microservicio Gestion Usuarios
+  db_usuarios:
+    image: postgres:15
+    container_name: postgres_usuarios
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: usuarios
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_data_usuarios:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data_zonas:
+  postgres_data_vehiculos:
+  postgres_data_usuarios:

@@ -139,7 +139,7 @@ public class VerificarLogicaZona {
             try {
                 switch (opcion) {
                     case "1":
-                        List<ZonaResponseDTO> zonas = zonaServicio.listarZonas();
+                        org.springframework.data.domain.Page<ZonaResponseDTO> zonas = zonaServicio.listarZonas(org.springframework.data.domain.Pageable.unpaged());
                         if (zonas.isEmpty()) System.out.println("No hay zonas registradas.");
                         zonas.forEach(z -> System.out.printf("ID: %s | Nombre: %s | Codigo: %s | Capacidad: %d | Estado: %s\n",
                                 z.getIdZona(), z.getNombre(), z.getCodigo(), z.getCapacidad(), z.getEstado() == 1 ? "ACTIVA" : "INACTIVA"));
@@ -175,12 +175,12 @@ public class VerificarLogicaZona {
                     case "4":
                         System.out.print("ID de la Zona a activar/desactivar: ");
                         UUID idAct = UUID.fromString(scanner.nextLine());
-                        boolean estadoNuevo = zonaServicio.activarDesactivar(idAct);
+                        boolean estadoNuevo = zonaServicio.activarDesactivar(idAct, false);
                         System.out.println("✅ Zona cambiada a estado: " + (estadoNuevo ? "ACTIVA" : "INACTIVA"));
                         break;
 
                     case "5":
-                        List<EspacioResponseDTO> espacios = espacioServicio.obtenerEspacios();
+                        org.springframework.data.domain.Page<EspacioResponseDTO> espacios = espacioServicio.obtenerEspacios(org.springframework.data.domain.Pageable.unpaged());
                         if (espacios.isEmpty()) System.out.println("No hay espacios registrados.");
                         espacios.forEach(e -> System.out.printf("ID: %s | Código: %s | Zona: %s | Estado: %s | Activo: %s\n",
                                 e.getId(), e.getCodigo(), e.getNombreZona(), e.getEstado(), e.isActivo()));
@@ -191,7 +191,7 @@ public class VerificarLogicaZona {
                         UUID idZonaEsp = UUID.fromString(scanner.nextLine());
                         System.out.print("Descripción del Espacio: ");
                         String descEsp = scanner.nextLine();
-                        System.out.print("Tipo de Espacio (CARRO, MOTO, DISCAPACITADOS): ");
+                        System.out.print("Tipo de Espacio (AUTO, MOTO, BUSETA, DISCAPACITADOS): ");
                         String tipoEsp = scanner.nextLine();
 
                         EspacioRequestDTO eReq = new EspacioRequestDTO();

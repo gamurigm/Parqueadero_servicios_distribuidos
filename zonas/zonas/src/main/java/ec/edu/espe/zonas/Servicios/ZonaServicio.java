@@ -2,6 +2,8 @@ package ec.edu.espe.zonas.Servicios;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import ec.edu.espe.zonas.DTOs.ZonaRequestDTO;
 import ec.edu.espe.zonas.DTOs.ZonaResponseDTO;
@@ -16,7 +18,7 @@ public interface ZonaServicio {
     String generarCodigoZona(ZonaRequestDTO req);
 
     // OPERACIONES CRUD
-    List<ZonaResponseDTO> listarZonas();
+    Page<ZonaResponseDTO> listarZonas(Pageable pageable);
 
     ZonaResponseDTO crearZona(ZonaRequestDTO req);
 
@@ -24,5 +26,5 @@ public interface ZonaServicio {
 
     void eliminarZona(UUID idZona);
 
-    Boolean activarDesactivar(UUID idZona);
+    Boolean activarDesactivar(UUID idZona, boolean forzar);
 }
