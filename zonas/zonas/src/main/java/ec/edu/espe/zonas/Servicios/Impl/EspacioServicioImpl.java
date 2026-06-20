@@ -225,12 +225,14 @@ public class EspacioServicioImpl implements EspacioServicio {
 
     @Override
     @Transactional
-    public void toggleActivo(UUID id) {
+    public String toggleActivo(UUID id) {
         Espacio espacio = repositorioEspacio.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
-        espacio.setActivo(!espacio.isActivo());
+        boolean nuevoEstado = !espacio.isActivo();
+        espacio.setActivo(nuevoEstado);
         espacio.setFechaModificacion(LocalDateTime.now());
         repositorioEspacio.save(espacio);
+        return nuevoEstado ? "El espacio ha sido ACTIVADO exitosamente." : "El espacio ha sido DESACTIVADO exitosamente.";
     }
 
     @Override

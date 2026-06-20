@@ -55,7 +55,7 @@ public class EspacioControlador {
 
     @PatchMapping("/{id}/activar-desactivar")
     public ResponseEntity<String> activarDesactivar(@PathVariable UUID id) {
-        espacioServicio.toggleActivo(id);
-        return ResponseEntity.ok("Estado de activación del espacio actualizado exitosamente.");
+        String mensaje = espacioServicio.toggleActivo(id);
+        return ResponseEntity.ok(mensaje);
     }
 }

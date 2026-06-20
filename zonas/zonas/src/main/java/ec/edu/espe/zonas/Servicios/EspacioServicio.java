@@ -31,7 +31,7 @@ public interface EspacioServicio {
 
     void cambiarActivo(UUID id, boolean activo);
 
-    void toggleActivo(UUID id);
+    String toggleActivo(UUID id);
 
     int cambiarActivoMasivo(UUID idZona, boolean activo);
 

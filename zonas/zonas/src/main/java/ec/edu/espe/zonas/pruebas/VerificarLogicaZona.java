@@ -168,15 +168,15 @@ public class VerificarLogicaZona {
                     case "3":
                         System.out.print("ID de la Zona a eliminar: ");
                         UUID idDel = UUID.fromString(scanner.nextLine());
-                        zonaServicio.eliminarZona(idDel);
-                        System.out.println("✅ Zona eliminada con éxito.");
+                        String msgDelZona = zonaServicio.eliminarZona(idDel);
+                        System.out.println("✅ " + msgDelZona);
                         break;
 
                     case "4":
                         System.out.print("ID de la Zona a activar/desactivar: ");
                         UUID idAct = UUID.fromString(scanner.nextLine());
-                        boolean estadoNuevo = zonaServicio.activarDesactivar(idAct, false);
-                        System.out.println("✅ Zona cambiada a estado: " + (estadoNuevo ? "ACTIVA" : "INACTIVA"));
+                        String estadoNuevo = zonaServicio.activarDesactivar(idAct, false);
+                        System.out.println("✅ " + estadoNuevo);
                         break;
 
                     case "5":
@@ -215,8 +215,8 @@ public class VerificarLogicaZona {
                     case "8":
                         System.out.print("ID del Espacio a eliminar: ");
                         UUID idEspDel = UUID.fromString(scanner.nextLine());
-                        espacioServicio.eliminarEspacio(idEspDel);
-                        System.out.println("✅ Espacio eliminado con éxito.");
+                        String msgDelEsp = espacioServicio.eliminarEspacio(idEspDel);
+                        System.out.println("✅ " + msgDelEsp);
                         break;
 
                     case "0":

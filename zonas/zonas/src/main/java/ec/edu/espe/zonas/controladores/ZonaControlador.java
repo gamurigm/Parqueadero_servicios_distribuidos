@@ -50,9 +50,10 @@ public class ZonaControlador {
     }
 
     @PatchMapping("/{idZona}/activar-desactivar")
-    public ResponseEntity<Boolean> activarDesactivar(@PathVariable UUID idZona, 
+    public ResponseEntity<String> activarDesactivar(@PathVariable UUID idZona, 
             @org.springframework.web.bind.annotation.RequestParam(defaultValue = "false") boolean forzar) {
-        return ResponseEntity.ok(zonaServicio.activarDesactivar(idZona, forzar));
+        String mensaje = zonaServicio.activarDesactivar(idZona, forzar);
+        return ResponseEntity.ok(mensaje);
     }
 
     @DeleteMapping("/{idZona}")

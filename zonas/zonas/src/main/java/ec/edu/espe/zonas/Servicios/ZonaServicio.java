@@ -26,5 +26,5 @@ public interface ZonaServicio {
 
     String eliminarZona(UUID idZona);
 
-    Boolean activarDesactivar(UUID idZona, boolean forzar);
+    String activarDesactivar(UUID idZona, boolean forzar);
 }

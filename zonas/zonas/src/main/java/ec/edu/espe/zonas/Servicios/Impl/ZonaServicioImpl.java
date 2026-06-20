@@ -179,6 +179,15 @@ public class ZonaServicioImpl implements ZonaServicio {
                     "No se detectaron cambios en los valores enviados. La zona '" + zona.getNombre() + "' ya tiene esos datos.");
         }
 
+        // 6. Validar que la nueva capacidad no sea menor a la cantidad de espacios ya creados
+        if (req.getCapacidad() < zona.getCapacidad()) {
+            long espaciosAsignados = espacioServicio.obtenerEspaciosPorZona(idZona).size();
+            if (req.getCapacidad() < espaciosAsignados) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                    "No se puede reducir la capacidad a " + req.getCapacidad() + " porque la zona ya tiene " + espaciosAsignados + " espacios creados físicamente.");
+            }
+        }
+
         zona.setNombre(req.getNombre());
         zona.setDescripcion(req.getDescripcion());
         zona.setTipoZona(req.getTipoZona());
@@ -208,7 +217,7 @@ public class ZonaServicioImpl implements ZonaServicio {
 
     @Override
     @jakarta.transaction.Transactional
-    public Boolean activarDesactivar(UUID idZona, boolean forzar) {
+    public String activarDesactivar(UUID idZona, boolean forzar) {
         // Validación de entrada: ID no puede ser nulo
         if (idZona == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -264,6 +273,6 @@ public class ZonaServicioImpl implements ZonaServicio {
         espacioServicio.cambiarActivoMasivo(idZona, estaActiva);
 
         zonaRepositorio.save(zona);
-        return estaActiva;
+        return estaActiva ? "La zona ha sido ACTIVADA exitosamente y sus espacios ahora están disponibles." : "La zona ha sido DESACTIVADA exitosamente y sus espacios han sido bloqueados.";
     }
 }
