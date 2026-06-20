@@ -42,7 +42,7 @@ public class Espacio {
     @Column(nullable = false)
     private TipoEspacio tipoEspacio;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private boolean activo;
 
     @Enumerated(EnumType.STRING)
