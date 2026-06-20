@@ -4,7 +4,9 @@ import java.util.UUID;
 
 import ec.edu.espe.zonas.entidades.TipoEspacio;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,10 +20,12 @@ public class EspacioRequestDTO {
     private UUID idZona;
 
     @Size(max = 200, message = "La descripción no puede exceder los 200 caracteres")
+    @Pattern(regexp = "^[a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ.,;:()-]*$", message = "La descripción contiene caracteres inválidos")
     private String descripcion;
 
-    @NotNull(message = "El tipo de espacio es obligatorio. Valores aceptados: AUTO, MOTO, DISCAPACITADOS")
+    @NotNull(message = "El tipo de espacio es obligatorio. Valores aceptados: AUTO, MOTO, BUSETA, DISCAPACITADOS")
     private TipoEspacio tipoEspacio;
 
+    @JsonIgnore
     private String codigo;
 }

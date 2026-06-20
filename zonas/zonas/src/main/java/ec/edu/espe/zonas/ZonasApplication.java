@@ -84,7 +84,7 @@ public class ZonasApplication {
 			System.out.println("PASO 3: Intentar DESACTIVAR la zona (todos los espacios están DISPONIBLES)");
 			System.out.println("--------------------------------------------------");
 			try {
-				zonaServicio.activarDesactivar(zonaCreada.getIdZona());
+				zonaServicio.activarDesactivar(zonaCreada.getIdZona(), false);
 				System.out.println("  ✅ Zona desactivada exitosamente");
 				System.out.println("     La zona ahora está INACTIVA (estado=0)");
 			} catch (Exception e) {
@@ -98,7 +98,7 @@ public class ZonasApplication {
 			System.out.println("PASO 4: ACTIVAR la zona nuevamente");
 			System.out.println("--------------------------------------------------");
 			try {
-				zonaServicio.activarDesactivar(zonaCreada.getIdZona());
+				zonaServicio.activarDesactivar(zonaCreada.getIdZona(), false);
 				System.out.println("  ✅ Zona activada exitosamente");
 				System.out.println("     La zona ahora está ACTIVA (estado=1)");
 			} catch (Exception e) {
@@ -132,7 +132,7 @@ public class ZonasApplication {
 			System.out.println("PASO 6: Intentar DESACTIVAR la zona (hay un espacio OCUPADO → debe FALLAR)");
 			System.out.println("--------------------------------------------------");
 			try {
-				zonaServicio.activarDesactivar(zonaCreada.getIdZona());
+				zonaServicio.activarDesactivar(zonaCreada.getIdZona(), false);
 				System.out.println("  ❌ ERROR: La zona se desactivó cuando NO debería haberse podido!");
 			} catch (Exception e) {
 				System.out.println("  ✅ Error esperado capturado correctamente:");

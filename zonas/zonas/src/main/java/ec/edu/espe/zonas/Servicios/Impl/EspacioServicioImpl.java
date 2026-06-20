@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import ec.edu.espe.zonas.entidades.Zona;
 import ec.edu.espe.zonas.repositorios.EspacioRepositorio;
 import ec.edu.espe.zonas.repositorios.ZonaRepositorio;
 import ec.edu.espe.zonas.utils.UtilsMappers;
+import ec.edu.espe.zonas.utils.SanitizadorEntradas;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -31,17 +34,29 @@ public class EspacioServicioImpl implements EspacioServicio {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EspacioResponseDTO> obtenerEspacios() {
-        return repositorioEspacio.findAll().stream()
-                .map(mapper::toResponseDTO)
-                .collect(Collectors.toList());
+    public Page<EspacioResponseDTO> obtenerEspacios(Pageable pageable) {
+        return repositorioEspacio.findAll(pageable)
+                .map(mapper::toResponseDTO);
     }
 
     @Override
     public EspacioResponseDTO crearEspacio(EspacioRequestDTO dto) {
 
         Zona objZona = zonaRepositorio.findById(dto.getIdZona())
-                .orElseThrow(() -> new RuntimeException("Zona no encontrada con id: " + dto.getIdZona()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Zona no encontrada con id: " + dto.getIdZona()));
+
+        if (objZona.getEstado() != 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                "No se pueden crear espacios en una zona inactiva");
+        }
+
+        if (dto.getDescripcion() != null) {
+            dto.setDescripcion(SanitizadorEntradas.trimYNormalizar(dto.getDescripcion()));
+            if (SanitizadorEntradas.contieneHtmlOScripts(dto.getDescripcion())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                    "La descripción contiene contenido potencialmente peligroso");
+            }
+        }
 
         // Validar capacidad de la zona
         long numeroEspaciosActuales = repositorioEspacio.countByZonaId(objZona.getId());
@@ -70,10 +85,22 @@ public class EspacioServicioImpl implements EspacioServicio {
     @Override
     public EspacioResponseDTO actualizarEspacio(UUID id, EspacioRequestDTO dto) {
         Espacio espacio = repositorioEspacio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Espacio no encontrado con id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
 
         Zona objZona = zonaRepositorio.findById(dto.getIdZona())
-                .orElseThrow(() -> new RuntimeException("Zona no encontrada con id: " + dto.getIdZona()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Zona no encontrada con id: " + dto.getIdZona()));
+
+        if (!espacio.getZona().getId().equals(objZona.getId()) && espacio.getEstado() == EstadoEspacio.OCUPADO) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede cambiar la zona de un espacio que está OCUPADO");
+        }
+
+        if (dto.getDescripcion() != null) {
+            dto.setDescripcion(SanitizadorEntradas.trimYNormalizar(dto.getDescripcion()));
+            if (SanitizadorEntradas.contieneHtmlOScripts(dto.getDescripcion())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+                    "La descripción contiene contenido potencialmente peligroso");
+            }
+        }
 
         espacio.setCodigo(dto.getCodigo());
         espacio.setDescripcion(dto.getDescripcion());
@@ -91,8 +118,12 @@ public class EspacioServicioImpl implements EspacioServicio {
     @Override
     public void eliminarEspacio(UUID id) {
         Espacio espacio = repositorioEspacio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Espacio no encontrado con id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
         
+        if (espacio.getEstado() == EstadoEspacio.OCUPADO) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede eliminar un espacio que está OCUPADO");
+        }
+
         repositorioEspacio.delete(espacio);
     }
 
@@ -105,7 +136,7 @@ public class EspacioServicioImpl implements EspacioServicio {
 
         // Validación: el espacio debe existir
         Espacio espacio = repositorioEspacio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Espacio no encontrado con id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
 
         // Validación: el espacio debe estar activo para poder cambiar su estado
         if (!espacio.isActivo()) {
@@ -152,10 +183,16 @@ public class EspacioServicioImpl implements EspacioServicio {
     @Transactional
     public void cambiarActivo(UUID id, boolean activo) {
         Espacio espacio = repositorioEspacio.findById(id)
-                .orElseThrow(() -> new RuntimeException("Espacio no encontrado con id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
         espacio.setActivo(activo);
         espacio.setFechaModificacion(LocalDateTime.now());
         repositorioEspacio.save(espacio);
+    }
+
+    @Override
+    @Transactional
+    public int cambiarActivoMasivo(UUID idZona, boolean activo) {
+        return repositorioEspacio.actualizarActivoPorZona(idZona, activo);
     }
 
 }

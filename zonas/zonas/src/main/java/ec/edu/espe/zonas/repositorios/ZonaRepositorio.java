@@ -10,6 +10,8 @@ public interface ZonaRepositorio extends JpaRepository<Zona, UUID> {
     boolean existsByCodigo(String codigo);
 
     boolean existsByNombre(String nombre);
+    
+    boolean existsByNombreAndIdNot(String nombre, UUID id);
 
     long countByTipoZona(ec.edu.espe.zonas.entidades.TipoZona tipoZona);
 

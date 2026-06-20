@@ -2,6 +2,8 @@ package ec.edu.espe.zonas.Servicios;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import ec.edu.espe.zonas.DTOs.EspacioRequestDTO;
 import ec.edu.espe.zonas.DTOs.EspacioResponseDTO;
@@ -9,7 +11,7 @@ import ec.edu.espe.zonas.entidades.EstadoEspacio;
 
 public interface EspacioServicio {
 
-    List<EspacioResponseDTO> obtenerEspacios();
+    Page<EspacioResponseDTO> obtenerEspacios(Pageable pageable);
 
     EspacioResponseDTO crearEspacio(EspacioRequestDTO dto);
 
@@ -26,5 +28,7 @@ public interface EspacioServicio {
     List<EspacioResponseDTO> obtenerEspaciosPorZona(UUID idZona);
 
     void cambiarActivo(UUID id, boolean activo);
+
+    int cambiarActivoMasivo(UUID idZona, boolean activo);
 
 }

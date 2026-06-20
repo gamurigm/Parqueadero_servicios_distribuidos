@@ -22,8 +22,9 @@ public class EspacioControlador {
     private final EspacioServicio espacioServicio;
 
     @GetMapping("/")
-    public ResponseEntity<List<EspacioResponseDTO>> obtenerEspacios() {
-        return ResponseEntity.ok(espacioServicio.obtenerEspacios());
+    public ResponseEntity<org.springframework.data.domain.Page<EspacioResponseDTO>> obtenerEspacios(
+            @org.springframework.data.web.PageableDefault(size = 10) org.springframework.data.domain.Pageable pageable) {
+        return ResponseEntity.ok(espacioServicio.obtenerEspacios(pageable));
     }
 
     @PostMapping("/")
@@ -44,7 +45,7 @@ public class EspacioControlador {
     }
 
     @PatchMapping("/{id}/estado")
-    public ResponseEntity<EspacioResponseDTO> cambiarEstado(@PathVariable UUID id, @RequestParam EstadoEspacio estado) {
+    public ResponseEntity<EspacioResponseDTO> cambiarEstado(@PathVariable UUID id, @RequestParam @jakarta.validation.constraints.NotNull EstadoEspacio estado) {
         return ResponseEntity.ok(espacioServicio.cambiarEstado(id, estado));
     }
 }

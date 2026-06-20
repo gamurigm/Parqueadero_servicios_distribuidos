@@ -31,8 +31,9 @@ public class ZonaControlador {
     private final ZonaServicio zonaServicio;
 
     @GetMapping("/")
-    public ResponseEntity<List<ZonaResponseDTO>> listarZonas() {
-        return ResponseEntity.ok(zonaServicio.listarZonas());
+    public ResponseEntity<org.springframework.data.domain.Page<ZonaResponseDTO>> listarZonas(
+            @org.springframework.data.web.PageableDefault(size = 10) org.springframework.data.domain.Pageable pageable) {
+        return ResponseEntity.ok(zonaServicio.listarZonas(pageable));
     }
 
     @PostMapping("/")
@@ -49,8 +50,9 @@ public class ZonaControlador {
     }
 
     @PatchMapping("/{idZona}/activar-desactivar")
-    public ResponseEntity<Boolean> activarDesactivar(@PathVariable UUID idZona) {
-        return ResponseEntity.ok(zonaServicio.activarDesactivar(idZona));
+    public ResponseEntity<Boolean> activarDesactivar(@PathVariable UUID idZona, 
+            @org.springframework.web.bind.annotation.RequestParam(defaultValue = "false") boolean forzar) {
+        return ResponseEntity.ok(zonaServicio.activarDesactivar(idZona, forzar));
     }
 
     @DeleteMapping("/{idZona}")

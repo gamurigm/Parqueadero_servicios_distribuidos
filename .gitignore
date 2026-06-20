@@ -70,3 +70,6 @@ nbdist/
 # --- Logs ---
 *.log
 logs/
+
+.opencode
+opencode.jsonc

@@ -21,4 +21,8 @@ public interface EspacioRepositorio extends JpaRepository<Espacio, UUID> {
 
     List<Espacio> findByEstado(EstadoEspacio estado);
 
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+    @org.springframework.data.jpa.repository.Query("UPDATE Espacio e SET e.activo = :estado, e.fechaModificacion = CURRENT_TIMESTAMP WHERE e.zona.id = :idZona")
+    int actualizarActivoPorZona(@org.springframework.data.repository.query.Param("idZona") UUID idZona, @org.springframework.data.repository.query.Param("estado") boolean estado);
+
 }

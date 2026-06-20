@@ -1,0 +1,10 @@
+{
+  "firstName": "Juan",
+  "middleName": "Carlos",
+  "lastName": "Perez",
+  "dni": "1234567890",
+  "email": "juan.perez@example.com",
+  "address": "Calle 123",
+  "phone": "0991234567",
+  "nationality": "Ecuadorian"
+}

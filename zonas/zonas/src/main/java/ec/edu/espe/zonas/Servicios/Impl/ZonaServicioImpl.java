@@ -2,6 +2,8 @@ package ec.edu.espe.zonas.Servicios.Impl;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +19,7 @@ import ec.edu.espe.zonas.Servicios.ZonaServicio;
 import ec.edu.espe.zonas.entidades.Zona;
 import ec.edu.espe.zonas.entidades.EstadoEspacio;
 import ec.edu.espe.zonas.repositorios.ZonaRepositorio;
+import ec.edu.espe.zonas.utils.SanitizadorEntradas;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,10 +35,9 @@ public class ZonaServicioImpl implements ZonaServicio {
     }
 
     @Override
-    public List<ZonaResponseDTO> listarZonas() {
-        return zonaRepositorio.findAll().stream()
-                .map(this::toResponseDTO)
-                .collect(Collectors.toList());
+    public Page<ZonaResponseDTO> listarZonas(Pageable pageable) {
+        return zonaRepositorio.findAll(pageable)
+                .map(this::toResponseDTO);
     }
 
     private ZonaResponseDTO toResponseDTO(Zona zona) {
@@ -88,18 +90,23 @@ public class ZonaServicioImpl implements ZonaServicio {
     @Override
     public ZonaResponseDTO crearZona(ZonaRequestDTO request) {
 
-        if (request.getNombre() == null || request.getNombre().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "EL NOMBRE ES OBLIGATORIO");
-        }
-        if (!request.getNombre().matches("^[a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ]+$")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "EL NOMBRE CONTIENE CARACTERES INVÁLIDOS");
-        }
-        if (request.getCapacidad() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "LA CAPACIDAD DEBE SER MAYOR A 0");
+        // 1. Sanitizar nombre
+        String nombreSanitizado = SanitizadorEntradas.trimYNormalizar(request.getNombre());
+        request.setNombre(nombreSanitizado);
+
+        // 2. Sanitizar descripción (si viene)
+        if (request.getDescripcion() != null) {
+            request.setDescripcion(SanitizadorEntradas.trimYNormalizar(request.getDescripcion()));
         }
 
-        if (zonaRepositorio.existsByNombre(request.getNombre()))
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "YA EXISTE EL NOMBRE");
+        // 3. Validar contenido peligroso en nombre y descripción
+        if (SanitizadorEntradas.contieneHtmlOScripts(nombreSanitizado) || 
+            SanitizadorEntradas.contieneHtmlOScripts(request.getDescripcion())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Contenido potencialmente peligroso detectado");
+        }
+
+        if (zonaRepositorio.existsByNombre(nombreSanitizado))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "YA EXISTE UNA ZONA CON ESE NOMBRE");
 
         if (zonaRepositorio.existsByCodigo(generarCodigoZona(request)))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "YA EXISTE EL CODIGO");
@@ -122,14 +129,24 @@ public class ZonaServicioImpl implements ZonaServicio {
     @Override
     public ZonaResponseDTO actualizarZona(UUID idZona, ZonaRequestDTO req) {
         
-        if (req.getNombre() == null || req.getNombre().trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "EL NOMBRE ES OBLIGATORIO");
+        // 1. Sanitizar nombre
+        String nombreSanitizado = SanitizadorEntradas.trimYNormalizar(req.getNombre());
+        req.setNombre(nombreSanitizado);
+
+        // 2. Sanitizar descripción (si viene)
+        if (req.getDescripcion() != null) {
+            req.setDescripcion(SanitizadorEntradas.trimYNormalizar(req.getDescripcion()));
         }
-        if (!req.getNombre().matches("^[a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ]+$")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "EL NOMBRE CONTIENE CARACTERES INVÁLIDOS");
+
+        // 3. Validar contenido peligroso
+        if (SanitizadorEntradas.contieneHtmlOScripts(nombreSanitizado) || 
+            SanitizadorEntradas.contieneHtmlOScripts(req.getDescripcion())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Contenido potencialmente peligroso detectado");
         }
-        if (req.getCapacidad() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "LA CAPACIDAD DEBE SER MAYOR A 0");
+
+        // 4. Verificar unicidad excluyendo la zona actual
+        if (zonaRepositorio.existsByNombreAndIdNot(nombreSanitizado, idZona)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "YA EXISTE UNA ZONA CON ESE NOMBRE");
         }
 
         Zona zona = zonaRepositorio.findById(idZona)
@@ -162,7 +179,7 @@ public class ZonaServicioImpl implements ZonaServicio {
 
     @Override
     @jakarta.transaction.Transactional
-    public Boolean activarDesactivar(UUID idZona) {
+    public Boolean activarDesactivar(UUID idZona, boolean forzar) {
         // Validación de entrada: ID no puede ser nulo
         if (idZona == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -189,6 +206,13 @@ public class ZonaServicioImpl implements ZonaServicio {
                         "No se puede desactivar la zona '" + zona.getNombre()
                                 + "' porque tiene espacios ocupados.");
             }
+
+            List<ec.edu.espe.zonas.DTOs.EspacioResponseDTO> espaciosReservados = espacioServicio.obtenerEspaciosPorZonaEstado(idZona, EstadoEspacio.RESERVADO);
+            if (!espaciosReservados.isEmpty() && !forzar) {
+                String nombres = espaciosReservados.stream().map(e -> e.getCodigo()).collect(Collectors.joining(", "));
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "La zona tiene espacios reservados: [" + nombres + "]. ¿Desea borrar/desactivar los espacios reservados? Agregue forzar=true en su solicitud.");
+            }
         }
 
         // Validación de ACTIVACIÓN: si se va a activar (pasar a 1)
@@ -206,11 +230,9 @@ public class ZonaServicioImpl implements ZonaServicio {
         zona.setFechaModificacion(java.time.LocalDateTime.now());
 
         // Efecto Cascada: Actualizar todos los espacios de la zona usando
-        // EspacioServicio
+        // EspacioServicio de manera masiva (Bulk Update)
         boolean estaActiva = (nuevoEstado == 1);
-        espacioServicio.obtenerEspaciosPorZona(idZona).forEach(espacioDto -> {
-            espacioServicio.cambiarActivo(espacioDto.getId(), estaActiva);
-        });
+        espacioServicio.cambiarActivoMasivo(idZona, estaActiva);
 
         zonaRepositorio.save(zona);
         return estaActiva;
