@@ -32,7 +32,7 @@ public class Espacio {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(unique = true, nullable = false, length = 12)
+    @Column(unique = true, nullable = false, length = 50)
     private String codigo; // nombre
 
     @Column(nullable = true)
