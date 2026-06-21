@@ -139,18 +139,15 @@ services:
     image: swaggerapi/swagger-ui:latest
     container_name: swagger-ui
     environment:
-      SERVICES: '[
-        {"name": "NestJS-1", "url": "http://vehiculos:3000/docs-json"},
-        {"name": "NestJS-2", "url": "http://usuarios:5000/docs-json"},
-        {"name": "Spring-Boot", "url": "http://zonas:8080/v3/api-docs"}]'
+      - URLS_PRIMARY_NAME=Usuarios
+      - URLS=[{name:"Vehículos",url:"http://host.docker.internal:3000/docs-json"},{name:"Usuarios",url:"http://host.docker.internal:5000/docs-json"},{name:"Zonas",url:"http://host.docker.internal:8080/v3/api-docs"}]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8085:8080"
     networks:
       - kong-net
-    depends_on:
-      - usuarios
-      - vehiculos
-      - zonas
+    restart: unless-stopped
   # KONG GATEWAY
   kong:
     image: kong:latest
