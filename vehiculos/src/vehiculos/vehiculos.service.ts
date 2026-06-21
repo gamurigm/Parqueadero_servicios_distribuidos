@@ -107,7 +107,7 @@ async update(id: UUID, updateVehiculoDto: UpdateVehiculoDto) {
     };
   } catch (error) {
     if (error instanceof BadRequestException)
-    throw new BadRequestException('Error al actualizar el vehículo: ' );
+    throw new BadRequestException('Error al actualizar el vehículo' );
   }
 }
 
