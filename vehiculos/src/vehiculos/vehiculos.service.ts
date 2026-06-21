@@ -1,106 +1,120 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+// vehiculos.service.ts
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Vehiculo } from './entities/vehiculo.entity';
 import { CreateVehiculoDto } from './dto/create-vehiculo.dto';
 import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
-import { Repository } from 'typeorm';
-import { Clasificacion, Vehiculo } from './entities/vehiculo.entity';
-import { InjectRepository } from '@nestjs/typeorm';
 import { FactoryVehiculos } from './factory/factory-vehiculos';
-import { UUID } from 'crypto';
-import { TipoMoto } from './entities/tipos/motocicleta.entity';
+import { Utils } from './utils/utils';
+import type { UUID } from 'crypto';
 
 @Injectable()
 export class VehiculosService {
+  private utils = new Utils();
 
   constructor(
     @InjectRepository(Vehiculo)
-    private repositoryVehiculos: Repository<Vehiculo>,
+    private vehiculoRepository: Repository<Vehiculo>,
   ) {}
 
-  async create(createVehiculoDto: CreateVehiculoDto): Promise<Vehiculo> {
-    const existe = await this.repositoryVehiculos.findOne({
-      where: { 
-        placa: createVehiculoDto.datos.placa,
-      },
-    });
-
-      if (existe) throw new Error('Vehículo ya existe con esta placa');
-
-      const vehiculo = FactoryVehiculos.crear(createVehiculoDto);
-
-      return this.repositoryVehiculos.save(vehiculo);
-
-  }
-
-  async findAll(): Promise<Vehiculo[]> {
-    return this.repositoryVehiculos.find()
-  }
-
-  async findOne(id: UUID): Promise<Vehiculo> {
-    const existe = await this.repositoryVehiculos.findOne({
-      where: { 
-        id,      
-      },
-    });
-
-    if (!existe) throw new NotFoundException('Vehículo no encontrado');
-    
-
-    return existe;
-  }
-
-  async update(id: UUID, updateVehiculoDto: UpdateVehiculoDto): Promise<Vehiculo> {
-    const existe = await this.repositoryVehiculos.findOne({
-      where: { 
-        id,      
-      },
-    });
-
-    if (!existe) throw new NotFoundException('Vehículo no encontrado');
-
-    if (updateVehiculoDto.datos?.placa) {
-      const placaExiste = await this.repositoryVehiculos.findOne({
-        where: {
-          placa: updateVehiculoDto.datos.placa,
-        },
+  async create(createVehiculoDto: CreateVehiculoDto) {
+    try {
+      // Validar que no exista una placa duplicada
+      const placaSanitizada = this.utils.sanitizeString('placa', createVehiculoDto.datos.placa);
+      const existe = await this.vehiculoRepository.findOne({
+        where: { placa: placaSanitizada }
       });
 
-      if (placaExiste && placaExiste.id !== id) {
-        throw new ConflictException('Otro vehículo ya existe con esta placa');
+      if (existe) {
+        throw new BadRequestException('Ya existe un vehículo con esta placa');
       }
-    }
 
-    
-    if (!updateVehiculoDto.datos || Object.keys(updateVehiculoDto.datos).length === 0) {
-      throw new BadRequestException('Realice al menos un cambio en los datos del vehículo');
+   // Crear el vehículo usando el factory con sanitización
+      const vehiculo = FactoryVehiculos.crear(createVehiculoDto);
+      
+      // Guardar en la base de datos
+      const saved = await this.vehiculoRepository.save(vehiculo);
+      return saved;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al crear el vehículo: ');
     }
-    
-    const datosActualizar: any = { ...updateVehiculoDto.datos };
-    
-    if (datosActualizar.clasificacion) {
-      datosActualizar.clasificacion = datosActualizar.clasificacion as Clasificacion;
-    }
-
-    if (datosActualizar.tipo) {
-      datosActualizar.tipoMoto = datosActualizar.tipo as TipoMoto;
-      delete datosActualizar.tipo; 
-    }
-    
-    await this.repositoryVehiculos.update(id,datosActualizar);
-    
-    return this.findOne(id);
   }
-  
-  async remove(id: UUID) {
-    const existe = await this.repositoryVehiculos.findOne({
-      where: { 
-        id,      
-      },
+
+  async findAll() {
+    return await this.vehiculoRepository.find();
+  }
+
+  async findOne(id: UUID) {
+    const idSanitizado = this.utils.validateUUID(id as string);
+    const vehiculo = await this.vehiculoRepository.findOne({
+      where: { id: idSanitizado }
     });
 
-    if (!existe) throw new NotFoundException('Vehículo no encontrado');
+    if (!vehiculo) {
+      throw new NotFoundException('Vehículo no encontrado');
+    }
 
-    await this.repositoryVehiculos.delete(id);
+    return vehiculo;
+  }
 
-    return { message: 'Vehículo eliminado exitosamente' };
+  async update(id: UUID, updateVehiculoDto: UpdateVehiculoDto) {
+    const idSanitizado = this.utils.validateUUID(id as string);
+    
+    // Buscar el vehículo existente
+    const vehiculoExistente = await this.vehiculoRepository.findOne({
+      where: { id: idSanitizado }
+    });
+
+    if (!vehiculoExistente) {
+      throw new NotFoundException('Vehículo no encontrado');
+    }
+
+    try {
+      // Si se está actualizando la placa, verificar que no exista duplicado
+      if (updateVehiculoDto.datos?.placa) {
+        const placaSanitizada = this.utils.sanitizeString('placa', updateVehiculoDto.datos.placa);
+        const existe = await this.vehiculoRepository.findOne({
+          where: { placa: placaSanitizada }
+        });
+
+        if (existe && existe.id !== idSanitizado) {
+          throw new BadRequestException('Ya existe un vehículo con esta placa');
+        }
+      }
+
+      // Actualizar el vehículo usando el factory
+      const vehiculoActualizado = FactoryVehiculos.actualizar(
+        updateVehiculoDto,
+        vehiculoExistente
+      );
+
+      // Guardar los cambios
+      const saved = await this.vehiculoRepository.save(vehiculoActualizado);
+      return saved;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al actualizar el vehículo' );
+    }
+  }
+
+  async remove(id: UUID) {
+    const idSanitizado = this.utils.validateUUID(id as string);
+    
+    const vehiculo = await this.vehiculoRepository.findOne({
+      where: { id: idSanitizado }
+    });
+
+    if (!vehiculo) {
+      throw new NotFoundException('Vehículo no encontrado');
+    }
+
+    await this.vehiculoRepository.remove(vehiculo);
+    return { message: 'Vehículo eliminado correctamente' };
   }
 }
