@@ -1,17 +1,17 @@
 // factory-vehiculos.ts
 import { BadRequestException } from "@nestjs/common";
 import { CreateVehiculoDto } from "../dto/create-vehiculo.dto";
-import { Vehiculo } from "../entities/vehiculo.entity";
+import { Vehiculo, Clasificacion } from "../entities/vehiculo.entity";
 import { Auto } from "../entities/tipos/auto.entity";
 import { Camioneta } from "../entities/tipos/camioneta.entity";
-import { Motocicleta } from "../entities/tipos/motocicleta.entity";
+import { Motocicleta, TipoMoto } from "../entities/tipos/motocicleta.entity";
 import { Utils } from "../utils/utils";
 
 export class FactoryVehiculos {
   private static utils = new Utils();
 
   static crear(dto: CreateVehiculoDto, existingPlaca?: string): Vehiculo {
-    const tipo = this.utils.sanitizeString("tipo",dto.tipo);
+    const tipo = this.utils.sanitizeString("tipo", dto.tipo);
     const datosSanitizados = this.sanitizarDatos(dto.datos);
     
     if (existingPlaca && datosSanitizados.placa === existingPlaca) {
@@ -70,8 +70,16 @@ export class FactoryVehiculos {
     }
 
     if (datos.clasificacion !== undefined) {
-      sanitized.clasificacion = this.utils.sanitizeString('clasificacion', datos.clasificacion);
+      const clasificacionStr = datos.clasificacion;
+      // Sanitizar pero preservando mayúsculas/minúsculas
+      const clasificacionSanitizada = this.sanitizarEnumValue(
+        'clasificacion', 
+        clasificacionStr, 
+        Object.values(Clasificacion)
+      );
+      sanitized.clasificacion = clasificacionSanitizada;
     }
+
 
     if (datos.numeroPuertas !== undefined) {
       sanitized.numeroPuertas = Number(datos.numeroPuertas);
@@ -99,12 +107,41 @@ export class FactoryVehiculos {
     }
 
     if (datos.tipoMoto !== undefined) {
-      sanitized.tipoMoto = this.utils.sanitizeString('tipoMoto', datos.tipoMoto);
+      const tipoMotoStr = datos.tipoMoto;
+      const tipoMotoSanitizado = this.sanitizarEnumValue(
+        'tipoMoto', 
+        tipoMotoStr, 
+        Object.values(TipoMoto)
+      );
+      sanitized.tipoMoto = tipoMotoSanitizado;
     }
 
     return sanitized;
   }
 
+  private static sanitizarEnumValue(
+    nombreCampo: string, 
+    valor: string, 
+    valoresPermitidos: string[]
+  ): string {
+    let sanitizado = this.utils.sanitizeString(nombreCampo, valor);
+    
+    if (valoresPermitidos.includes(sanitizado)) {
+      return sanitizado;
+    }
+    
+    const encontrado = valoresPermitidos.find(
+      val => val.toLowerCase() === sanitizado.toLowerCase()
+    );
+    
+    if (encontrado) {
+      return encontrado;
+    }
+    
+    throw new BadRequestException(
+      `${nombreCampo} inválido. Valores permitidos: ${valoresPermitidos.join(', ')}`
+    );
+  }
 
   static actualizar(dto: any, vehiculoExistente: Vehiculo): Vehiculo {
     const datosActualizados = this.sanitizarDatos(dto.datos || dto);

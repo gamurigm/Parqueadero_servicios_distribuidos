@@ -1,5 +1,5 @@
 // vehiculos.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Put } from '@nestjs/common';
 import { VehiculosService } from './vehiculos.service';
 import { CreateVehiculoDto } from './dto/create-vehiculo.dto';
 import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
@@ -33,7 +33,7 @@ export class VehiculosController {
     return this.vehiculosService.findOne(id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UsePipes(new SanitizePipe())
   @ApiOperation({ summary: 'Actualizar vehículo' })
   update(@Param('id') id: UUID, @Body() updateVehiculoDto: UpdateVehiculoDto) {
