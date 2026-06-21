@@ -5,14 +5,31 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-<<<<<<< HEAD
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
-=======
+
+  // Habilitar CORS
+  app.enableCors({
+    origin: [
+      'http://localhost:8085',
+      'http://127.0.0.1:8085',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://host.docker.internal:3000',
+      'http://localhost:5000',
+      'http://localhost:8080',
+      'http://localhost:8000',
+    ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+    credentials: true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('API Vehiculos')
     .setDescription('Documentación de la API')
     .setVersion('1.0')
+    .addServer('http://localhost:3000', 'Local - Directo')
+    .addServer('http://host.docker.internal:3000', 'Docker - Host')
+    .addServer('http://localhost:8000/vehiculos', 'Kong Gateway')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -30,7 +47,6 @@ async function bootstrap() {
     }),
   );
   
-  await app.listen(process.env.PORT ?? 3000);
->>>>>>> 41b7811 (Agregar sanitización y documentación Swagger para API de vehículos)
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 bootstrap();

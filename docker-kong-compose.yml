@@ -140,14 +140,14 @@ services:
     container_name: swagger-ui
     environment:
       - URLS_PRIMARY_NAME=Usuarios
-      - URLS=[{name:"Vehículos",url:"http://host.docker.internal:3000/docs-json"},{name:"Usuarios",url:"http://host.docker.internal:5000/docs-json"},{name:"Zonas",url:"http://host.docker.internal:8080/v3/api-docs"}]
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - URLS=[{"name":"Vehículos","url":"http://localhost:3000/api-json"},{"name":"Usuarios","url":"http://localhost:5000/docs-json"},{"name":"Zonas","url":"http://localhost:8080/v3/api-docs"}]
     ports:
       - "8085:8080"
     networks:
       - kong-net
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   # KONG GATEWAY
   kong:
     image: kong:latest
