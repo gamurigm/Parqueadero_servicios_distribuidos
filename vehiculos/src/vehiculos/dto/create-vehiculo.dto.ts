@@ -1,13 +1,22 @@
-import { IsDecimal, IsEnum, IsIn, IsInt, IsNotEmpty, IsString, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from "class-validator";
+import { IsEnum, IsIn, IsInt, IsNotEmpty, IsNumber, IsString, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from "class-validator";
 import { TipoMoto } from "../entities/tipos/motocicleta.entity";
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { Clasificacion } from "../entities/vehiculo.entity";
+import { ApiProperty } from '@nestjs/swagger';
 
 class BaseVehiculoDto{
     @IsString()
     @IsNotEmpty()
-    @Matches(/^{A-Z}{3}-\D{3,4}$/,{
-        message :'La placa debe tener un formato válido (PVZ-1234)'})
+    @Matches(/^[A-Z]{3}-\d{3,4}$/,{
+        message :'La placa debe tener un formato válido (PVZ-1234)'
+    })
+    @ApiProperty({
+        example: 'ABC-1234',
+        description: 'Placa del vehículo',
+    })
+    @Transform(({ value }) =>
+        typeof value === 'string' ? value.trim().toUpperCase() : value
+    )
     placa!: string;
 
     @IsString()
@@ -21,6 +30,12 @@ class BaseVehiculoDto{
     @Matches(/^[A-Za-z\s\-áéíóúÁÉÍÓÚñÑ]+$/,{
         message: 'La marca solo puede contener letras y espacios'
     })
+    @ApiProperty({
+        example: 'Toyota',
+    })
+    @Transform(({ value }) => 
+       typeof value ==='string' ? value.trim() : value
+    )
     marca!:string;
 
     @IsString()
@@ -34,6 +49,12 @@ class BaseVehiculoDto{
     @Matches(/^[A-Za-z0-9áéíóúÁÉÍÓÚñÑ\s\-]+$/,{
         message: 'La modelo solo puede contener letras y espacios'
     })
+    @ApiProperty({
+        example: 'Corolla',
+    })
+    @Transform(({ value }) => 
+       typeof value ==='string' ? value.trim() : value
+    )
     modelo!:string;
 
     @IsString()
@@ -47,23 +68,33 @@ class BaseVehiculoDto{
     @Matches(/^[A-Za-z\s\-áéíóúÁÉÍÓÚñÑ]+$/,{
         message: 'La color solo puede contener letras y espacios'
     })
+    @ApiProperty({
+        example: 'Blanco',
+    })
+    @Transform(({ value }) => 
+       typeof value ==='string' ? value.trim() : value
+    )
     color!:string;
 
     @Min(1885,{
         message: 'El año debe ser mayor o igual a 1885'
     })
     @IsInt({message: 'El año debe ser un número entero'})
-    @Matches(/^[0-9]+$/,{
-        message: 'La año solo puede contener números'
-    })
     @Max(new Date().getFullYear() + 1,{
         message: `El año debe ser menor o igual a ${new Date().getFullYear()}`
+    })
+    @ApiProperty({
+        example: 2024,
     })
     @IsNotEmpty()
     anio!: number;
 
     @IsEnum(Clasificacion, {
         message: 'La clasificación debe ser: Electrico, Hibrido, Gasolina o Diesel'
+    })
+    @ApiProperty({
+        enum: Clasificacion,
+        example: Clasificacion.GASOLINA,
     })
     @IsNotEmpty()
     clasificacion!: string; 
@@ -78,9 +109,10 @@ class AutoDto extends BaseVehiculoDto{
     @Max(7,{
         message: "El numero de puertas maximo es 7"
     })
+    @ApiProperty({ example: 4 })
     numeroPuertas!: number;
 
-    @IsDecimal()
+    @IsNumber()
     @Min(0,{
         message: "La capacidad del maletero debe ser mayor a 1 kg"
     })
@@ -88,13 +120,14 @@ class AutoDto extends BaseVehiculoDto{
     @Max(1000,{
         message: "La capacidad del maletero no puede exceder 1000"
     })
+    @ApiProperty({ example: 450 })
     capacidadMaletero!:number;
 }
 
 class MotocicletaDto extends BaseVehiculoDto{
     @IsString()
     @IsNotEmpty()
-    @Matches(/^{A-Z}{2}-\d{0-9}{3}[A-Z]$/,{
+    @Matches(/^[A-Z]{2}-\d{3}[A-Z]$/,{
         message: 'La placa debe ser el siguiente formato (GG-420A)'
     })
     declare placa: string;
@@ -103,6 +136,10 @@ class MotocicletaDto extends BaseVehiculoDto{
     @IsEnum(TipoMoto,{
         message: 'El tipo de motocicleta debe ser Deportiva, Scooter o Motocross'
     })
+    @ApiProperty({
+        enum: TipoMoto,
+        example: TipoMoto.DEPORTIVA,
+    })
     tipo!: string;
 }
 
@@ -110,10 +147,13 @@ class CamionetaDto extends BaseVehiculoDto{
     @IsNotEmpty()
     @IsString()
     @MinLength(5,{
-        message:'La cabina no puede tener menos de 5 caracteres'})
+        message:'La cabina no puede tener menos de 5 caracteres'
+    })
+    @ApiProperty({ example: "Cabina Doble" })
+    @Transform(({ value }) => value.trim())
     cabina!: string;
     
-    @IsDecimal()
+    @IsNumber()
     @Min(0,{
         message: "La capacidad de carga debe ser mayor a 1 kg"
     })
@@ -121,11 +161,15 @@ class CamionetaDto extends BaseVehiculoDto{
     @Max(10000,{
         message: "La capacidad de carga no puede exceder 10000 kg"
     })
+    @ApiProperty({ example: 1500 })
     capacidadCarga!: number;
 }
 
 export class CreateVehiculoDto {
   @IsIn(['auto', 'motocicleta', 'camioneta'])
+  @ApiProperty({
+    enum: ['auto', 'motocicleta', 'camioneta'],
+  })
   tipo!: string;
 
   @ValidateNested()
@@ -143,6 +187,10 @@ export class CreateVehiculoDto {
       default:
         return BaseVehiculoDto;
     }
+  })
+
+  @ApiProperty({
+    description: 'Datos específicos según el tipo de vehículo'
   })
   datos!: AutoDto | MotocicletaDto | CamionetaDto;
 }

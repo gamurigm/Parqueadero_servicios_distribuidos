@@ -1,11 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateVehiculoDto } from './dto/create-vehiculo.dto';
 import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
 import { Repository } from 'typeorm';
 import { Clasificacion, Vehiculo } from './entities/vehiculo.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FactoryVehiculos } from './factory/factory-vehiculos';
-import { ListCollectionsCursor } from 'typeorm/driver/mongodb/typings.js';
 import { UUID } from 'crypto';
 import { TipoMoto } from './entities/tipos/motocicleta.entity';
 
@@ -43,7 +42,7 @@ export class VehiculosService {
       },
     });
 
-    if (!existe) throw new Error('Vehículo no encontrado');
+    if (!existe) throw new NotFoundException('Vehículo no encontrado');
     
 
     return existe;
@@ -56,13 +55,7 @@ export class VehiculosService {
       },
     });
 
-    if (!existe) throw new Error('Vehículo no encontrado');
-
-    const placaExiste = await this.repositoryVehiculos.findOne({  
-      where: {
-        placa: updateVehiculoDto.datos?.placa,
-      },
-    });
+    if (!existe) throw new NotFoundException('Vehículo no encontrado');
 
     if (updateVehiculoDto.datos?.placa) {
       const placaExiste = await this.repositoryVehiculos.findOne({
@@ -72,13 +65,13 @@ export class VehiculosService {
       });
 
       if (placaExiste && placaExiste.id !== id) {
-        throw new Error('Otro vehículo ya existe con esta placa');
+        throw new ConflictException('Otro vehículo ya existe con esta placa');
       }
     }
 
     
     if (!updateVehiculoDto.datos || Object.keys(updateVehiculoDto.datos).length === 0) {
-      throw new Error('Realice al menos un cambio en los datos del vehículo');
+      throw new BadRequestException('Realice al menos un cambio en los datos del vehículo');
     }
     
     const datosActualizar: any = { ...updateVehiculoDto.datos };
@@ -104,7 +97,7 @@ export class VehiculosService {
       },
     });
 
-    if (!existe) throw new Error('Vehículo no encontrado');
+    if (!existe) throw new NotFoundException('Vehículo no encontrado');
 
     await this.repositoryVehiculos.delete(id);
 
