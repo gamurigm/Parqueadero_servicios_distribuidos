@@ -1,5 +1,3 @@
-version: '3.9'
-
 networks:
   kong-net:
     driver: bridge
@@ -137,22 +135,22 @@ services:
         condition: service_healthy
     restart: unless-stopped
   #Unificacion de swaggers
-  swagger-aggregator:
-    image: swaggerapi/swagger-agg:latest
-    container_name: swagger-aggregator
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: swagger-ui
     environment:
       SERVICES: '[
         {"name": "NestJS-1", "url": "http://vehiculos:3000/docs-json"},
         {"name": "NestJS-2", "url": "http://usuarios:5000/docs-json"},
-        {"name": "Spring-Boot", "url": "http://zonas:8080/v1/api/api-docs"}]'
+        {"name": "Spring-Boot", "url": "http://zonas:8080/v3/api-docs"}]'
     ports:
       - "8085:8080"
     networks:
       - kong-net
     depends_on:
-      - servicio-nest-1
-      - servicio-nest-2
-      - servicio-spring
+      - usuarios
+      - vehiculos
+      - zonas
   # KONG GATEWAY
   kong:
     image: kong:latest
