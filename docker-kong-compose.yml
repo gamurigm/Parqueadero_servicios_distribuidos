@@ -178,7 +178,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
+#konga para usar kong
+  konga:
+    image: pantsel/konga:latest
+    container_name: konga
+    environment:
+      - NODE_ENV=production
+      - TOKEN_SECRET=asdnisaasc1654asd167as4da2s1684asd1fzx7sdw9qrgbnhju9
+    ports:
+      - "1337:1337"
+    networks:
+      - kong-net
+    restart: unless-stopped
 volumes:
   usuarios_postgres_data:
   postgres_data:
