@@ -7,7 +7,9 @@ import {
   Matches,
   IsOptional,
   IsNotEmpty,
+  Validate,
 } from 'class-validator';
+import { EsCedulaEcuatorianaConstraint } from '../../utils/cedula-validator';
 
 export class CreatePersonaDto {
 
@@ -55,9 +57,12 @@ export class CreatePersonaDto {
   @Matches(/^\d{10}$/, { 
     message: 'El DNI debe contener solo números (10 dígitos)' 
   })
+  @Validate(EsCedulaEcuatorianaConstraint, {
+    message: 'La cédula ingresada no es una cédula ecuatoriana válida',
+  })
   @ApiProperty({
-    example: '1234567890',
-    description: 'DNI de la persona (10 dígitos)',
+    example: '1710034065',
+    description: 'Cédula de identidad ecuatoriana (10 dígitos, algoritmo Módulo 10)',
     minLength: 10,
     maxLength: 10
   })
