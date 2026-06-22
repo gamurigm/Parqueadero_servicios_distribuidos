@@ -28,9 +28,11 @@ export class PersonaService {
     middleName: string,
     lastName: string,
 ): Promise<string> {
-  console.log(middleName);
+
     const baseUsername = `${firstName[0]}${middleName?.[0] ?? ''}${lastName}`
         .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
         .replace(/\s+/g, '');
     const users = await this.userRepository
         .createQueryBuilder('user')

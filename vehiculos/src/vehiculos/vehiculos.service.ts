@@ -141,15 +141,13 @@ private hayCambios(vehiculoExistente: Vehiculo, nuevosDatosSanitizados: any): bo
     if (key in datosExistentes) {
       const valorNuevo = nuevosDatosSanitizados[key];
       const valorExistente = datosExistentes[key];
-      
+      //cambio existe
       if (valorNuevo !== valorExistente) {
-        console.log(`Cambio detectado en ${key}: "${valorExistente}" -> "${valorNuevo}"`);
         return true;
       }
     }
   }
-  
-  console.log('No se detectaron cambios');
+  //cambio no existe
   return false;
 }
 
