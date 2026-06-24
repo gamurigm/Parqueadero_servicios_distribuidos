@@ -36,7 +36,7 @@ export class Asignacion {
      * Notas o descripción de la asignación (opcional)
      */
     @Column({ type: 'text', nullable: true })
-    notas: string;
+    descripcion: string;
 
     @CreateDateColumn({ name: 'fecha_asignacion', type: 'timestamptz' })
     fechaAsignacion: Date;

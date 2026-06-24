@@ -81,7 +81,7 @@ export class TrazabilidadService {
             userId: asignacion.userId,
             vehicleId: asignacion.vehicleId,
             estado: asignacion.estado,
-            notas: asignacion.notas,
+            descripcion: asignacion.descripcion,
             fechaAsignacion: asignacion.fechaAsignacion,
             fechaModificacion: asignacion.fechaModificacion,
         };

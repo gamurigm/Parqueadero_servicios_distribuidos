@@ -16,7 +16,7 @@ export class FactoryAsignacion {
         const asignacion = new Asignacion();
         asignacion.userId = dto.userId.trim().toLowerCase();
         asignacion.vehicleId = dto.vehicleId.trim().toLowerCase();
-        asignacion.notas = dto.notas?.trim() ?? null;
+        asignacion.descripcion = dto.descripcion?.trim() ?? null;
         asignacion.estado = 1; // Activo por defecto al crear
         return asignacion;
     }

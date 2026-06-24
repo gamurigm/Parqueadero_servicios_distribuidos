@@ -3,7 +3,7 @@ import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 /**
  * DTO para actualizar una asignación existente.
- * Solo se puede modificar el estado y las notas (la clave compuesta es inmutable).
+ * Solo se puede modificar el estado y las descripcion (la clave compuesta es inmutable).
  */
 export class UpdateAsignacionDto {
     @ApiPropertyOptional({
@@ -19,10 +19,10 @@ export class UpdateAsignacionDto {
     estado?: number;
 
     @ApiPropertyOptional({
-        description: 'Notas adicionales sobre la asignación',
+        description: 'Descripcion adicionales sobre la asignación',
         example: 'Asignación suspendida temporalmente',
     })
     @IsOptional()
     @IsString()
-    notas?: string;
+    descripcion?: string;
 }

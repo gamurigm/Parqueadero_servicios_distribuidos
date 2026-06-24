@@ -136,7 +136,7 @@ export class AsignacionService {
         // 2. Verificar que haya cambios reales
         const sinCambios =
             (dto.estado === undefined || dto.estado === asignacion.estado) &&
-            (dto.notas === undefined || dto.notas === asignacion.notas);
+            (dto.descripcion === undefined || dto.descripcion === asignacion.descripcion);
 
         if (sinCambios) {
             throw new BadRequestException('No se detectaron cambios en los valores enviados');
@@ -159,7 +159,7 @@ export class AsignacionService {
 
         // 5. Aplicar cambios
         if (dto.estado !== undefined) asignacion.estado = dto.estado;
-        if (dto.notas !== undefined) asignacion.notas = dto.notas;
+        if (dto.descripcion !== undefined) asignacion.descripcion = dto.descripcion;
 
         const saved = await this.asignacionRepo.save(asignacion);
 
@@ -240,7 +240,7 @@ export class AsignacionService {
                     userId: asignacion.userId,
                     vehicleId: asignacion.vehicleId,
                     estado: asignacion.estado,
-                    notas: asignacion.notas,
+                    descripcion: asignacion.descripcion,
                     fechaAsignacion: asignacion.fechaAsignacion,
                     // Detalles del vehículo (del microservicio externo)
                     vehiculo: vehiculoDetalle

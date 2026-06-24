@@ -23,10 +23,10 @@ export class CreateAsignacionDto {
     vehicleId: string;
 
     @ApiPropertyOptional({
-        description: 'Notas adicionales sobre la asignación',
+        description: 'Descripcion adicionales sobre la asignación',
         example: 'Vehículo asignado para estacionamiento zona norte',
     })
     @IsOptional()
     @IsString()
-    notas?: string;
+    descripcion?: string;
 }
