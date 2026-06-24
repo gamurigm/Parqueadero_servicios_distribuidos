@@ -8,10 +8,16 @@ export class Utils {
     private readonly uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     public validateUUID(id: string): string {
-        const cleaned = this.sanitizeString('id', id);
+        if (!id) throw new BadRequestException('ID no proporcionado');
+
+        // Eliminar cualquier espacio en blanco (incluyendo en medio de los caracteres)
+        const noSpaces = id.replace(/\s+/g, '');
+        
+        // Sanitizar contra posibles tags HTML o caracteres raros
+        const cleaned = this.sanitizeString('id', noSpaces);
 
         if (!this.uuidRegex.test(cleaned)) {
-            throw new BadRequestException('ID inválido: debe ser un UUID válido');
+            throw new BadRequestException('ID inválido: debe ser un UUID válido sin espacios en blanco');
         }
 
         return cleaned;
@@ -24,8 +30,25 @@ export class Utils {
 
         let cleaned = value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 
-        // Eliminar tags HTML
+        // Eliminar tags HTML (Prevención básica XSS)
         cleaned = cleaned.replace(/<[^>]*>/g, '');
+
+        // Prevenir comillas simples maliciosas (Prevención SQLi en crudo, aunque TypeORM ya nos protege)
+        cleaned = cleaned.replace(/['";\\]/g, '');
+
+        return cleaned;
+    }
+
+    public sanitizeText(value: string | undefined): string | null {
+        if (!value) return null;
+
+        let cleaned = value.trim().replace(/\s+/g, ' ');
+
+        // Eliminar tags HTML (Prevención básica XSS)
+        cleaned = cleaned.replace(/<[^>]*>/g, '');
+
+        // Prevenir comillas maliciosas y caracteres de inyección SQL
+        cleaned = cleaned.replace(/['";\\]/g, '');
 
         return cleaned;
     }

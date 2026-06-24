@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 /**
  * DTO para crear una nueva asignación vehículo-propietario.
@@ -27,6 +27,7 @@ export class CreateAsignacionDto {
         example: 'Vehículo asignado para estacionamiento zona norte',
     })
     @IsOptional()
-    @IsString()
-    descripcion?: string;
+    @IsString({ message: 'Las notas deben ser un texto válido' })
+    @MaxLength(500, { message: 'Las notas no pueden exceder los 500 caracteres' })
+    notas?: string;
 }

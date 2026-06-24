@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 /**
  * DTO para actualizar una asignación existente.
@@ -23,6 +23,7 @@ export class UpdateAsignacionDto {
         example: 'Asignación suspendida temporalmente',
     })
     @IsOptional()
-    @IsString()
-    descripcion?: string;
+    @IsString({ message: 'Las notas deben ser un texto válido' })
+    @MaxLength(500, { message: 'Las notas no pueden exceder los 500 caracteres' })
+    notas?: string;
 }

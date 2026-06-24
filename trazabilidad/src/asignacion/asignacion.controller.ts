@@ -60,55 +60,6 @@ export class AsignacionController {
         return this.asignacionService.listar();
     }
 
-    @Get(':userId/:vehicleId')
-    @ApiOperation({ summary: 'RF1 - Buscar asignación por clave compuesta (userId + vehicleId)' })
-    @ApiParam({ name: 'userId', description: 'UUID del propietario', example: 'a3f1b2c4-1234-4abc-89de-1234567890ab' })
-    @ApiParam({ name: 'vehicleId', description: 'UUID del vehículo', example: 'b4e2c3d5-5678-4def-90ef-234567890bcd' })
-    @ApiResponse({ status: 200, description: 'Asignación encontrada' })
-    @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
-    buscarPorClave(
-        @Param('userId') userId: string,
-        @Param('vehicleId') vehicleId: string,
-    ) {
-        return this.asignacionService.buscarPorClave(userId, vehicleId);
-    }
-
-    @Put(':userId/:vehicleId')
-    @ApiOperation({
-        summary: 'RF1 - Actualizar asignación (estado/notas)',
-        description: 'Actualiza el estado o notas de una asignación. ' +
-            'Genera automáticamente un evento de trazabilidad MODIFICACION.',
-    })
-    @ApiParam({ name: 'userId', description: 'UUID del propietario' })
-    @ApiParam({ name: 'vehicleId', description: 'UUID del vehículo' })
-    @ApiResponse({ status: 200, description: 'Asignación actualizada' })
-    @ApiResponse({ status: 400, description: 'Sin cambios detectados o datos inválidos' })
-    @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
-    actualizar(
-        @Param('userId') userId: string,
-        @Param('vehicleId') vehicleId: string,
-        @Body() dto: UpdateAsignacionDto,
-    ) {
-        return this.asignacionService.actualizar(userId, vehicleId, dto);
-    }
-
-    @Delete(':userId/:vehicleId')
-    @ApiOperation({
-        summary: 'RF1 - Eliminar asignación',
-        description: 'Elimina una asignación por su clave compuesta. ' +
-            'Genera automáticamente un evento de trazabilidad ELIMINACION.',
-    })
-    @ApiParam({ name: 'userId', description: 'UUID del propietario' })
-    @ApiParam({ name: 'vehicleId', description: 'UUID del vehículo' })
-    @ApiResponse({ status: 200, description: 'Asignación eliminada' })
-    @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
-    eliminar(
-        @Param('userId') userId: string,
-        @Param('vehicleId') vehicleId: string,
-    ) {
-        return this.asignacionService.eliminar(userId, vehicleId);
-    }
-
     // ──────────────────────────────────────────────────
     // RF3 - Consulta de Flota por Propietario
     // ──────────────────────────────────────────────────
@@ -156,5 +107,58 @@ export class AsignacionController {
         @Param('vehicleId') vehicleId: string,
     ) {
         return this.trazabilidadService.listarPorAsignacion(userId, vehicleId);
+    }
+
+    // ──────────────────────────────────────────────────
+    // Búsqueda y Operaciones por Clave Compuesta (Debe ir al final por los :dinamicos)
+    // ──────────────────────────────────────────────────
+
+    @Get(':userId/:vehicleId')
+    @ApiOperation({ summary: 'RF1 - Buscar asignación por clave compuesta (userId + vehicleId)' })
+    @ApiParam({ name: 'userId', description: 'UUID del propietario', example: 'a3f1b2c4-1234-4abc-89de-1234567890ab' })
+    @ApiParam({ name: 'vehicleId', description: 'UUID del vehículo', example: 'b4e2c3d5-5678-4def-90ef-234567890bcd' })
+    @ApiResponse({ status: 200, description: 'Asignación encontrada' })
+    @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
+    buscarPorClave(
+        @Param('userId') userId: string,
+        @Param('vehicleId') vehicleId: string,
+    ) {
+        return this.asignacionService.buscarPorClave(userId, vehicleId);
+    }
+
+    @Put(':userId/:vehicleId')
+    @ApiOperation({
+        summary: 'RF1 - Actualizar asignación (estado/notas)',
+        description: 'Actualiza el estado o notas de una asignación. ' +
+            'Genera automáticamente un evento de trazabilidad MODIFICACION.',
+    })
+    @ApiParam({ name: 'userId', description: 'UUID del propietario' })
+    @ApiParam({ name: 'vehicleId', description: 'UUID del vehículo' })
+    @ApiResponse({ status: 200, description: 'Asignación actualizada' })
+    @ApiResponse({ status: 400, description: 'Sin cambios detectados o datos inválidos' })
+    @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
+    actualizar(
+        @Param('userId') userId: string,
+        @Param('vehicleId') vehicleId: string,
+        @Body() dto: UpdateAsignacionDto,
+    ) {
+        return this.asignacionService.actualizar(userId, vehicleId, dto);
+    }
+
+    @Delete(':userId/:vehicleId')
+    @ApiOperation({
+        summary: 'RF1 - Eliminar asignación',
+        description: 'Elimina una asignación por su clave compuesta. ' +
+            'Genera automáticamente un evento de trazabilidad ELIMINACION.',
+    })
+    @ApiParam({ name: 'userId', description: 'UUID del propietario' })
+    @ApiParam({ name: 'vehicleId', description: 'UUID del vehículo' })
+    @ApiResponse({ status: 200, description: 'Asignación eliminada' })
+    @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
+    eliminar(
+        @Param('userId') userId: string,
+        @Param('vehicleId') vehicleId: string,
+    ) {
+        return this.asignacionService.eliminar(userId, vehicleId);
     }
 }
