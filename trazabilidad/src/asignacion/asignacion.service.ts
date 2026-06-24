@@ -13,6 +13,7 @@ import { FactoryAsignacion } from './factory/factory-asignacion';
 import { TrazabilidadService } from '../trazabilidad/trazabilidad.service';
 import { TipoAccion } from '../trazabilidad/entities/trazabilidad.entity';
 import { VehiculosClientService } from '../vehiculos-client/vehiculos-client.service';
+import { UsuariosClientService } from '../usuarios-client/usuarios-client.service';
 import { Utils } from '../utils/utils';
 
 /**
@@ -31,6 +32,7 @@ export class AsignacionService {
         private readonly asignacionRepo: Repository<Asignacion>,
         private readonly trazabilidadService: TrazabilidadService,
         private readonly vehiculosClientService: VehiculosClientService,
+        private readonly usuariosClientService: UsuariosClientService,
     ) {
         this.utils = new Utils();
     }
@@ -47,7 +49,16 @@ export class AsignacionService {
         const userId = this.utils.validateUUID(dto.userId);
         const vehicleId = this.utils.validateUUID(dto.vehicleId);
 
-        // 2. Verificar que no exista ya esta asignación exacta
+        // 2. Validar que el propietario realmente exista en el Microservicio de Usuarios
+        await this.usuariosClientService.validarPropietario(userId);
+
+        // 3. Validar que el vehículo realmente exista en el Microservicio de Vehículos
+        const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(vehicleId);
+        if (!vehiculoDetalle) {
+            throw new NotFoundException(`El vehículo con ID ${vehicleId} no existe en el sistema`);
+        }
+
+        // 4. Verificar que no exista ya esta asignación exacta
         const asignacionExistente = await this.asignacionRepo.findOne({
             where: { userId, vehicleId },
         });
@@ -69,11 +80,11 @@ export class AsignacionService {
             );
         }
 
-        // 4. Crear entidad usando Factory (OCP)
+        // 6. Crear entidad usando Factory (OCP)
         const asignacion = FactoryAsignacion.crear({ ...dto, userId, vehicleId });
         const saved = await this.asignacionRepo.save(asignacion);
 
-        // 5. RF2: Registrar evento de trazabilidad CREACION (automático)
+        // 7. RF2: Registrar evento de trazabilidad CREACION (automático)
         await this.trazabilidadService.registrar(
             TipoAccion.CREACION,
             saved.userId,
@@ -235,25 +246,26 @@ export class AsignacionService {
                     asignacion.vehicleId,
                 );
 
-                return {
-                    // Datos de la asignación
-                    userId: asignacion.userId,
-                    vehicleId: asignacion.vehicleId,
-                    estado: asignacion.estado,
-                    notas: asignacion.notas,
-                    fechaAsignacion: asignacion.fechaAsignacion,
-                    // Detalles del vehículo (del microservicio externo)
-                    vehiculo: vehiculoDetalle
-                        ? {
-                              id: vehiculoDetalle.id,
-                              tipo: vehiculoDetalle.tipo,
-                              categoria: vehiculoDetalle.categoria,
-                              marca: vehiculoDetalle.marca ?? null,
-                              modelo: vehiculoDetalle.modelo ?? null,
-                              placa: vehiculoDetalle.placa ?? null,
-                          }
-                        : { id: asignacion.vehicleId, error: 'Servicio de vehículos no disponible' },
-                };
+                if (vehiculoDetalle) {
+                    // Retorna directamente los datos del vehículo
+                    return {
+                        id: vehiculoDetalle.id,
+                        tipo: vehiculoDetalle.tipo,
+                        categoria: vehiculoDetalle.categoria,
+                        marca: vehiculoDetalle.marca ?? null,
+                        modelo: vehiculoDetalle.modelo ?? null,
+                        placa: vehiculoDetalle.placa ?? null,
+                        fechaAsignacion: asignacion.fechaAsignacion, // Contexto adicional útil
+                        estadoAsignacion: asignacion.estado === 1 ? 'Activo' : 'Inactivo'
+                    };
+                } else {
+                    // Fallback si el microservicio de vehículos no responde o borraron el vehículo
+                    return { 
+                        id: asignacion.vehicleId, 
+                        error: 'Servicio de vehículos no disponible o vehículo eliminado',
+                        fechaAsignacion: asignacion.fechaAsignacion
+                    };
+                }
             }),
         );
 

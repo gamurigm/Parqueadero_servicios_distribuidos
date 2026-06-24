@@ -5,6 +5,7 @@ import { HttpModule } from '@nestjs/axios';
 import { AsignacionModule } from './asignacion/asignacion.module';
 import { TrazabilidadModule } from './trazabilidad/trazabilidad.module';
 import { VehiculosClientModule } from './vehiculos-client/vehiculos-client.module';
+import { UsuariosClientModule } from './usuarios-client/usuarios-client.module';
 import { Asignacion } from './asignacion/entities/asignacion.entity';
 import { EventoTrazabilidad } from './trazabilidad/entities/trazabilidad.entity';
 
@@ -37,6 +38,7 @@ import { EventoTrazabilidad } from './trazabilidad/entities/trazabilidad.entity'
     AsignacionModule,
     TrazabilidadModule,
     VehiculosClientModule,
+    UsuariosClientModule,
   ],
 })
 export class AppModule {}
