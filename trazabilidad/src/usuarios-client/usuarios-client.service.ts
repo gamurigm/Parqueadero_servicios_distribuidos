@@ -23,19 +23,53 @@ export class UsuariosClientService {
     }
 
     /**
-     * Valida si una persona (propietario) existe en el microservicio de Usuarios.
+     * Valida si un usuario existe en la tabla de usuarios y tiene el rol de "Propietario".
      */
     async validarPropietario(userId: string): Promise<any> {
         try {
-            const url = `${this.usuariosBaseUrl}/persona/${userId}`;
-            this.logger.log(`Validando propietario en API Usuarios: ${url}`);
+            // 1. Consultar en la API (usuarios tabla usuarios!)
+            const urlUsuario = `${this.usuariosBaseUrl}/usuario/${userId}`;
+            this.logger.log(`Validando usuario en API Usuarios (tabla usuarios): ${urlUsuario}`);
+            const resUsuario = await firstValueFrom(this.httpService.get(urlUsuario));
             
-            const response = await firstValueFrom(this.httpService.get(url));
-            return response.data;
+            if (!resUsuario.data || !resUsuario.data.active) {
+                throw new NotFoundException(`El usuario con ID ${userId} no está activo en el sistema`);
+            }
+
+            // 2. Obtener todos los roles y buscar el rol "Propietario"
+            const urlRoles = `${this.usuariosBaseUrl}/roles`;
+            const resRoles = await firstValueFrom(this.httpService.get(urlRoles));
+            const roles: any[] = resRoles.data;
+            const rolPropietario = roles.find(r => r.nombre.toLowerCase().includes('propietario'));
+
+            if (!rolPropietario) {
+                // Si el rol no existe, logueamos pero podemos dejar pasar o rechazar
+                this.logger.warn('El rol "Propietario" no está definido en el sistema de roles.');
+            } else {
+                // 3. Verificar si el usuario tiene asignado el rol "Propietario"
+                const urlRolesUsuario = `${this.usuariosBaseUrl}/roles-Usuario/usuarios/${userId}`;
+                const resRolesUsuario = await firstValueFrom(this.httpService.get(urlRolesUsuario));
+                const rolesAsignados: any[] = resRolesUsuario.data;
+
+                const tieneRol = rolesAsignados.some(
+                    (asignacion) => asignacion.id_rol === rolPropietario.id && asignacion.activo === true
+                );
+
+                if (!tieneRol) {
+                    throw new NotFoundException(`El usuario ${userId} existe, pero no es de tipo "Propietario"`);
+                }
+            }
+
+            return resUsuario.data;
         } catch (error) {
             this.logger.error(`Error al consultar propietario ${userId}: ${error.message}`);
+            
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+
             if (error.response?.status === 404) {
-                throw new NotFoundException(`El propietario con ID ${userId} no existe en el sistema`);
+                throw new NotFoundException(`El usuario con ID ${userId} no existe en la tabla de usuarios o no tiene roles.`);
             }
             throw new Error('Servicio de usuarios no disponible para validación');
         }

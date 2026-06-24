@@ -80,6 +80,11 @@ export class AsignacionService {
             );
         }
 
+        // 5. Sanitizar campos de texto para prevenir XSS / SQLi
+        if (dto.notas) {
+            dto.notas = this.utils.sanitizeText(dto.notas);
+        }
+
         // 6. Crear entidad usando Factory (OCP)
         const asignacion = FactoryAsignacion.crear({ ...dto, userId, vehicleId });
         const saved = await this.asignacionRepo.save(asignacion);
@@ -168,9 +173,9 @@ export class AsignacionService {
         // 4. Guardar snapshot anterior para trazabilidad
         const payloadAnterior = TrazabilidadService.serializarAsignacion(asignacion);
 
-        // 5. Aplicar cambios
+        // 5. Aplicar cambios y sanitizar texto contra XSS/SQLi
         if (dto.estado !== undefined) asignacion.estado = dto.estado;
-        if (dto.notas !== undefined) asignacion.notas = dto.notas;
+        if (dto.notas !== undefined) asignacion.notas = this.utils.sanitizeText(dto.notas);
 
         const saved = await this.asignacionRepo.save(asignacion);
 
