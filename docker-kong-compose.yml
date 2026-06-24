@@ -61,6 +61,26 @@ services:
       - kong-net
     restart: on-failure
 
+  # Base de datos Trazabilidad
+  trazabilidad-database:
+    image: postgres:16-alpine
+    container_name: trazabilidad-database
+    environment:
+      POSTGRES_DB: TrazabilidadDB
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: xasmdno123XAW2342as
+    ports:
+      - "5440:5432"
+    networks:
+      - kong-net
+    volumes:
+      - trazabilidad_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Servicio Vehiculos (NestJS - Puerto 3000)
   vehiculos:
     image: vehiculos:latest 
@@ -134,13 +154,42 @@ services:
       usuarios-database:
         condition: service_healthy
     restart: unless-stopped
+
+  # Servicio Trazabilidad (NestJS - Puerto 3002)
+  trazabilidad:
+    image: trazabilidad:latest
+    container_name: trazabilidad
+    build:
+      context: ./trazabilidad
+      dockerfile: trazabilidad.dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - DB_HOST=trazabilidad-database
+      - DB_PORT=5432
+      - DB_USUARIO=admin_user
+      - DB_CONTRASENA=xasmdno123XAW2342as
+      - DB_NOMBRE=TrazabilidadDB
+      - VEHICULOS_SERVICE_URL=http://vehiculos:3000
+      - USUARIOS_SERVICE_URL=http://usuarios:5000
+    ports:
+      - "3002:3002"
+    networks:
+      - kong-net
+    depends_on:
+      trazabilidad-database:
+        condition: service_healthy
+      vehiculos:
+        condition: service_started
+    restart: unless-stopped
+
   #Unificacion de swaggers
   swagger-ui:
     image: swaggerapi/swagger-ui:latest
     container_name: swagger-ui
     environment:
       - URLS_PRIMARY_NAME=Usuarios
-      - URLS=[{"name":"Vehículos","url":"http://localhost:3000/api-json"},{"name":"Usuarios","url":"http://localhost:5000/docs-json"},{"name":"Zonas","url":"http://localhost:8080/v3/api-docs"}]
+      - URLS=[{"name":"Vehículos","url":"http://localhost:3000/api-json"},{"name":"Usuarios","url":"http://localhost:5000/docs-json"},{"name":"Zonas","url":"http://localhost:8080/v3/api-docs"},{"name":"Trazabilidad","url":"http://localhost:3002/docs-json"}]
     ports:
       - "8085:8080"
     networks:
@@ -193,3 +242,4 @@ services:
 volumes:
   usuarios_postgres_data:
   postgres_data:
+  trazabilidad_postgres_data:
