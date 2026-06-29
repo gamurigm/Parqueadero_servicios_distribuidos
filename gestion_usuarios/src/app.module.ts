@@ -16,6 +16,7 @@ import { Role } from './roles/entities/role.entity';
 import { RolesUsuarios } from './roles_usuario/entities/roles_usuario.entity';
 import { Natural } from './persona/entities/tipos/natural.entity';
 import { Juridica } from './persona/entities/tipos/juridica.entity';
+import { RefreshToken } from './auth/entities/refresh-token.entity';
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { Juridica } from './persona/entities/tipos/juridica.entity';
         username: configService.get('DB_USER', 'admin_user'),
         password: configService.get('DB_PASSWORD', 'xasmdno123XAW2342as'),
         database: configService.get('DB_NAME', 'UsuariosDB'),
-        entities: [Person, User, Role, RolesUsuarios, Natural, Juridica],
+        entities: [Person, User, Role, RolesUsuarios, Natural, Juridica, RefreshToken],
         synchronize: true,
         logging: true,
       }),

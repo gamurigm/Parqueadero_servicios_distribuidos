@@ -25,8 +25,8 @@ export class RolesUsuarioService {
     
   async create(createRolesUsuarioDto: CreateRolesUsuarioDto) {
         
-        const idUser = this.utils.sanitizeString("id usuario",createRolesUsuarioDto.id_user);
-        const idRol = this.utils.sanitizeString("id rol",createRolesUsuarioDto.id_rol);
+        const idUser = this.utils.validateUUID(createRolesUsuarioDto.id_user);
+        const idRol = this.utils.validateUUID(createRolesUsuarioDto.id_rol);
 
         const user = await this.repositorioUsuario.findOne({
             where: { id: idUser}

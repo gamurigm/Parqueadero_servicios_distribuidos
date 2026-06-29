@@ -1,6 +1,7 @@
 import { Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, Entity, OneToOne, JoinColumn, OneToMany } from 'typeorm';
 import { Person } from '../../persona/entities/persona.entity';
 import { RolesUsuarios } from '../../roles_usuario/entities/roles_usuario.entity';
+import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 
 @Entity('usuarios')
 export class User {
@@ -31,4 +32,7 @@ export class User {
 
     @OneToMany(() => RolesUsuarios, (rolesUsuario) => rolesUsuario.user)
     rolesUsuarios!: RolesUsuarios[];
+
+    @OneToMany(() => RefreshToken, (rt) => rt.usuario)
+    refreshTokens!: RefreshToken[];
 }
