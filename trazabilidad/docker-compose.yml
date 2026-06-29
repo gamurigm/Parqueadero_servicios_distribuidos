@@ -1,0 +1,24 @@
+# docker-compose local para desarrollo del servicio de trazabilidad
+# Solo levanta la base de datos - el servicio se ejecuta con npm run start:dev
+
+services:
+  trazabilidad-database:
+    image: postgres:16-alpine
+    container_name: trazabilidad-database
+    environment:
+      POSTGRES_DB: TrazabilidadDB
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: xasmdno123XAW2342as
+    ports:
+      - "5440:5432"
+    volumes:
+      - trazabilidad_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  trazabilidad_postgres_data:

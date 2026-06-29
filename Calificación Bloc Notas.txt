@@ -1,0 +1,8 @@
+Base: 10
+Crear vehiculo: 2.5
+Asignar vehiculo a propietario: 1.5
+	Campos de entrada poco amigable
+Registro trazabilidad: 2
+	No hay mensajes agradables
+Consulta de autos asignados usuario X: 2
+	No hay mensajes agradables
