@@ -28,7 +28,7 @@ async function bootstrap() {
         .setTitle('API Usuarios')
         .setDescription('Gestión de usuarios')
         .setVersion('1.0')
-        .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'access-token')
+        .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', name: 'JWT', description: 'Ingresa tu JWT token', in: 'header' }, 'JWT-auth')
         .addServer('http://localhost:5000', 'Local - Directo')
         .addServer('http://host.docker.internal:5000', 'Docker - Host')
         .addServer('http://localhost:8000/usuarios', 'Kong Gateway')
@@ -45,6 +45,7 @@ async function bootstrap() {
             defaultModelsExpandDepth: 1,
             defaultModelExpandDepth: 1,
             docExpansion: 'list',
+            authActions: { default: { name: 'JWT-auth', schema: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, value: 'Bearer <token>' } }
         },
         customSiteTitle: 'API Usuarios',
     });

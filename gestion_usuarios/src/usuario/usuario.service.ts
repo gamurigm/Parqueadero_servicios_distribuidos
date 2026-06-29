@@ -195,4 +195,13 @@ export class UsuarioService {
       
     return {message:"usuario eliminado"};
   }
+
+  async findByUsernameWithPassword(username: string): Promise<User | null> {
+    const usernameSnt = this.utils.sanitizeString("nombre usuario", username);
+    return this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.username = :username', { username: usernameSnt })
+      .getOne();
+  }
 }
