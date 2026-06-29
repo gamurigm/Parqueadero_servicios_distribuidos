@@ -18,6 +18,9 @@ export class RefreshToken {
   @Column({ default: false })
   revoked!: boolean;
 
+  @Column('simple-array', { nullable: true })
+  roles!: string[];
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

@@ -72,7 +72,10 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const { username, password } = loginDto;
 
-    const user = await this.usuarioService.findByUsernameWithPassword(username);
+    // Sanitizar entradas antes de usarlas
+    const usernameSnt = this.utils.sanitizeString('nombre usuario', username);
+
+    const user = await this.usuarioService.findByUsernameWithPassword(usernameSnt);
 
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
@@ -88,16 +91,12 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const roles = await this.rolesUsuarioRepository.find({
+    const rolesAsignados = await this.rolesUsuarioRepository.find({
       where: { id_usuario: user.id, activo: true },
       relations: { role: true },
     });
 
-    const roleNames = roles.map((r) => r.role.nombre);
-
-    // Update lastLogin
-    // Note: since we removed userRepository, we would ideally do this via usuarioService if it had a method.
-    // For now we skip lastLogin update since we don't have direct access, or we can add a method to UsuarioService later.
+    const roleNames = rolesAsignados.map((r) => r.role.nombre);
 
     const payload = { sub: user.id, username: user.username, roles: roleNames };
     const access_token = this.jwtService.sign(payload);
@@ -106,10 +105,12 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
+    // Persistir roles en el refresh token para no tener que re-consultar en cada renovación
     const refreshToken = this.refreshTokenRepository.create({
       token: tokenString,
       usuarioId: user.id,
       expiresAt,
+      roles: roleNames,
     });
     await this.refreshTokenRepository.save(refreshToken);
 
@@ -140,11 +141,8 @@ export class AuthService {
     await this.refreshTokenRepository.save(refreshToken);
 
     const user = refreshToken.usuario;
-    const roles = await this.rolesUsuarioRepository.find({
-      where: { id_usuario: user.id, activo: true },
-      relations: { role: true },
-    });
-    const roleNames = roles.map((r) => r.role.nombre);
+    // Usar roles persistidos en el refresh token (evita re-consultar roles a la DB)
+    const roleNames = refreshToken.roles ?? [];
 
     const payload = { sub: user.id, username: user.username, roles: roleNames };
     const access_token = this.jwtService.sign(payload);
@@ -157,6 +155,7 @@ export class AuthService {
       token: tokenString,
       usuarioId: user.id,
       expiresAt,
+      roles: roleNames,
     });
     await this.refreshTokenRepository.save(newRefreshToken);
 
