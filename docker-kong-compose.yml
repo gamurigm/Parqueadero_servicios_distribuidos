@@ -96,6 +96,7 @@ services:
       - DB_USUARIO=admin_user
       - DB_CONTRASENA=xasmdno123XAW2342as
       - DB_NOMBRE=UsuariosDB
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
     ports:
       - "3000:3000"  
     networks:
@@ -120,6 +121,7 @@ services:
       - DB_USER=admin_user
       - DB_PASSWORD=xasmdno123XAW2342as
       - DB_NAME=UsuariosDB
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
     ports:
       - "5000:5000"
     networks:
@@ -146,6 +148,7 @@ services:
       - SPRING_JPA_SHOW_SQL=true
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
       - SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL=true
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
     ports:
       - "8080:8080"
     networks:
