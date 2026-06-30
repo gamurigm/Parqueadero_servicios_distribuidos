@@ -101,7 +101,7 @@ export class AuthService {
     const payload = {
       iss: this.configService.get<string>('JWT_ISSUER', 'gestion-usuarios'),
       sub: user.id,
-      aud: this.configService.get<string>('JWT_AUDIENCE', 'gestion-usuarios'),
+      aud: this.configService.get<string>('JWT_AUDIENCE', 'parqueadero-api'),
       jti: crypto.randomUUID(),
       username: user.username,
       roles: roleNames,
@@ -154,7 +154,7 @@ export class AuthService {
     const payload = {
       iss: this.configService.get<string>('JWT_ISSUER', 'gestion-usuarios'),
       sub: user.id,
-      aud: this.configService.get<string>('JWT_AUDIENCE', 'gestion-usuarios'),
+      aud: this.configService.get<string>('JWT_AUDIENCE', 'parqueadero-api'),
       jti: crypto.randomUUID(),
       username: user.username,
       roles: roleNames,
