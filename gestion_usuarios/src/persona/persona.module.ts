@@ -15,5 +15,6 @@ import { Juridica } from './entities/tipos/juridica.entity';
   ],
   controllers: [PersonaController],
   providers: [PersonaService],
+  exports: [PersonaService],
 })
 export class PersonaModule {}
