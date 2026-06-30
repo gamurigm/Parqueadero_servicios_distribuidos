@@ -2,7 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Put } from '@nestjs/
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { Resource } from '../opa/decorators/resource.decorator';
 
 @ApiTags('roles')
 @Controller('roles')
@@ -10,6 +11,8 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Post()
+  @ApiBearerAuth('JWT-auth')
+  @Resource('roles.create')
   @ApiOperation({ summary: 'Crear un nuevo rol' })
   @ApiResponse({ status: 201, description: 'Rol creado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
@@ -18,6 +21,8 @@ export class RolesController {
   }
 
   @Get()
+  @ApiBearerAuth('JWT-auth')
+  @Resource('roles.read')
   @ApiOperation({ summary: 'Obtener todos los roles' })
   @ApiResponse({ status: 200, description: 'Lista de roles obtenida exitosamente' })
   findAll() {
@@ -25,6 +30,8 @@ export class RolesController {
   }
 
   @Get(':id')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('roles.read')
   @ApiOperation({ summary: 'Obtener un rol por ID' })
   @ApiParam({ name: 'id', description: 'ID del rol', example: '550e8400-e29b-41d4-a716-446655440000' })
   @ApiResponse({ status: 200, description: 'Rol encontrado' })
@@ -34,6 +41,8 @@ export class RolesController {
   }
 
   @Put(':id')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('roles.update')
   @ApiOperation({ summary: 'Actualizar un rol' })
   @ApiParam({ name: 'id', description: 'ID del rol a actualizar' })
   @ApiResponse({ status: 200, description: 'Rol actualizado exitosamente' })
@@ -43,6 +52,8 @@ export class RolesController {
   }
 
   @Patch(':id')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('roles.activate')
   @ApiOperation({ summary: 'Activar o desactivar un rol' })
   @ApiParam({ name: 'id', description: 'ID del rol' })
   @ApiResponse({ status: 200, description: 'Estado del rol actualizado' })
@@ -52,6 +63,8 @@ export class RolesController {
   }
 
   @Delete(':id')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('roles.delete')
   @ApiOperation({ summary: 'Eliminar un rol' })
   @ApiParam({ name: 'id', description: 'ID del rol a eliminar' })
   @ApiResponse({ status: 200, description: 'Rol eliminado exitosamente' })

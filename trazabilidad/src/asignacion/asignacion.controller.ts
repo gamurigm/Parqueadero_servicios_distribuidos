@@ -14,6 +14,7 @@ import {
     ApiOperation,
     ApiResponse,
     ApiParam,
+    ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AsignacionService } from './asignacion.service';
 import { TrazabilidadService } from '../trazabilidad/trazabilidad.service';
@@ -40,6 +41,7 @@ export class AsignacionController {
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({
         summary: 'RF1 - Crear asignación vehículo-propietario',
         description: 'Asocia un vehículo a un propietario usando clave compuesta (userId + vehicleId). ' +
@@ -54,6 +56,7 @@ export class AsignacionController {
     }
 
     @Get()
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'Listar todas las asignaciones' })
     @ApiResponse({ status: 200, description: 'Lista de asignaciones' })
     listar() {
@@ -65,6 +68,7 @@ export class AsignacionController {
     // ──────────────────────────────────────────────────
 
     @Get('propietario/:userId')
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({
         summary: 'RF3 - Obtener flota de vehículos de un propietario',
         description: 'Retorna la lista de vehículos asignados al propietario, ' +
@@ -83,6 +87,7 @@ export class AsignacionController {
 
     @ApiTags('Trazabilidad')
     @Get('trazabilidad/historial')
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'RF2 - Obtener historial completo de auditoría' })
     @ApiResponse({ status: 200, description: 'Todos los eventos de auditoría' })
     listarTrazabilidad() {
@@ -91,6 +96,7 @@ export class AsignacionController {
 
     @ApiTags('Trazabilidad')
     @Get('trazabilidad/propietario/:userId')
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'RF2 - Historial de auditoría de un propietario' })
     @ApiParam({ name: 'userId', description: 'UUID del propietario' })
     listarTrazabilidadPorPropietario(@Param('userId') userId: string) {
@@ -99,6 +105,7 @@ export class AsignacionController {
 
     @ApiTags('Trazabilidad')
     @Get('trazabilidad/:userId/:vehicleId')
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'RF2 - Historial de auditoría de una asignación específica' })
     @ApiParam({ name: 'userId', description: 'UUID del propietario' })
     @ApiParam({ name: 'vehicleId', description: 'UUID del vehículo' })
@@ -114,6 +121,7 @@ export class AsignacionController {
     // ──────────────────────────────────────────────────
 
     @Get(':userId/:vehicleId')
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({ summary: 'RF1 - Buscar asignación por clave compuesta (userId + vehicleId)' })
     @ApiParam({ name: 'userId', description: 'UUID del propietario', example: 'a3f1b2c4-1234-4abc-89de-1234567890ab' })
     @ApiParam({ name: 'vehicleId', description: 'UUID del vehículo', example: 'b4e2c3d5-5678-4def-90ef-234567890bcd' })
@@ -127,6 +135,7 @@ export class AsignacionController {
     }
 
     @Put(':userId/:vehicleId')
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({
         summary: 'RF1 - Actualizar asignación (estado/notas)',
         description: 'Actualiza el estado o notas de una asignación. ' +
@@ -146,6 +155,7 @@ export class AsignacionController {
     }
 
     @Delete(':userId/:vehicleId')
+    @ApiBearerAuth('JWT-auth')
     @ApiOperation({
         summary: 'RF1 - Eliminar asignación',
         description: 'Elimina una asignación por su clave compuesta. ' +

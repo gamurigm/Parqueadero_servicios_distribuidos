@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
@@ -6,6 +7,8 @@ import { AsignacionModule } from './asignacion/asignacion.module';
 import { TrazabilidadModule } from './trazabilidad/trazabilidad.module';
 import { VehiculosClientModule } from './vehiculos-client/vehiculos-client.module';
 import { UsuariosClientModule } from './usuarios-client/usuarios-client.module';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { Asignacion } from './asignacion/entities/asignacion.entity';
 import { EventoTrazabilidad } from './trazabilidad/entities/trazabilidad.entity';
 
@@ -30,15 +33,18 @@ import { EventoTrazabilidad } from './trazabilidad/entities/trazabilidad.entity'
       }),
       inject: [ConfigService],
     }),
-    // HttpModule global para llamadas a otros microservicios
     HttpModule.register({
       timeout: 5000,
       maxRedirects: 5,
     }),
+    AuthModule,
     AsignacionModule,
     TrazabilidadModule,
     VehiculosClientModule,
     UsuariosClientModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
 export class AppModule {}

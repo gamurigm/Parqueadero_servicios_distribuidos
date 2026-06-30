@@ -14,20 +14,24 @@ import java.nio.charset.StandardCharsets;
 public class JwtService {
 
     private final SecretKey secretKey;
+    private final String expectedIssuer;
 
-    public JwtService(@Value("${JWT_SECRET:super-secret-key-change-in-production}") String secret) {
+    public JwtService(@Value("${JWT_SECRET:super-secret-key-change-in-production}") String secret,
+                      @Value("${JWT_ISSUER:gestion-usuarios}") String expectedIssuer) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.expectedIssuer = expectedIssuer;
     }
 
     public Claims validateToken(String token) {
         try {
             return Jwts.parser()
                     .verifyWith(secretKey)
+                    .requireIssuer(expectedIssuer)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (JwtException | IllegalArgumentException e) {
-            throw new RuntimeException("Token JWT inválido o expirado", e);
+            throw new RuntimeException("Token JWT inválido o expirado: " + e.getMessage(), e);
         }
     }
 }

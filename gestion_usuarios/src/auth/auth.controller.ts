@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterAuthDto } from './dto/register-auth.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { Public } from './decorators/public.decorator';
+import { Resource } from '../opa/decorators/resource.decorator';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -47,6 +48,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
+  @Resource('auth.logout')
   @ApiOperation({ summary: 'Cerrar sesión y revocar el token de refresh' })
   @ApiBody({ type: RefreshDto })
   @ApiResponse({ status: 200, description: 'Sesión cerrada exitosamente' })
@@ -56,6 +58,7 @@ export class AuthController {
 
   @Get('profile')
   @ApiBearerAuth('JWT-auth')
+  @Resource('auth.profile')
   @ApiOperation({ summary: 'Obtener el perfil del usuario autenticado' })
   @ApiResponse({ status: 200, description: 'Perfil del usuario retornado' })
   @ApiResponse({ status: 401, description: 'No autorizado' })

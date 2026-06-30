@@ -23,11 +23,11 @@ export class CreateAsignacionDto {
     vehicleId: string;
 
     @ApiPropertyOptional({
-        description: 'Descripcion adicionales sobre la asignación',
+        description: 'Descripción adicional sobre la asignación',
         example: 'Vehículo asignado para estacionamiento zona norte',
     })
     @IsOptional()
-    @IsString({ message: 'Las notas deben ser un texto válido' })
-    @MaxLength(500, { message: 'Las notas no pueden exceder los 500 caracteres' })
-    notas?: string;
+    @IsString({ message: 'La descripción debe ser un texto válido' })
+    @MaxLength(500, { message: 'La descripción no puede exceder los 500 caracteres' })
+    descripcion?: string;
 }
