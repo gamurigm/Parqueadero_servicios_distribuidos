@@ -23,7 +23,7 @@ allow if {
 }
 
 # roles.read: Cualquier usuario autenticado
-allow {
+allow if {
     startswith(input.resource, "roles.read")
     input.user.id != ""
 }
