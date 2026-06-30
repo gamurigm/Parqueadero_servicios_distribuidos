@@ -6,18 +6,18 @@ import data.authz.has_role
 default allow = false
 
 # Admin universal
-allow {
+allow if {
     global_allow
 }
 
 # usuarios.read: Cualquier usuario autenticado
-allow {
+allow if {
     input.resource == "usuarios.read"
     input.user.id != ""
 }
 
 # usuarios.update: El propio usuario o admin
-allow {
+allow if {
     input.resource == "usuarios.update"
     input.user.id != ""
 }
@@ -29,19 +29,19 @@ allow {
 }
 
 # personas.read: Cualquier usuario autenticado
-allow {
+allow if {
     input.resource == "personas.read"
     input.user.id != ""
 }
 
 # auth.profile: Cualquier usuario autenticado
-allow {
+allow if {
     input.resource == "auth.profile"
     input.user.id != ""
 }
 
 # auth.logout: Cualquier usuario autenticado
-allow {
+allow if {
     input.resource == "auth.logout"
     input.user.id != ""
 }
