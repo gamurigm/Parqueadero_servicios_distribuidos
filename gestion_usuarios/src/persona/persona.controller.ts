@@ -2,7 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Put } from '@nestjs/
 import { PersonaService } from './persona.service';
 import { CreatePersonaDto } from './dto/create-persona.dto';
 import { UpdatePersonaDto } from './dto/update-persona.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { Resource } from '../opa/decorators/resource.decorator';
 
 @ApiTags('persona')
 @Controller('persona')
@@ -10,6 +11,8 @@ export class PersonaController {
   constructor(private readonly personaService: PersonaService) {}
 
   @Post()
+  @ApiBearerAuth('JWT-auth')
+  @Resource('personas.create')
   @ApiOperation({ summary: 'Crear una nueva persona' })
   @ApiResponse({ status: 201, description: 'Persona creada exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
@@ -18,6 +21,8 @@ export class PersonaController {
   }
 
   @Get()
+  @ApiBearerAuth('JWT-auth')
+  @Resource('personas.read')
   @ApiOperation({ summary: 'Obtener todas las personas' })
   @ApiResponse({ status: 200, description: 'Lista de personas obtenida exitosamente' })
   findAll() {
@@ -25,6 +30,8 @@ export class PersonaController {
   }
 
   @Get('/:id')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('personas.read')
   @ApiOperation({ summary: 'Obtener una persona por ID' })
   @ApiParam({ name: 'id', description: 'ID de la persona', example: '550e8400-e29b-41d4-a716-446655440000' })
   @ApiResponse({ status: 200, description: 'Persona encontrada' })
@@ -34,6 +41,8 @@ export class PersonaController {
   }
 
   @Put('/:id')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('personas.update')
   @ApiOperation({ summary: 'Actualizar una persona' })
   @ApiParam({ name: 'id', description: 'ID de la persona a actualizar' })
   @ApiResponse({ status: 200, description: 'Persona actualizada exitosamente' })
@@ -43,6 +52,8 @@ export class PersonaController {
   }
 
   @Patch('/:id/cambio-de-estado')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('personas.activate')
   @ApiOperation({ summary: 'Cambiar estado de una persona (activar/desactivar)' })
   @ApiParam({ name: 'id', description: 'ID de la persona' })
   @ApiResponse({ status: 200, description: 'Estado de la persona actualizado' })
@@ -52,6 +63,8 @@ export class PersonaController {
   }
 
   @Delete('/:id')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('personas.delete')
   @ApiOperation({ summary: 'Eliminar una persona' })
   @ApiParam({ name: 'id', description: 'ID de la persona a eliminar' })
   @ApiResponse({ status: 200, description: 'Persona eliminada exitosamente' })

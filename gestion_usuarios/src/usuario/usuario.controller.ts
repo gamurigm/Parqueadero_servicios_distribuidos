@@ -2,7 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Put } from '@nestjs/
 import { UsuarioService } from './usuario.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Resource } from '../opa/decorators/resource.decorator';
 
 @ApiTags('usuarios')
 @Controller('usuario')
@@ -10,6 +11,8 @@ export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
 
   @Post()
+  @ApiBearerAuth('JWT-auth')
+  @Resource('usuarios.create')
   @ApiOperation({ 
     summary: 'Crear un nuevo usuario',
     description: 'Crea un usuario con username y password'
@@ -27,6 +30,8 @@ export class UsuarioController {
   }
 
   @Get()
+  @ApiBearerAuth('JWT-auth')
+  @Resource('usuarios.read')
   @ApiOperation({ 
     summary: 'Obtener todos los usuarios',
     description: 'Retorna la lista de todos los usuarios registrados'
@@ -40,6 +45,8 @@ export class UsuarioController {
   }
 
   @Get('/:id')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('usuarios.read')
   @ApiOperation({ 
     summary: 'Obtener un usuario por ID',
     description: 'Retorna los detalles de un usuario específico'
@@ -62,6 +69,8 @@ export class UsuarioController {
   }
 
   @Put('/:id')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('usuarios.update')
   @ApiOperation({ 
     summary: 'Actualizar usuario',
     description: 'Actualiza los datos de un usuario existente'
@@ -83,6 +92,8 @@ export class UsuarioController {
   }
 
   @Patch('/:id')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('usuarios.update')
   @ApiOperation({ 
     summary: 'Actualizar contraseña del usuario',
     description: 'Cambia la contraseña de un usuario específico'
@@ -111,6 +122,8 @@ export class UsuarioController {
   }
 
   @Patch('/:id/activar-desactivar')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('usuarios.activate')
   @ApiOperation({ 
     summary: 'Activar o desactivar usuario',
     description: 'Cambia el estado activo/inactivo de un usuario'
@@ -132,6 +145,8 @@ export class UsuarioController {
   }
 
   @Delete('/:id')
+  @ApiBearerAuth('JWT-auth')
+  @Resource('usuarios.delete')
   @ApiOperation({ 
     summary: 'Eliminar usuario',
     description: 'Elimina un usuario de la base de datos'

@@ -16,6 +16,7 @@ import { Role } from '../roles/entities/role.entity';
 import { UsuarioModule } from '../usuario/usuario.module';
 import { PersonaModule } from '../persona/persona.module';
 import { RolesUsuarioModule } from '../roles_usuario/roles_usuario.module';
+import { OpaModule } from '../opa/opa.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { RolesUsuarioModule } from '../roles_usuario/roles_usuario.module';
     forwardRef(() => UsuarioModule),
     PersonaModule,
     RolesUsuarioModule,
+    OpaModule,
   ],
   controllers: [AuthController],
   providers: [

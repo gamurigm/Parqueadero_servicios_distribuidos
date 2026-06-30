@@ -7,7 +7,12 @@ import { Repository } from 'typeorm';
 import { User } from '../../usuario/entities/usuario.entity';
 
 export interface JwtPayload {
+  iss: string;
   sub: string;
+  aud: string;
+  exp: number;
+  iat: number;
+  jti: string;
   username: string;
   roles: string[];
 }
@@ -29,6 +34,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload) {
     const user = await this.userRepository.findOne({ where: { id: payload.sub } });
     if (!user || !user.active) throw new UnauthorizedException('Usuario no válido o inactivo');
-    return { id: payload.sub, username: payload.username, roles: payload.roles };
+    return {
+      id: payload.sub,
+      username: payload.username,
+      roles: payload.roles,
+      iss: payload.iss,
+      aud: payload.aud,
+      jti: payload.jti,
+    };
   }
 }

@@ -9,7 +9,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterAuthDto } from './dto/register-auth.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { Utils } from '../utils/utils';
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
 import { PersonaService } from '../persona/persona.service';
 import { UsuarioService } from '../usuario/usuario.service';
 import { RolesUsuarioService } from '../roles_usuario/roles_usuario.service';
@@ -98,7 +98,14 @@ export class AuthService {
 
     const roleNames = rolesAsignados.map((r) => r.role.nombre);
 
-    const payload = { sub: user.id, username: user.username, roles: roleNames };
+    const payload = {
+      iss: this.configService.get<string>('JWT_ISSUER', 'gestion-usuarios'),
+      sub: user.id,
+      aud: this.configService.get<string>('JWT_AUDIENCE', 'gestion-usuarios'),
+      jti: crypto.randomUUID(),
+      username: user.username,
+      roles: roleNames,
+    };
     const access_token = this.jwtService.sign(payload);
 
     const tokenString = crypto.randomBytes(40).toString('hex');
@@ -144,7 +151,14 @@ export class AuthService {
     // Usar roles persistidos en el refresh token (evita re-consultar roles a la DB)
     const roleNames = refreshToken.roles ?? [];
 
-    const payload = { sub: user.id, username: user.username, roles: roleNames };
+    const payload = {
+      iss: this.configService.get<string>('JWT_ISSUER', 'gestion-usuarios'),
+      sub: user.id,
+      aud: this.configService.get<string>('JWT_AUDIENCE', 'gestion-usuarios'),
+      jti: crypto.randomUUID(),
+      username: user.username,
+      roles: roleNames,
+    };
     const access_token = this.jwtService.sign(payload);
 
     const tokenString = crypto.randomBytes(40).toString('hex');

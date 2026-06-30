@@ -17,6 +17,7 @@ import { RolesUsuarios } from './roles_usuario/entities/roles_usuario.entity';
 import { Natural } from './persona/entities/tipos/natural.entity';
 import { Juridica } from './persona/entities/tipos/juridica.entity';
 import { RefreshToken } from './auth/entities/refresh-token.entity';
+import { OpaModule } from './opa/opa.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { RefreshToken } from './auth/entities/refresh-token.entity';
     PersonaModule,
     RolesModule,
     RolesUsuarioModule,
+    OpaModule,
   ],
   controllers: [AppController],
   providers: [

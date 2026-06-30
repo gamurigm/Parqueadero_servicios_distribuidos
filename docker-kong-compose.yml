@@ -122,6 +122,8 @@ services:
       - DB_PASSWORD=xasmdno123XAW2342as
       - DB_NAME=UsuariosDB
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
+      - JWT_AUDIENCE=parqueadero-api
+      - OPA_URL=http://opa:8181/v1/data
     ports:
       - "5000:5000"
     networks:
@@ -149,6 +151,7 @@ services:
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
       - SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL=true
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
+      - JWT_ISSUER=gestion-usuarios
     ports:
       - "8080:8080"
     networks:
@@ -175,6 +178,8 @@ services:
       - DB_NOMBRE=TrazabilidadDB
       - VEHICULOS_SERVICE_URL=http://vehiculos:3000
       - USUARIOS_SERVICE_URL=http://usuarios:5000
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
+      - JWT_ISSUER=gestion-usuarios
     ports:
       - "3002:3002"
     networks:
@@ -200,6 +205,25 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
+      
+  # OPA - Open Policy Agent
+  opa:
+    image: openpolicyagent/opa:latest
+    container_name: opa-server
+    ports:
+      - "8181:8181"
+    networks:
+      - kong-net
+    volumes:
+      - ./opa/policies:/policies
+    command:
+      - "run"
+      - "--server"
+      - "--log-level=debug"
+      - "--watch"
+      - "/policies"
+    restart: unless-stopped
+
   # KONG GATEWAY
   kong:
     image: kong:latest

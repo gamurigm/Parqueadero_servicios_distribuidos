@@ -19,11 +19,11 @@ export class UpdateAsignacionDto {
     estado?: number;
 
     @ApiPropertyOptional({
-        description: 'Descripcion adicionales sobre la asignación',
+        description: 'Descripción adicional sobre la asignación',
         example: 'Asignación suspendida temporalmente',
     })
     @IsOptional()
-    @IsString({ message: 'Las notas deben ser un texto válido' })
-    @MaxLength(500, { message: 'Las notas no pueden exceder los 500 caracteres' })
-    notas?: string;
+    @IsString({ message: 'La descripción debe ser un texto válido' })
+    @MaxLength(140, { message: 'La descripción no puede exceder los 500 caracteres' })
+    descripcion?: string;
 }
