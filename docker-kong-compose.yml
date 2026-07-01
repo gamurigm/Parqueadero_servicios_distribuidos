@@ -141,7 +141,7 @@ services:
     networks:
       - kong-net
     depends_on:
-      vehiculos-database:  # ✅ CORREGIDO - Antes: usuarios-database
+      vehiculos-database:
         condition: service_healthy
     restart: unless-stopped
 
@@ -274,8 +274,93 @@ services:
       test: ["CMD", "kong", "health"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
+  # Inicialización de Kong 
+  kong-init:
+    image: alpine:latest
+    container_name: kong-init
+    depends_on:
+      kong:
+        condition: service_healthy
+    networks:
+      - kong-net
+    command: |
+      sh -c '
+        echo "Instalando curl..."
+        apk add --no-cache curl
+        
+        echo "Esperando a que Kong esté listo..."
+        sleep 15
+        
+        echo "Configurando servicios..."
+        
+        # Servicio de Usuarios
+        curl -s -X POST http://kong:8001/services \
+          --data name=usuarios-service \
+          --data url=http://usuarios:5000
+        
+        # Servicio de Vehículos
+        curl -s -X POST http://kong:8001/services \
+          --data name=vehiculos-service \
+          --data url=http://vehiculos:3000
+        
+        # Servicio de Zonas
+        curl -s -X POST http://kong:8001/services \
+          --data name=zonas-service \
+          --data url=http://zonas:8080
+        
+        # Servicio de Trazabilidad
+        curl -s -X POST http://kong:8001/services \
+          --data name=trazabilidad-service \
+          --data url=http://trazabilidad:3002
+        
+        
+        #  IMPORTANTE: strip_path=true para que Kong quite el prefijo /usuarios
+        # Ruta para Usuarios - con strip_path=true
+        curl -s -X POST http://kong:8001/services/usuarios-service/routes \
+          --data "paths[]=/usuarios" \
+          --data name=usuarios-route \
+          --data strip_path=true \
+          --data preserve_host=false
+      
+        
+        # Rutas para Vehículos
+        curl -s -X POST http://kong:8001/services/vehiculos-service/routes \
+          --data "paths[]=/vehiculos" \
+          --data name=vehiculos-route \
+          --data strip_path=true \
+          --data preserve_host=false
+        
+        # Rutas para Zonas
+        curl -s -X POST http://kong:8001/services/zonas-service/routes \
+          --data "paths[]=/zonas" \
+          --data name=zonas-route \
+          --data strip_path=true \
+          --data preserve_host=false
+        
+        # Rutas para Trazabilidad
+        curl -s -X POST http://kong:8001/services/trazabilidad-service/routes \
+          --data "paths[]=/trazabilidad" \
+          --data name=trazabilidad-route \
+          --data strip_path=true \
+          --data preserve_host=false
+        
+        echo "Configurando plugins..."
+        
+        # CORS
+        curl -s -X POST http://kong:8001/plugins \
+          --data name=cors \
+          --data "config.origins=*" \
+          --data "config.methods=GET, POST, PUT, DELETE, PATCH, OPTIONS" \
+          --data "config.headers=Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Auth-Token, Authorization" \
+          --data "config.exposed_headers=X-Auth-Token" \
+          --data "config.credentials=true" \
+          --data "config.max_age=3600"
+        
+      
+      '
+    restart: "no"
   #konga para usar kong
   konga:
     image: pantsel/konga:latest
