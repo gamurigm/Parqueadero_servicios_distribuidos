@@ -1,5 +1,7 @@
 package authz.vehiculos
 
+import rego.v1
+
 import data.authz.allow as global_allow
 import data.authz.has_role
 

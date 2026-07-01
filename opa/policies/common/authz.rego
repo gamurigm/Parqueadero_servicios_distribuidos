@@ -1,5 +1,7 @@
 package authz
 
+import rego.v1
+
 default allow = false
 
 # Admin universal: un admin tiene acceso a todo
