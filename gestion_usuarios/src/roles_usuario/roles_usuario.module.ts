@@ -5,10 +5,12 @@ import { RolesUsuarioController } from './roles_usuario.controller';
 import { RolesUsuarios } from './entities/roles_usuario.entity';
 import { User } from '../usuario/entities/usuario.entity';
 import { Role } from '../roles/entities/role.entity';
+import { OpaModule } from '../opa/opa.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RolesUsuarios, User, Role])
+    TypeOrmModule.forFeature([RolesUsuarios, User, Role]),
+    OpaModule
   ],
   controllers: [RolesUsuarioController],
   providers: [RolesUsuarioService],
