@@ -215,25 +215,6 @@ services:
       opa:
         condition: service_started
     restart: unless-stopped
-
-  # Open Policy Agent (OPA)
-  opa:
-    image: openpolicyagent/opa:latest
-    container_name: opa
-    ports:
-      - "8181:8181"
-    volumes:
-      - ./opa/policies:/policies
-    command:
-      - "run"
-      - "--server"
-      - "--addr"
-      - "0.0.0.0:8181"
-      - "/policies"
-    networks:
-      - kong-net
-    restart: unless-stopped
-
   # Servicio Zonas (Spring Boot - Puerto 8080)
   zonas:
     image: zonas:latest
