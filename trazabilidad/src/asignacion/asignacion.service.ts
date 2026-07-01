@@ -12,17 +12,10 @@ import { UpdateAsignacionDto } from './dto/update-asignacion.dto';
 import { FactoryAsignacion } from './factory/factory-asignacion';
 import { TrazabilidadService } from '../trazabilidad/trazabilidad.service';
 import { TipoAccion } from '../trazabilidad/entities/trazabilidad.entity';
-import { VehiculosClientService } from '../vehiculos-client/vehiculos-client.service';
+import { VehiculosClientService, VehiculoDetalle } from '../vehiculos-client/vehiculos-client.service';
 import { UsuariosClientService } from '../usuarios-client/usuarios-client.service';
 import { Utils } from '../utils/utils';
 
-/**
- * Servicio de Asignaciones Vehículo-Propietario.
- * SOLID:
- * - SRP: Solo gestiona la lógica de asignaciones
- * - OCP: Usa Factory para crear entidades (extensible sin modificar)
- * - DIP: Depende de TrazabilidadService e VehiculosClientService (abstracciones)
- */
 @Injectable()
 export class AsignacionService {
     private utils: Utils;
@@ -37,85 +30,69 @@ export class AsignacionService {
         this.utils = new Utils();
     }
 
-    /**
-     * RF1: Crea una nueva asignación vehículo-propietario.
-     * Reglas:
-     * - La clave compuesta (userId + vehicleId) debe ser única
-     * - Un vehículo solo puede tener UNA asignación activa a la vez
-     * Trigger: Registra evento CREACION en trazabilidad.
-     */
-    async crear(dto: CreateAsignacionDto): Promise<Asignacion> {
-        // 1. Validar UUIDs
+    async crear(dto: CreateAsignacionDto, authHeader?: string): Promise<any> {
         const userId = this.utils.validateUUID(dto.userId);
         const vehicleId = this.utils.validateUUID(dto.vehicleId);
 
-        // 2. Validar que el propietario realmente exista en el Microservicio de Usuarios
-        await this.usuariosClientService.validarPropietario(userId);
+        const propietario = await this.usuariosClientService.validarPropietario(userId, authHeader);
 
-        // 3. Validar que el vehículo realmente exista en el Microservicio de Vehículos
-        const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(vehicleId);
+        const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(vehicleId, authHeader);
         if (!vehiculoDetalle) {
-            throw new NotFoundException(`El vehículo con ID ${vehicleId} no existe en el sistema`);
+            throw new NotFoundException(`El vehiculo con ID ${vehicleId} no existe en el sistema`);
         }
 
-        // 4. Verificar que no exista ya esta asignación exacta
         const asignacionExistente = await this.asignacionRepo.findOne({
             where: { userId, vehicleId },
         });
 
         if (asignacionExistente) {
             throw new ConflictException(
-                `Ya existe una asignación para el usuario ${userId} con el vehículo ${vehicleId}`,
+                `Ya existe una asignacion para el usuario ${userId} con el vehiculo ${vehicleId}`,
             );
         }
 
-        // 3. RF1 - Verificar que el vehículo no esté activo con otro propietario
         const vehiculoActivo = await this.asignacionRepo.findOne({
             where: { vehicleId, estado: 1 },
         });
 
         if (vehiculoActivo) {
             throw new ConflictException(
-                `El vehículo ${vehicleId} ya está asignado activamente al propietario ${vehiculoActivo.userId}`,
+                `El vehiculo ${vehicleId} ya esta asignado activamente al propietario ${vehiculoActivo.userId}`,
             );
         }
 
-        // 5. Sanitizar campos de texto para prevenir XSS / SQLi
         if (dto.descripcion) {
             dto.descripcion = this.utils.sanitizeText(dto.descripcion);
         }
 
-        // 6. Crear entidad usando Factory (OCP)
         const asignacion = FactoryAsignacion.crear({ ...dto, userId, vehicleId });
         const saved = await this.asignacionRepo.save(asignacion);
 
-        // 7. RF2: Registrar evento de trazabilidad CREACION (automático)
-        const vehiculoInfo = vehiculoDetalle ? `${vehiculoDetalle.marca ?? ''} ${vehiculoDetalle.modelo ?? ''} (${vehiculoDetalle.placa ?? 'sin placa'})`.trim() : vehicleId;
+        const propietarioNombre = this.obtenerNombrePropietario(propietario);
+        const vehiculoInfo = this.obtenerEtiquetaVehiculo(vehicleId, vehiculoDetalle);
         await this.trazabilidadService.registrar(
             TipoAccion.CREACION,
             saved.userId,
             saved.vehicleId,
-            `Se creó asignación del vehículo ${vehiculoInfo} al propietario ${saved.userId}`,
+            `Se creo asignacion del vehiculo ${vehiculoInfo} al propietario ${propietarioNombre}`,
             null,
             TrazabilidadService.serializarAsignacion(saved),
         );
 
-        return saved;
+        return this.enriquecerAsignacion(saved, authHeader, propietario, vehiculoDetalle);
     }
 
-    /**
-     * Lista todas las asignaciones.
-     */
-    async listar(): Promise<Asignacion[]> {
-        return await this.asignacionRepo.find({
+    async listar(authHeader?: string): Promise<any[]> {
+        const asignaciones = await this.asignacionRepo.find({
             order: { fechaAsignacion: 'DESC' },
         });
+
+        return Promise.all(
+            asignaciones.map((asignacion) => this.enriquecerAsignacion(asignacion, authHeader)),
+        );
     }
 
-    /**
-     * Busca una asignación por su clave compuesta.
-     */
-    async buscarPorClave(userId: string, vehicleId: string): Promise<Asignacion> {
+    async buscarPorClave(userId: string, vehicleId: string, authHeader?: string): Promise<any> {
         const uid = this.utils.validateUUID(userId);
         const vid = this.utils.validateUUID(vehicleId);
 
@@ -125,33 +102,27 @@ export class AsignacionService {
 
         if (!asignacion) {
             throw new NotFoundException(
-                `No se encontró asignación para usuario ${uid} y vehículo ${vid}`,
+                `No se encontro asignacion para usuario ${uid} y vehiculo ${vid}`,
             );
         }
 
-        return asignacion;
+        return this.enriquecerAsignacion(asignacion, authHeader);
     }
 
-    /**
-     * Actualiza una asignación existente (estado y/o notas).
-     * Trigger: Registra evento MODIFICACION en trazabilidad.
-     */
-    async actualizar(userId: string, vehicleId: string, dto: UpdateAsignacionDto): Promise<Asignacion> {
+    async actualizar(userId: string, vehicleId: string, dto: UpdateAsignacionDto, authHeader?: string): Promise<any> {
         const uid = this.utils.validateUUID(userId);
         const vid = this.utils.validateUUID(vehicleId);
 
-        // 1. Buscar la asignación existente
         const asignacion = await this.asignacionRepo.findOne({
             where: { userId: uid, vehicleId: vid },
         });
 
         if (!asignacion) {
             throw new NotFoundException(
-                `No se encontró asignación para usuario ${uid} y vehículo ${vid}`,
+                `No se encontro asignacion para usuario ${uid} y vehiculo ${vid}`,
             );
         }
 
-        // 2. Verificar que haya cambios reales
         const sinCambios =
             (dto.estado === undefined || dto.estado === asignacion.estado) &&
             (dto.descripcion === undefined || dto.descripcion === asignacion.descripcion);
@@ -160,48 +131,44 @@ export class AsignacionService {
             throw new BadRequestException('No se detectaron cambios en los valores enviados');
         }
 
-        // 3. Si se activa el vehículo, verificar que no esté activo en otra asignación
         if (dto.estado === 1 && asignacion.estado === 0) {
             const otroActivo = await this.asignacionRepo.findOne({
                 where: { vehicleId: vid, estado: 1 },
             });
             if (otroActivo && otroActivo.userId !== uid) {
                 throw new ConflictException(
-                    `El vehículo ya está activo para otro propietario: ${otroActivo.userId}`,
+                    `El vehiculo ya esta activo para otro propietario: ${otroActivo.userId}`,
                 );
             }
         }
 
-        // 4. Guardar snapshot anterior para trazabilidad
         const payloadAnterior = TrazabilidadService.serializarAsignacion(asignacion);
 
-        // 5. Aplicar cambios y sanitizar texto contra XSS/SQLi
         if (dto.estado !== undefined) asignacion.estado = dto.estado;
         if (dto.descripcion !== undefined) asignacion.descripcion = this.utils.sanitizeText(dto.descripcion);
 
         const saved = await this.asignacionRepo.save(asignacion);
 
-        // 6. RF2: Registrar evento MODIFICACION (automático)
+        const propietario = await this.usuariosClientService.obtenerUsuario(saved.userId, authHeader);
+        const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(saved.vehicleId, authHeader);
+        const propietarioNombre = this.obtenerNombrePropietario(propietario);
+        const vehiculoInfo = this.obtenerEtiquetaVehiculo(saved.vehicleId, vehiculoDetalle);
         const cambios: string[] = [];
         if (dto.estado !== undefined) cambios.push(`estado: ${dto.estado === 1 ? 'Activo' : 'Inactivo'}`);
-        if (dto.descripcion !== undefined) cambios.push(`descripción actualizada`);
+        if (dto.descripcion !== undefined) cambios.push('descripcion actualizada');
         await this.trazabilidadService.registrar(
             TipoAccion.MODIFICACION,
             saved.userId,
             saved.vehicleId,
-            `Se modificó asignación usuario=${saved.userId} / vehículo=${saved.vehicleId} - Cambios: ${cambios.join(', ')}`,
+            `Se modifico asignacion de ${propietarioNombre} sobre ${vehiculoInfo} - Cambios: ${cambios.join(', ')}`,
             payloadAnterior,
             TrazabilidadService.serializarAsignacion(saved),
         );
 
-        return saved;
+        return this.enriquecerAsignacion(saved, authHeader, propietario, vehiculoDetalle);
     }
 
-    /**
-     * Elimina una asignación por su clave compuesta.
-     * Trigger: Registra evento ELIMINACION en trazabilidad.
-     */
-    async eliminar(userId: string, vehicleId: string): Promise<{ message: string }> {
+    async eliminar(userId: string, vehicleId: string, authHeader?: string): Promise<{ message: string }> {
         const uid = this.utils.validateUUID(userId);
         const vid = this.utils.validateUUID(vehicleId);
 
@@ -211,37 +178,33 @@ export class AsignacionService {
 
         if (!asignacion) {
             throw new NotFoundException(
-                `No se encontró asignación para usuario ${uid} y vehículo ${vid}`,
+                `No se encontro asignacion para usuario ${uid} y vehiculo ${vid}`,
             );
         }
 
-        // 1. Guardar snapshot antes de eliminar
         const payloadAnterior = TrazabilidadService.serializarAsignacion(asignacion);
+        const propietario = await this.usuariosClientService.obtenerUsuario(asignacion.userId, authHeader);
+        const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(asignacion.vehicleId, authHeader);
+        const propietarioNombre = this.obtenerNombrePropietario(propietario);
+        const vehiculoInfo = this.obtenerEtiquetaVehiculo(asignacion.vehicleId, vehiculoDetalle);
 
-        // 2. Eliminar
         await this.asignacionRepo.remove(asignacion);
 
-        // 3. RF2: Registrar evento ELIMINACION (automático)
         await this.trazabilidadService.registrar(
             TipoAccion.ELIMINACION,
             uid,
             vid,
-            `Se eliminó asignación usuario=${uid} / vehículo=${vid}`,
+            `Se elimino asignacion de ${propietarioNombre} sobre ${vehiculoInfo}`,
             payloadAnterior,
             null,
         );
 
-        return { message: `Asignación usuario=${uid} / vehículo=${vid} eliminada exitosamente` };
+        return { message: `Asignacion de ${propietarioNombre} sobre ${vehiculoInfo} eliminada exitosamente` };
     }
 
-    /**
-     * RF3: Obtiene la flota de vehículos de un propietario con detalles de tipo y categoría.
-     * Comunica con el Microservicio de Vehículos para enriquecer la respuesta.
-     */
     async obtenerFlotaPorPropietario(userId: string, authHeader?: string): Promise<any[]> {
         const uid = this.utils.validateUUID(userId);
 
-        // 1. Obtener todas las asignaciones activas del propietario
         const asignaciones = await this.asignacionRepo.find({
             where: { userId: uid, estado: 1 },
             order: { fechaAsignacion: 'DESC' },
@@ -251,7 +214,6 @@ export class AsignacionService {
             return [];
         }
 
-        // 2. Para cada asignación, consultar los detalles del vehículo (RF3)
         const flota = await Promise.all(
             asignaciones.map(async (asignacion) => {
                 const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(
@@ -260,7 +222,6 @@ export class AsignacionService {
                 );
 
                 if (vehiculoDetalle) {
-                    // Retorna directamente los datos del vehículo
                     return {
                         id: vehiculoDetalle.id,
                         tipo: vehiculoDetalle.tipo,
@@ -268,20 +229,86 @@ export class AsignacionService {
                         marca: vehiculoDetalle.marca ?? null,
                         modelo: vehiculoDetalle.modelo ?? null,
                         placa: vehiculoDetalle.placa ?? null,
-                        fechaAsignacion: asignacion.fechaAsignacion, // Contexto adicional útil
-                        estadoAsignacion: asignacion.estado === 1 ? 'Activo' : 'Inactivo'
-                    };
-                } else {
-                    // Fallback si el microservicio de vehículos no responde o borraron el vehículo
-                    return { 
-                        id: asignacion.vehicleId, 
-                        error: 'Servicio de vehículos no disponible o vehículo eliminado',
-                        fechaAsignacion: asignacion.fechaAsignacion
+                        fechaAsignacion: asignacion.fechaAsignacion,
+                        estadoAsignacion: asignacion.estado === 1 ? 'Activo' : 'Inactivo',
                     };
                 }
+
+                return {
+                    id: asignacion.vehicleId,
+                    error: 'Servicio de vehiculos no disponible o vehiculo eliminado',
+                    fechaAsignacion: asignacion.fechaAsignacion,
+                };
             }),
         );
 
         return flota;
+    }
+
+    private async enriquecerAsignacion(
+        asignacion: Asignacion,
+        authHeader?: string,
+        propietario?: any | null,
+        vehiculoDetalle?: VehiculoDetalle | null,
+    ): Promise<any> {
+        const userData = propietario ?? await this.usuariosClientService.obtenerUsuario(asignacion.userId, authHeader);
+        const vehiculoData = vehiculoDetalle ?? await this.vehiculosClientService.getVehiculo(asignacion.vehicleId, authHeader);
+
+        return {
+            userId: asignacion.userId,
+            vehicleId: asignacion.vehicleId,
+            estado: asignacion.estado,
+            estadoTexto: asignacion.estado === 1 ? 'Activo' : 'Inactivo',
+            descripcion: asignacion.descripcion,
+            fechaAsignacion: asignacion.fechaAsignacion,
+            fechaModificacion: asignacion.fechaModificacion,
+            propietario: {
+                id: asignacion.userId,
+                username: userData?.username ?? null,
+                nombreCompleto: this.obtenerNombrePropietario(userData),
+                email: userData?.persona?.email ?? userData?.email ?? null,
+                cedula: userData?.persona?.dni ?? userData?.dni ?? null,
+            },
+            vehiculo: {
+                id: asignacion.vehicleId,
+                placa: vehiculoData?.placa ?? null,
+                marca: vehiculoData?.marca ?? null,
+                modelo: vehiculoData?.modelo ?? null,
+                tipo: vehiculoData?.tipo ?? null,
+                categoria: vehiculoData?.categoria ?? null,
+            },
+        };
+    }
+
+    private obtenerNombrePropietario(userData: any | null | undefined): string {
+        if (!userData) return 'No disponible';
+
+        const persona = userData.persona ?? {};
+        const nombreDesdeCampos = [persona.firstName, persona.middleName, persona.lastName]
+            .filter(Boolean)
+            .join(' ')
+            .trim();
+
+        return userData.nombreCompleto
+            || persona.nombreCompleto
+            || nombreDesdeCampos
+            || userData.username
+            || userData.nombre
+            || 'No disponible';
+    }
+
+    private obtenerEtiquetaVehiculo(vehicleId: string, vehiculoDetalle?: VehiculoDetalle | null): string {
+        if (!vehiculoDetalle) return vehicleId;
+
+        const marcaModelo = [vehiculoDetalle.marca, vehiculoDetalle.modelo]
+            .filter(Boolean)
+            .join(' ')
+            .trim();
+
+        if (vehiculoDetalle.placa && marcaModelo) {
+            return `${marcaModelo} (${vehiculoDetalle.placa})`;
+        }
+
+        return vehiculoDetalle.placa ?? marcaModelo ?? vehicleId;
     }
 }

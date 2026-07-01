@@ -3,8 +3,14 @@ package authz.tickets
 import rego.v1
 
 import data.authz.has_role
+import data.authz.allow as global_allow
 
 default allow = false
+
+# Admin universal
+allow if {
+    global_allow
+}
 
 # Solo usuarios con el rol empleado pueden emitir tickets.
 allow if {

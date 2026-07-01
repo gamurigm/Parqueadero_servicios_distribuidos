@@ -31,59 +31,61 @@ let AsignacionService = class AsignacionService {
         this.usuariosClientService = usuariosClientService;
         this.utils = new utils_1.Utils();
     }
-    async crear(dto) {
+    async crear(dto, authHeader) {
         const userId = this.utils.validateUUID(dto.userId);
         const vehicleId = this.utils.validateUUID(dto.vehicleId);
-        await this.usuariosClientService.validarPropietario(userId);
-        const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(vehicleId);
+        const propietario = await this.usuariosClientService.validarPropietario(userId, authHeader);
+        const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(vehicleId, authHeader);
         if (!vehiculoDetalle) {
-            throw new common_1.NotFoundException(`El vehículo con ID ${vehicleId} no existe en el sistema`);
+            throw new common_1.NotFoundException(`El vehiculo con ID ${vehicleId} no existe en el sistema`);
         }
         const asignacionExistente = await this.asignacionRepo.findOne({
             where: { userId, vehicleId },
         });
         if (asignacionExistente) {
-            throw new common_1.ConflictException(`Ya existe una asignación para el usuario ${userId} con el vehículo ${vehicleId}`);
+            throw new common_1.ConflictException(`Ya existe una asignacion para el usuario ${userId} con el vehiculo ${vehicleId}`);
         }
         const vehiculoActivo = await this.asignacionRepo.findOne({
             where: { vehicleId, estado: 1 },
         });
         if (vehiculoActivo) {
-            throw new common_1.ConflictException(`El vehículo ${vehicleId} ya está asignado activamente al propietario ${vehiculoActivo.userId}`);
+            throw new common_1.ConflictException(`El vehiculo ${vehicleId} ya esta asignado activamente al propietario ${vehiculoActivo.userId}`);
         }
         if (dto.descripcion) {
             dto.descripcion = this.utils.sanitizeText(dto.descripcion);
         }
         const asignacion = factory_asignacion_1.FactoryAsignacion.crear({ ...dto, userId, vehicleId });
         const saved = await this.asignacionRepo.save(asignacion);
-        const vehiculoInfo = vehiculoDetalle ? `${vehiculoDetalle.marca ?? ''} ${vehiculoDetalle.modelo ?? ''} (${vehiculoDetalle.placa ?? 'sin placa'})`.trim() : vehicleId;
-        await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.CREACION, saved.userId, saved.vehicleId, `Se creó asignación del vehículo ${vehiculoInfo} al propietario ${saved.userId}`, null, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
-        return saved;
+        const propietarioNombre = this.obtenerNombrePropietario(propietario);
+        const vehiculoInfo = this.obtenerEtiquetaVehiculo(vehicleId, vehiculoDetalle);
+        await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.CREACION, saved.userId, saved.vehicleId, `Se creo asignacion del vehiculo ${vehiculoInfo} al propietario ${propietarioNombre}`, null, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
+        return this.enriquecerAsignacion(saved, authHeader, propietario, vehiculoDetalle);
     }
-    async listar() {
-        return await this.asignacionRepo.find({
+    async listar(authHeader) {
+        const asignaciones = await this.asignacionRepo.find({
             order: { fechaAsignacion: 'DESC' },
         });
+        return Promise.all(asignaciones.map((asignacion) => this.enriquecerAsignacion(asignacion, authHeader)));
     }
-    async buscarPorClave(userId, vehicleId) {
+    async buscarPorClave(userId, vehicleId, authHeader) {
         const uid = this.utils.validateUUID(userId);
         const vid = this.utils.validateUUID(vehicleId);
         const asignacion = await this.asignacionRepo.findOne({
             where: { userId: uid, vehicleId: vid },
         });
         if (!asignacion) {
-            throw new common_1.NotFoundException(`No se encontró asignación para usuario ${uid} y vehículo ${vid}`);
+            throw new common_1.NotFoundException(`No se encontro asignacion para usuario ${uid} y vehiculo ${vid}`);
         }
-        return asignacion;
+        return this.enriquecerAsignacion(asignacion, authHeader);
     }
-    async actualizar(userId, vehicleId, dto) {
+    async actualizar(userId, vehicleId, dto, authHeader) {
         const uid = this.utils.validateUUID(userId);
         const vid = this.utils.validateUUID(vehicleId);
         const asignacion = await this.asignacionRepo.findOne({
             where: { userId: uid, vehicleId: vid },
         });
         if (!asignacion) {
-            throw new common_1.NotFoundException(`No se encontró asignación para usuario ${uid} y vehículo ${vid}`);
+            throw new common_1.NotFoundException(`No se encontro asignacion para usuario ${uid} y vehiculo ${vid}`);
         }
         const sinCambios = (dto.estado === undefined || dto.estado === asignacion.estado) &&
             (dto.descripcion === undefined || dto.descripcion === asignacion.descripcion);
@@ -95,7 +97,7 @@ let AsignacionService = class AsignacionService {
                 where: { vehicleId: vid, estado: 1 },
             });
             if (otroActivo && otroActivo.userId !== uid) {
-                throw new common_1.ConflictException(`El vehículo ya está activo para otro propietario: ${otroActivo.userId}`);
+                throw new common_1.ConflictException(`El vehiculo ya esta activo para otro propietario: ${otroActivo.userId}`);
             }
         }
         const payloadAnterior = trazabilidad_service_1.TrazabilidadService.serializarAsignacion(asignacion);
@@ -104,27 +106,35 @@ let AsignacionService = class AsignacionService {
         if (dto.descripcion !== undefined)
             asignacion.descripcion = this.utils.sanitizeText(dto.descripcion);
         const saved = await this.asignacionRepo.save(asignacion);
+        const propietario = await this.usuariosClientService.obtenerUsuario(saved.userId, authHeader);
+        const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(saved.vehicleId, authHeader);
+        const propietarioNombre = this.obtenerNombrePropietario(propietario);
+        const vehiculoInfo = this.obtenerEtiquetaVehiculo(saved.vehicleId, vehiculoDetalle);
         const cambios = [];
         if (dto.estado !== undefined)
             cambios.push(`estado: ${dto.estado === 1 ? 'Activo' : 'Inactivo'}`);
         if (dto.descripcion !== undefined)
-            cambios.push(`descripción actualizada`);
-        await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.MODIFICACION, saved.userId, saved.vehicleId, `Se modificó asignación usuario=${saved.userId} / vehículo=${saved.vehicleId} - Cambios: ${cambios.join(', ')}`, payloadAnterior, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
-        return saved;
+            cambios.push('descripcion actualizada');
+        await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.MODIFICACION, saved.userId, saved.vehicleId, `Se modifico asignacion de ${propietarioNombre} sobre ${vehiculoInfo} - Cambios: ${cambios.join(', ')}`, payloadAnterior, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
+        return this.enriquecerAsignacion(saved, authHeader, propietario, vehiculoDetalle);
     }
-    async eliminar(userId, vehicleId) {
+    async eliminar(userId, vehicleId, authHeader) {
         const uid = this.utils.validateUUID(userId);
         const vid = this.utils.validateUUID(vehicleId);
         const asignacion = await this.asignacionRepo.findOne({
             where: { userId: uid, vehicleId: vid },
         });
         if (!asignacion) {
-            throw new common_1.NotFoundException(`No se encontró asignación para usuario ${uid} y vehículo ${vid}`);
+            throw new common_1.NotFoundException(`No se encontro asignacion para usuario ${uid} y vehiculo ${vid}`);
         }
         const payloadAnterior = trazabilidad_service_1.TrazabilidadService.serializarAsignacion(asignacion);
+        const propietario = await this.usuariosClientService.obtenerUsuario(asignacion.userId, authHeader);
+        const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(asignacion.vehicleId, authHeader);
+        const propietarioNombre = this.obtenerNombrePropietario(propietario);
+        const vehiculoInfo = this.obtenerEtiquetaVehiculo(asignacion.vehicleId, vehiculoDetalle);
         await this.asignacionRepo.remove(asignacion);
-        await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.ELIMINACION, uid, vid, `Se eliminó asignación usuario=${uid} / vehículo=${vid}`, payloadAnterior, null);
-        return { message: `Asignación usuario=${uid} / vehículo=${vid} eliminada exitosamente` };
+        await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.ELIMINACION, uid, vid, `Se elimino asignacion de ${propietarioNombre} sobre ${vehiculoInfo}`, payloadAnterior, null);
+        return { message: `Asignacion de ${propietarioNombre} sobre ${vehiculoInfo} eliminada exitosamente` };
     }
     async obtenerFlotaPorPropietario(userId, authHeader) {
         const uid = this.utils.validateUUID(userId);
@@ -146,18 +156,71 @@ let AsignacionService = class AsignacionService {
                     modelo: vehiculoDetalle.modelo ?? null,
                     placa: vehiculoDetalle.placa ?? null,
                     fechaAsignacion: asignacion.fechaAsignacion,
-                    estadoAsignacion: asignacion.estado === 1 ? 'Activo' : 'Inactivo'
+                    estadoAsignacion: asignacion.estado === 1 ? 'Activo' : 'Inactivo',
                 };
             }
-            else {
-                return {
-                    id: asignacion.vehicleId,
-                    error: 'Servicio de vehículos no disponible o vehículo eliminado',
-                    fechaAsignacion: asignacion.fechaAsignacion
-                };
-            }
+            return {
+                id: asignacion.vehicleId,
+                error: 'Servicio de vehiculos no disponible o vehiculo eliminado',
+                fechaAsignacion: asignacion.fechaAsignacion,
+            };
         }));
         return flota;
+    }
+    async enriquecerAsignacion(asignacion, authHeader, propietario, vehiculoDetalle) {
+        const userData = propietario ?? await this.usuariosClientService.obtenerUsuario(asignacion.userId, authHeader);
+        const vehiculoData = vehiculoDetalle ?? await this.vehiculosClientService.getVehiculo(asignacion.vehicleId, authHeader);
+        return {
+            userId: asignacion.userId,
+            vehicleId: asignacion.vehicleId,
+            estado: asignacion.estado,
+            estadoTexto: asignacion.estado === 1 ? 'Activo' : 'Inactivo',
+            descripcion: asignacion.descripcion,
+            fechaAsignacion: asignacion.fechaAsignacion,
+            fechaModificacion: asignacion.fechaModificacion,
+            propietario: {
+                id: asignacion.userId,
+                username: userData?.username ?? null,
+                nombreCompleto: this.obtenerNombrePropietario(userData),
+                email: userData?.persona?.email ?? userData?.email ?? null,
+                cedula: userData?.persona?.dni ?? userData?.dni ?? null,
+            },
+            vehiculo: {
+                id: asignacion.vehicleId,
+                placa: vehiculoData?.placa ?? null,
+                marca: vehiculoData?.marca ?? null,
+                modelo: vehiculoData?.modelo ?? null,
+                tipo: vehiculoData?.tipo ?? null,
+                categoria: vehiculoData?.categoria ?? null,
+            },
+        };
+    }
+    obtenerNombrePropietario(userData) {
+        if (!userData)
+            return 'No disponible';
+        const persona = userData.persona ?? {};
+        const nombreDesdeCampos = [persona.firstName, persona.middleName, persona.lastName]
+            .filter(Boolean)
+            .join(' ')
+            .trim();
+        return userData.nombreCompleto
+            || persona.nombreCompleto
+            || nombreDesdeCampos
+            || userData.username
+            || userData.nombre
+            || 'No disponible';
+    }
+    obtenerEtiquetaVehiculo(vehicleId, vehiculoDetalle) {
+        if (!vehiculoDetalle)
+            return vehicleId;
+        const marcaModelo = [vehiculoDetalle.marca, vehiculoDetalle.modelo]
+            .filter(Boolean)
+            .join(' ')
+            .trim();
+        if (vehiculoDetalle.placa && marcaModelo) {
+            return `${marcaModelo} (${vehiculoDetalle.placa})`;
+        }
+        return vehiculoDetalle.placa ?? marcaModelo ?? vehicleId;
     }
 };
 exports.AsignacionService = AsignacionService;

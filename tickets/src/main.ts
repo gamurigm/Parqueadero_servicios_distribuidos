@@ -1,7 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { GlobalExceptionFilter } from './infrastructure/filters/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -66,7 +67,8 @@ async function bootstrap() {
     customSiteTitle: 'API Tickets',
   });
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
+  app.useGlobalFilters(new GlobalExceptionFilter(new Logger('Global')));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   await app.listen(process.env.PORT ?? 3003, '0.0.0.0');
   console.log(`Ticket Service corriendo en: http://localhost:${process.env.PORT ?? 3003}`);
   console.log(`Swagger UI: http://localhost:${process.env.PORT ?? 3003}/docs`);

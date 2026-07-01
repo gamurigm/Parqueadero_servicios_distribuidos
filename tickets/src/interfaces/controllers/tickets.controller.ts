@@ -9,6 +9,7 @@ import {
   Inject,
   NotFoundException,
   Req,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { EmitirTicketUseCase } from '../../application/use-cases/emitir-ticket.use-case';
@@ -45,9 +46,9 @@ export class TicketsController {
   @ApiResponse({ status: 400, description: 'Error de validación o regla de negocio' })
   async emitir(@Body() dto: EmitirTicketRequestDto, @Req() req: any): Promise<TicketResponseDto> {
     const result = await this.emitirUseCase.execute({
-      idEspacio: dto.idEspacio.trim(),
-      cedula: dto.cedula?.trim(),
-      placa: dto.placa?.trim(),
+      idEspacio: dto.idEspacio,
+      cedula: dto.cedula,
+      placa: dto.placa,
       idEmpleado: req.user.id,
       authHeader: req.headers.authorization,
     });
@@ -63,8 +64,8 @@ export class TicketsController {
   @ApiResponse({ status: 404, description: 'Ticket no encontrado' })
   async pagar(@Body() dto: PagarTicketRequestDto, @Req() req: any): Promise<PagoResponseDto> {
     return await this.pagarUseCase.execute({
-      idTicket: dto.idTicket?.trim(),
-      codigoTicket: dto.codigoTicket?.trim(),
+      idTicket: dto.idTicket,
+      codigoTicket: dto.codigoTicket,
       idEmpleado: req.user.id,
       authHeader: req.headers.authorization,
     });
@@ -78,10 +79,10 @@ export class TicketsController {
   @ApiResponse({ status: 400, description: 'Error de validación o regla de negocio' })
   async anular(@Body() dto: AnularTicketRequestDto, @Req() req: any): Promise<TicketResponseDto> {
     const result = await this.anularUseCase.execute({
-      idTicket: dto.idTicket?.trim(),
-      codigoTicket: dto.codigoTicket?.trim(),
+      idTicket: dto.idTicket,
+      codigoTicket: dto.codigoTicket,
       idEmpleado: req.user.id,
-      motivo: dto.motivo.trim(),
+      motivo: dto.motivo,
     });
     return result as TicketResponseDto;
   }
@@ -116,7 +117,7 @@ export class TicketsController {
   @ApiOperation({ summary: 'Obtener un ticket por ID' })
   @ApiResponse({ status: 200, description: 'Ticket encontrado', type: TicketResponseDto })
   @ApiResponse({ status: 404, description: 'Ticket no encontrado' })
-  async obtener(@Param('id') id: string): Promise<TicketResponseDto> {
+  async obtener(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string): Promise<TicketResponseDto> {
     const ticket = await this.ticketRepo.findById(id);
     if (!ticket) {
       throw new NotFoundException('Ticket no encontrado');

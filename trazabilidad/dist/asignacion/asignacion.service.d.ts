@@ -12,12 +12,15 @@ export declare class AsignacionService {
     private readonly usuariosClientService;
     private utils;
     constructor(asignacionRepo: Repository<Asignacion>, trazabilidadService: TrazabilidadService, vehiculosClientService: VehiculosClientService, usuariosClientService: UsuariosClientService);
-    crear(dto: CreateAsignacionDto): Promise<Asignacion>;
-    listar(): Promise<Asignacion[]>;
-    buscarPorClave(userId: string, vehicleId: string): Promise<Asignacion>;
-    actualizar(userId: string, vehicleId: string, dto: UpdateAsignacionDto): Promise<Asignacion>;
-    eliminar(userId: string, vehicleId: string): Promise<{
+    crear(dto: CreateAsignacionDto, authHeader?: string): Promise<any>;
+    listar(authHeader?: string): Promise<any[]>;
+    buscarPorClave(userId: string, vehicleId: string, authHeader?: string): Promise<any>;
+    actualizar(userId: string, vehicleId: string, dto: UpdateAsignacionDto, authHeader?: string): Promise<any>;
+    eliminar(userId: string, vehicleId: string, authHeader?: string): Promise<{
         message: string;
     }>;
     obtenerFlotaPorPropietario(userId: string, authHeader?: string): Promise<any[]>;
+    private enriquecerAsignacion;
+    private obtenerNombrePropietario;
+    private obtenerEtiquetaVehiculo;
 }
