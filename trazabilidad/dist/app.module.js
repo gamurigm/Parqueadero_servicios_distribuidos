@@ -8,14 +8,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
+const core_1 = require("@nestjs/core");
 const config_1 = require("@nestjs/config");
 const typeorm_1 = require("@nestjs/typeorm");
 const axios_1 = require("@nestjs/axios");
 const asignacion_module_1 = require("./asignacion/asignacion.module");
 const trazabilidad_module_1 = require("./trazabilidad/trazabilidad.module");
 const vehiculos_client_module_1 = require("./vehiculos-client/vehiculos-client.module");
+const usuarios_client_module_1 = require("./usuarios-client/usuarios-client.module");
+const auth_module_1 = require("./auth/auth.module");
+const jwt_auth_guard_1 = require("./auth/guards/jwt-auth.guard");
 const asignacion_entity_1 = require("./asignacion/entities/asignacion.entity");
 const trazabilidad_entity_1 = require("./trazabilidad/entities/trazabilidad.entity");
+const opa_module_1 = require("./opa/opa.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -45,9 +50,15 @@ exports.AppModule = AppModule = __decorate([
                 timeout: 5000,
                 maxRedirects: 5,
             }),
+            auth_module_1.AuthModule,
             asignacion_module_1.AsignacionModule,
             trazabilidad_module_1.TrazabilidadModule,
             vehiculos_client_module_1.VehiculosClientModule,
+            usuarios_client_module_1.UsuariosClientModule,
+            opa_module_1.OpaModule,
+        ],
+        providers: [
+            { provide: core_1.APP_GUARD, useClass: jwt_auth_guard_1.JwtAuthGuard },
         ],
     })
 ], AppModule);

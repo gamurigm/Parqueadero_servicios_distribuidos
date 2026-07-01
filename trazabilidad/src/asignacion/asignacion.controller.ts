@@ -90,14 +90,21 @@ export class AsignacionController {
 
     // ──────────────────────────────────────────────────
     // RF2 - Consultas de Trazabilidad (Auditoría)
+    // NOTA: Endpoints principales de trazabilidad ahora están en
+    // TrazabilidadController (/trazabilidad/*). Los siguientes
+    // endpoints se mantienen por retrocompatibilidad.
     // ──────────────────────────────────────────────────
 
     @ApiTags('Trazabilidad')
     @Get('trazabilidad/historial')
     @ApiBearerAuth('JWT-auth')
     @Resource('trazabilidad.read')
-    @ApiOperation({ summary: 'RF2 - Obtener historial completo de auditoría' })
-    @ApiResponse({ status: 200, description: 'Todos los eventos de auditoría' })
+    @ApiOperation({
+        summary: 'RF2 - Obtener historial completo de auditoría (enriquecido)',
+        description: 'Retorna todos los eventos de auditoría con información amigable ' +
+            '(nombres de usuario, datos de vehículos). Endpoint principal: GET /trazabilidad/historial',
+    })
+    @ApiResponse({ status: 200, description: 'Todos los eventos de auditoría enriquecidos' })
     listarTrazabilidad() {
         return this.trazabilidadService.listarTodos();
     }
@@ -106,7 +113,10 @@ export class AsignacionController {
     @Get('trazabilidad/propietario/:userId')
     @ApiBearerAuth('JWT-auth')
     @Resource('trazabilidad.read')
-    @ApiOperation({ summary: 'RF2 - Historial de auditoría de un propietario' })
+    @ApiOperation({
+        summary: 'RF2 - Historial de auditoría de un propietario (enriquecido)',
+        description: 'Retorna eventos de un propietario con datos legibles.',
+    })
     @ApiParam({ name: 'userId', description: 'UUID del propietario' })
     listarTrazabilidadPorPropietario(@Param('userId') userId: string) {
         return this.trazabilidadService.listarPorPropietario(userId);
@@ -116,7 +126,10 @@ export class AsignacionController {
     @Get('trazabilidad/:userId/:vehicleId')
     @ApiBearerAuth('JWT-auth')
     @Resource('trazabilidad.read')
-    @ApiOperation({ summary: 'RF2 - Historial de auditoría de una asignación específica' })
+    @ApiOperation({
+        summary: 'RF2 - Historial de auditoría de una asignación específica (enriquecido)',
+        description: 'Retorna eventos de una asignación con datos legibles.',
+    })
     @ApiParam({ name: 'userId', description: 'UUID del propietario' })
     @ApiParam({ name: 'vehicleId', description: 'UUID del vehículo' })
     listarTrazabilidadPorAsignacion(

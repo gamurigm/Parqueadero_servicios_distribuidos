@@ -5,8 +5,6 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../usuario/entities/usuario.entity';
-import * as fs from 'fs';
-import * as path from 'path';
 
 export interface JwtPayload {
   iss: string;
@@ -29,10 +27,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: fs.readFileSync(
-        path.resolve(__dirname, '../../../jwt-keys/jwt-public.pem'),
-        'utf-8',
-      ),
+      secretOrKey: configService.get<string>('JWT_SECRET', 'super-secret-key-change-in-production'),
+
     });
   }
 

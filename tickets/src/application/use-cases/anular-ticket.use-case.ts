@@ -4,6 +4,10 @@ import {
   TICKET_REPOSITORY,
 } from '../ports/ticket-repository.interface';
 import { IZonasClient, ZONAS_CLIENT } from '../ports/zonas-client.interface';
+import {
+  ITrazabilidadClient,
+  TRAZABILIDAD_CLIENT,
+} from '../ports/trazabilidad-client.interface';
 import { BusinessError } from '../../domain/errors/business-error';
 
 export interface AnularTicketInput {
@@ -29,6 +33,8 @@ export class AnularTicketUseCase {
     private readonly ticketRepo: ITicketRepository,
     @Inject(ZONAS_CLIENT)
     private readonly zonasClient: IZonasClient,
+    @Inject(TRAZABILIDAD_CLIENT)
+    private readonly trazabilidadClient: ITrazabilidadClient,
   ) {}
 
   async execute(input: AnularTicketInput): Promise<AnularTicketOutput> {
@@ -43,11 +49,33 @@ export class AnularTicketUseCase {
     ticket.anular(input.motivo, input.idEmpleado);
     const updated = await this.ticketRepo.update(ticket);
 
-    try {
-      await this.zonasClient.marcarLibre(ticket.idEspacio);
-    } catch (error) {
-      this.logger.error(`Error al liberar espacio ${ticket.idEspacio} tras anulación: ${error.message}`);
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        await this.zonasClient.marcarLibre(ticket.idEspacio);
+        break;
+      } catch (error) {
+        retries--;
+        if (retries === 0) {
+          this.logger.error(`Error crítico al liberar espacio ${ticket.idEspacio} tras anulación: ${error.message}. Inconsistencia temporal.`);
+        } else {
+          this.logger.warn(`Fallo al marcar libre, reintentando... quedan ${retries} intentos`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
     }
+
+    this.trazabilidadClient.registrarEvento({
+      microservicio: 'TICKETS',
+      endpoint: 'POST /tickets/anular',
+      metodoHttp: 'POST',
+      tipoAccion: 'ANULACION',
+      descripcion: `Se anuló el ticket ${updated.codigoTicket}. Motivo: ${input.motivo}`,
+      entidadId: updated.id,
+      usuarioEjecutor: input.idEmpleado,
+      payloadAnterior: { estado: 'ACTIVO' },
+      payloadNuevo: { estado: 'ANULADO', motivo: input.motivo },
+    });
 
     return {
       id: updated.id,

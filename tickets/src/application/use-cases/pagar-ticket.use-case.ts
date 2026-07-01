@@ -12,6 +12,10 @@ import {
   IVehiculosClient,
   VEHICULOS_CLIENT,
 } from '../ports/vehiculos-client.interface';
+import {
+  ITrazabilidadClient,
+  TRAZABILIDAD_CLIENT,
+} from '../ports/trazabilidad-client.interface';
 import { BusinessError } from '../../domain/errors/business-error';
 
 export interface PagarTicketInput {
@@ -44,6 +48,8 @@ export class PagarTicketUseCase {
     private readonly tarifaProvider: ITarifaProvider,
     @Inject(VEHICULOS_CLIENT)
     private readonly vehiculosClient: IVehiculosClient,
+    @Inject(TRAZABILIDAD_CLIENT)
+    private readonly trazabilidadClient: ITrazabilidadClient,
   ) {}
 
   async execute(input: PagarTicketInput): Promise<PagarTicketOutput> {
@@ -76,11 +82,33 @@ export class PagarTicketUseCase {
     ticket.pagar(fechaSalida, valor, input.idEmpleado);
     const updated = await this.ticketRepo.update(ticket);
 
-    try {
-      await this.zonasClient.marcarLibre(ticket.idEspacio);
-    } catch (error) {
-      this.logger.error(`Error al liberar espacio ${ticket.idEspacio}: ${error.message}`);
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        await this.zonasClient.marcarLibre(ticket.idEspacio);
+        break;
+      } catch (error) {
+        retries--;
+        if (retries === 0) {
+          this.logger.error(`Error crítico al liberar espacio ${ticket.idEspacio} tras pago: ${error.message}. Inconsistencia temporal.`);
+        } else {
+          this.logger.warn(`Fallo al marcar libre, reintentando... quedan ${retries} intentos`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
     }
+
+    this.trazabilidadClient.registrarEvento({
+      microservicio: 'TICKETS',
+      endpoint: 'POST /tickets/pagar',
+      metodoHttp: 'POST',
+      tipoAccion: 'PAGO',
+      descripcion: `Se pagó el ticket ${updated.codigoTicket} por valor de $${valor}`,
+      entidadId: updated.id,
+      usuarioEjecutor: input.idEmpleado,
+      payloadAnterior: { estado: 'ACTIVO' },
+      payloadNuevo: { estado: 'PAGADO', valorRecaudado: valor, fechaSalida },
+    });
 
     return {
       id: updated.id,

@@ -9,14 +9,29 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EventoTrazabilidad = exports.TipoAccion = void 0;
+exports.EventoTrazabilidad = exports.Microservicio = exports.TipoAccion = void 0;
 const typeorm_1 = require("typeorm");
 var TipoAccion;
 (function (TipoAccion) {
     TipoAccion["CREACION"] = "CREACION";
     TipoAccion["MODIFICACION"] = "MODIFICACION";
     TipoAccion["ELIMINACION"] = "ELIMINACION";
+    TipoAccion["CONSULTA"] = "CONSULTA";
+    TipoAccion["LOGIN"] = "LOGIN";
+    TipoAccion["ACTIVACION"] = "ACTIVACION";
+    TipoAccion["DESACTIVACION"] = "DESACTIVACION";
+    TipoAccion["EMISION"] = "EMISION";
+    TipoAccion["PAGO"] = "PAGO";
+    TipoAccion["ANULACION"] = "ANULACION";
 })(TipoAccion || (exports.TipoAccion = TipoAccion = {}));
+var Microservicio;
+(function (Microservicio) {
+    Microservicio["TRAZABILIDAD"] = "TRAZABILIDAD";
+    Microservicio["USUARIOS"] = "USUARIOS";
+    Microservicio["VEHICULOS"] = "VEHICULOS";
+    Microservicio["ZONAS"] = "ZONAS";
+    Microservicio["TICKETS"] = "TICKETS";
+})(Microservicio || (exports.Microservicio = Microservicio = {}));
 let EventoTrazabilidad = class EventoTrazabilidad {
 };
 exports.EventoTrazabilidad = EventoTrazabilidad;
@@ -25,11 +40,44 @@ __decorate([
     __metadata("design:type", String)
 ], EventoTrazabilidad.prototype, "id", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'uuid', name: 'user_id' }),
+    (0, typeorm_1.Column)({
+        type: 'enum',
+        enum: Microservicio,
+        name: 'microservicio',
+        default: Microservicio.TRAZABILIDAD,
+    }),
+    __metadata("design:type", String)
+], EventoTrazabilidad.prototype, "microservicio", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', name: 'endpoint', length: 255, default: '' }),
+    __metadata("design:type", String)
+], EventoTrazabilidad.prototype, "endpoint", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', name: 'metodo_http', length: 10, default: '' }),
+    __metadata("design:type", String)
+], EventoTrazabilidad.prototype, "metodoHttp", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', name: 'entidad_id', nullable: true }),
+    __metadata("design:type", String)
+], EventoTrazabilidad.prototype, "entidadId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'text', name: 'descripcion', default: '' }),
+    __metadata("design:type", String)
+], EventoTrazabilidad.prototype, "descripcion", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', name: 'usuario_ejecutor', nullable: true }),
+    __metadata("design:type", String)
+], EventoTrazabilidad.prototype, "usuarioEjecutor", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'varchar', name: 'usuario_ejecutor_nombre', nullable: true, length: 255 }),
+    __metadata("design:type", String)
+], EventoTrazabilidad.prototype, "usuarioEjecutorNombre", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'uuid', name: 'user_id', nullable: true }),
     __metadata("design:type", String)
 ], EventoTrazabilidad.prototype, "userId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'uuid', name: 'vehicle_id' }),
+    (0, typeorm_1.Column)({ type: 'uuid', name: 'vehicle_id', nullable: true }),
     __metadata("design:type", String)
 ], EventoTrazabilidad.prototype, "vehicleId", void 0);
 __decorate([

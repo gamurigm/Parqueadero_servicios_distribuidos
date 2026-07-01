@@ -37,10 +37,12 @@ services:
       - usuarios_postgres_data:/var/lib/postgresql/data
       - ./gestion_usuarios/seed:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d UsuariosDB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   # Base de datos Vehiculos
   vehiculos-database:
@@ -57,10 +59,12 @@ services:
     volumes:
       - vehiculos_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d VehiculoDB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   # Base de datos Zonas
   zonas-database:
@@ -77,10 +81,12 @@ services:
     volumes:
       - zonas_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d ZonasDB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
     
   # Base de datos de Kong
   kong-database:
@@ -97,10 +103,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kong"]
+      test: ["CMD-SHELL", "pg_isready -U kong -d kong"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   # Migraciones de Kong
   kong-migrations:
@@ -135,10 +143,12 @@ services:
     volumes:
       - tickets_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d TicketsDB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   # Base de datos Trazabilidad
   trazabilidad-database:
@@ -155,10 +165,12 @@ services:
     volumes:
       - trazabilidad_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d TrazabilidadDB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   # Servicio Vehiculos (NestJS - Puerto 3000)
   vehiculos:

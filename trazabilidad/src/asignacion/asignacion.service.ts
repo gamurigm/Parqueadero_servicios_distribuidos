@@ -90,10 +90,12 @@ export class AsignacionService {
         const saved = await this.asignacionRepo.save(asignacion);
 
         // 7. RF2: Registrar evento de trazabilidad CREACION (automático)
+        const vehiculoInfo = vehiculoDetalle ? `${vehiculoDetalle.marca ?? ''} ${vehiculoDetalle.modelo ?? ''} (${vehiculoDetalle.placa ?? 'sin placa'})`.trim() : vehicleId;
         await this.trazabilidadService.registrar(
             TipoAccion.CREACION,
             saved.userId,
             saved.vehicleId,
+            `Se creó asignación del vehículo ${vehiculoInfo} al propietario ${saved.userId}`,
             null,
             TrazabilidadService.serializarAsignacion(saved),
         );
@@ -180,10 +182,14 @@ export class AsignacionService {
         const saved = await this.asignacionRepo.save(asignacion);
 
         // 6. RF2: Registrar evento MODIFICACION (automático)
+        const cambios: string[] = [];
+        if (dto.estado !== undefined) cambios.push(`estado: ${dto.estado === 1 ? 'Activo' : 'Inactivo'}`);
+        if (dto.descripcion !== undefined) cambios.push(`descripción actualizada`);
         await this.trazabilidadService.registrar(
             TipoAccion.MODIFICACION,
             saved.userId,
             saved.vehicleId,
+            `Se modificó asignación usuario=${saved.userId} / vehículo=${saved.vehicleId} - Cambios: ${cambios.join(', ')}`,
             payloadAnterior,
             TrazabilidadService.serializarAsignacion(saved),
         );
@@ -220,6 +226,7 @@ export class AsignacionService {
             TipoAccion.ELIMINACION,
             uid,
             vid,
+            `Se eliminó asignación usuario=${uid} / vehículo=${vid}`,
             payloadAnterior,
             null,
         );

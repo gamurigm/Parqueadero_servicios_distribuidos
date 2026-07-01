@@ -74,4 +74,23 @@ export class UsuariosClientService {
             throw new Error('Servicio de usuarios no disponible para validación');
         }
     }
+
+    /**
+     * Obtiene los datos de un usuario por su ID para enriquecer la trazabilidad.
+     * A diferencia de validarPropietario, no lanza excepciones - retorna null si falla.
+     *
+     * @param userId - UUID del usuario
+     * @returns Datos del usuario o null si no se pudo obtener
+     */
+    async obtenerUsuario(userId: string): Promise<any | null> {
+        try {
+            const urlUsuario = `${this.usuariosBaseUrl}/usuario/${userId}`;
+            this.logger.log(`Consultando usuario para trazabilidad: ${urlUsuario}`);
+            const resUsuario = await firstValueFrom(this.httpService.get(urlUsuario));
+            return resUsuario.data ?? null;
+        } catch (error) {
+            this.logger.warn(`No se pudo obtener el usuario ${userId}: ${error.message}`);
+            return null;
+        }
+    }
 }

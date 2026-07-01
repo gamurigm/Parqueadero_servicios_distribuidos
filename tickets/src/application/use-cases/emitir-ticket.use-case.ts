@@ -17,6 +17,10 @@ import {
   ITicketCodeGenerator,
   TICKET_CODE_GENERATOR,
 } from '../ports/ticket-code-generator.interface';
+import {
+  ITrazabilidadClient,
+  TRAZABILIDAD_CLIENT,
+} from '../ports/trazabilidad-client.interface';
 import { Ticket } from '../../domain/ticket.entity';
 import { BusinessError } from '../../domain/errors/business-error';
 
@@ -53,6 +57,8 @@ export class EmitirTicketUseCase {
     private readonly zonasClient: IZonasClient,
     @Inject(TICKET_CODE_GENERATOR)
     private readonly codeGenerator: ITicketCodeGenerator,
+    @Inject(TRAZABILIDAD_CLIENT)
+    private readonly trazabilidadClient: ITrazabilidadClient,
   ) {}
 
   async execute(input: EmitirTicketInput): Promise<EmitirTicketOutput> {
@@ -100,11 +106,33 @@ export class EmitirTicketUseCase {
       }
     }
 
-    try {
-      await this.zonasClient.marcarOcupado(idEspacio);
-    } catch (error) {
-      this.logger.error(`Error al marcar espacio ${idEspacio} como ocupado: ${error.message}`);
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        await this.zonasClient.marcarOcupado(idEspacio);
+        break; // Éxito
+      } catch (error) {
+        retries--;
+        if (retries === 0) {
+          this.logger.error(`Error crítico al marcar espacio ${idEspacio} como ocupado: ${error.message}. Inconsistencia temporal.`);
+        } else {
+          this.logger.warn(`Fallo al marcar ocupado, reintentando... quedan ${retries} intentos`);
+          await new Promise(resolve => setTimeout(resolve, 1000)); // 1s backoff
+        }
+      }
     }
+
+    // Registrar en trazabilidad
+    this.trazabilidadClient.registrarEvento({
+      microservicio: 'TICKETS',
+      endpoint: 'POST /tickets/emitir',
+      metodoHttp: 'POST',
+      tipoAccion: 'EMISION',
+      descripcion: `Se emitió el ticket ${saved.codigoTicket} para placa ${saved.placa} en espacio ${idEspacio}`,
+      entidadId: saved.id,
+      usuarioEjecutor: idEmpleado,
+      payloadNuevo: { id: saved.id, codigoTicket: saved.codigoTicket, placa: saved.placa, idEspacio },
+    });
 
     return {
       id: saved.id,

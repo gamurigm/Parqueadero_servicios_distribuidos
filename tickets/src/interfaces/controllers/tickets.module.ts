@@ -11,6 +11,8 @@ import { TicketRepository } from '../../infrastructure/persistence/ticket.reposi
 import { UsuariosClientService } from '../../infrastructure/clients/usuarios-client.service';
 import { VehiculosClientService } from '../../infrastructure/clients/vehiculos-client.service';
 import { ZonasClientService } from '../../infrastructure/clients/zonas-client.service';
+import { TrazabilidadClientModule } from '../../infrastructure/clients/trazabilidad-client.module';
+import { TrazabilidadClientService } from '../../infrastructure/clients/trazabilidad-client.service';
 import { TicketCodeGeneratorService } from '../../infrastructure/services/ticket-code-generator.service';
 import { TarifaProviderService } from '../../infrastructure/services/tarifa-provider.service';
 import {
@@ -22,6 +24,7 @@ import { ZONAS_CLIENT } from '../../application/ports/zonas-client.interface';
 import {
   TICKET_CODE_GENERATOR,
 } from '../../application/ports/ticket-code-generator.interface';
+import { TRAZABILIDAD_CLIENT } from '../../application/ports/trazabilidad-client.interface';
 import { TARIFA_PROVIDER } from '../../application/ports/tarifa-provider.interface';
 
 @Module({
@@ -30,15 +33,17 @@ import { TARIFA_PROVIDER } from '../../application/ports/tarifa-provider.interfa
     UsuariosClientModule,
     VehiculosClientModule,
     ZonasClientModule,
+    TrazabilidadClientModule,
   ],
   controllers: [TicketsController],
   providers: [
-    { provide: TICKET_REPOSITORY, useClass: TicketRepository },
-    { provide: USUARIOS_CLIENT, useClass: UsuariosClientService },
-    { provide: VEHICULOS_CLIENT, useClass: VehiculosClientService },
-    { provide: ZONAS_CLIENT, useClass: ZonasClientService },
-    { provide: TICKET_CODE_GENERATOR, useClass: TicketCodeGeneratorService },
-    { provide: TARIFA_PROVIDER, useClass: TarifaProviderService },
+    { provide: TICKET_REPOSITORY, useExisting: TicketRepository },
+    { provide: USUARIOS_CLIENT, useExisting: UsuariosClientService },
+    { provide: VEHICULOS_CLIENT, useExisting: VehiculosClientService },
+    { provide: ZONAS_CLIENT, useExisting: ZonasClientService },
+    { provide: TRAZABILIDAD_CLIENT, useExisting: TrazabilidadClientService },
+    { provide: TICKET_CODE_GENERATOR, useExisting: TicketCodeGeneratorService },
+    { provide: TARIFA_PROVIDER, useExisting: TarifaProviderService },
     EmitirTicketUseCase,
     PagarTicketUseCase,
     AnularTicketUseCase,
