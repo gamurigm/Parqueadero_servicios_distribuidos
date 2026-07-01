@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs';
 
 export interface JwtPayload {
   iss: string;
@@ -17,10 +18,18 @@ export interface JwtPayload {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService) {
+    let publicKey = configService.get<string>('JWT_SECRET', 'super-secret-key-change-in-production');
+    try {
+      publicKey = fs.readFileSync('/keys/public.pem', 'utf8');
+    } catch (e) {
+      console.warn('No se pudo leer /keys/public.pem');
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET', 'super-secret-key-change-in-production'),
+      secretOrKey: publicKey,
+      algorithms: ['RS256'],
     });
   }
 
