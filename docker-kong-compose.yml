@@ -120,6 +120,26 @@ services:
       - kong-net
     restart: on-failure
 
+  # Base de datos Tickets
+  tickets-database:
+    image: postgres:16-alpine
+    container_name: tickets-database
+    environment:
+      POSTGRES_DB: TicketsDB
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: t1ck3tsP4ssX2342as
+    ports:
+      - "5441:5432"
+    networks:
+      - kong-net
+    volumes:
+      - tickets_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Base de datos Trazabilidad
   trazabilidad-database:
     image: postgres:16-alpine
@@ -229,7 +249,7 @@ services:
     container_name: trazabilidad
     build:
       context: ./trazabilidad
-      dockerfile: trazabilidad.dockerfile
+      dockerfile: trazabilidad.dockerfile  
     environment:
       - NODE_ENV=production
       - PORT=3002
@@ -254,13 +274,49 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  # Servicio Tickets (NestJS - Puerto 3003)
+  tickets:
+    image: tickets:latest
+    container_name: tickets
+    build:
+      context: ./tickets
+      dockerfile: tickets.dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - DB_HOST=tickets-database
+      - DB_PORT=5432
+      - DB_USUARIO=admin_user
+      - DB_CONTRASENA=t1ck3tsP4ssX2342as
+      - DB_NOMBRE=TicketsDB
+      - USUARIOS_SERVICE_URL=http://usuarios:5000
+      - VEHICULOS_SERVICE_URL=http://vehiculos:3000
+      - ZONAS_SERVICE_URL=http://zonas:8080
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
+      - JWT_ISSUER=gestion-usuarios
+      - OPA_URL=http://opa:8181/v1/data
+      - TARIFA_AUTO_REGULAR=2.50
+      - TARIFA_AUTO_RESERVADO=5.00
+      - TARIFA_MOTO_REGULAR=1.50
+      - TARIFA_MOTO_RESERVADO=3.00
+      - TARIFA_CAMIONETA_REGULAR=3.50
+      - TARIFA_CAMIONETA_RESERVADO=6.00
+    ports:
+      - "3003:3003"
+    networks:
+      - kong-net
+    depends_on:
+      tickets-database:
+        condition: service_healthy
+    restart: unless-stopped
+
   #Unificacion de swaggers
   swagger-ui:
     image: swaggerapi/swagger-ui:latest
     container_name: swagger-ui
     environment:
       - URLS_PRIMARY_NAME=Usuarios
-      - URLS=[{"name":"Vehículos","url":"http://172.21.110.197:8000/vehiculos/api-json"},{"name":"Usuarios","url":"http://172.21.110.197:8000/usuarios/docs-json"},{"name":"Zonas","url":"http://172.21.110.197:8000/zonas/v3/api-docs"},{"name":"Trazabilidad","url":"http://172.21.110.197:8000/trazabilidad/docs-json"}]
+      - URLS=[{"name":"Vehículos","url":"http://172.21.110.197:8000/vehiculos/api-json"},{"name":"Usuarios","url":"http://172.21.110.197:8000/usuarios/docs-json"},{"name":"Zonas","url":"http://172.21.110.197:8000/zonas/v3/api-docs"},{"name":"Trazabilidad","url":"http://172.21.110.197:8000/trazabilidad/docs-json"},{"name":"Tickets","url":"http://172.21.110.197:8000/tickets/docs-json"}]
     ports:
       - "8085:8080"
     networks:
@@ -339,6 +395,11 @@ services:
           --data name=trazabilidad-service \
           --data url=http://trazabilidad:3002
         
+        # Servicio de Tickets
+        curl -s -X POST http://kong:8001/services \
+          --data name=tickets-service \
+          --data url=http://tickets:3003
+        
         
         #  IMPORTANTE: strip_path=true para que Kong quite el prefijo /usuarios
         # Ruta para Usuarios - con strip_path=true
@@ -367,6 +428,13 @@ services:
         curl -s -X POST http://kong:8001/services/trazabilidad-service/routes \
           --data "paths[]=/trazabilidad" \
           --data name=trazabilidad-route \
+          --data strip_path=true \
+          --data preserve_host=false
+        
+        # Rutas para Tickets
+        curl -s -X POST http://kong:8001/services/tickets-service/routes \
+          --data "paths[]=/tickets" \
+          --data name=tickets-route \
           --data strip_path=true \
           --data preserve_host=false
         
@@ -416,3 +484,4 @@ volumes:
   zonas_postgres_data:       
   postgres_data:
   trazabilidad_postgres_data:
+  tickets_postgres_data:

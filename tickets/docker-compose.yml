@@ -1,0 +1,21 @@
+services:
+  tickets-database:
+    image: postgres:16-alpine
+    container_name: tickets-database
+    environment:
+      POSTGRES_DB: TicketsDB
+      POSTGRES_USER: admin_user
+      POSTGRES_PASSWORD: t1ck3tsP4ssX2342as
+    ports:
+      - "5441:5432"
+    volumes:
+      - tickets_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  tickets_postgres_data:
