@@ -9,6 +9,7 @@ import { Vehiculo } from './vehiculos/entities/vehiculo.entity';
 import { Auto } from './vehiculos/entities/tipos/auto.entity';
 import { Motocicleta } from './vehiculos/entities/tipos/motocicleta.entity';
 import { Camioneta } from './vehiculos/entities/tipos/camioneta.entity';
+import { OpaModule } from './opa/opa.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { Camioneta } from './vehiculos/entities/tipos/camioneta.entity';
     }),
     AuthModule,
     VehiculosModule,
+    OpaModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

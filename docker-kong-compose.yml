@@ -155,6 +155,9 @@ services:
       - DB_USUARIO=admin_user
       - DB_CONTRASENA=xasmdnoasd65168zcs
       - DB_NOMBRE=VehiculoDB
+      - OPA_URL=http://opa:8181/v1/data
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
+      - JWT_ISSUER=gestion-usuarios
     ports:
       - "3001:3000"  
     networks:
@@ -210,6 +213,7 @@ services:
       - SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL=true
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
       - JWT_ISSUER=gestion-usuarios
+      - OPA_URL=http://opa:8181/v1/data
     ports:
       - "8080:8080"
     networks:
@@ -238,6 +242,7 @@ services:
       - USUARIOS_SERVICE_URL=http://usuarios:5000
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
       - JWT_ISSUER=gestion-usuarios
+      - OPA_URL=http://opa:8181/v1/data
     ports:
       - "3002:3002"
     networks:

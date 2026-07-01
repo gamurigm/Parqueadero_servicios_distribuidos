@@ -21,6 +21,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final OpaFilter opaFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -36,7 +37,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/zonas/", "/api/v1/espacios/").permitAll()
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(opaFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
