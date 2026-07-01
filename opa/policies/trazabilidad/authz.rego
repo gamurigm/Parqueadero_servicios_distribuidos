@@ -12,36 +12,56 @@ allow if {
     global_allow
 }
 
-# assignments.create: propietario
+# asignaciones.create: propietario
 allow if {
-    input.resource == "assignments.create"
+    input.resource == "asignaciones.create"
     has_role("propietario")
 }
 
-# assignments.read: Cualquier usuario autenticado
+# asignaciones.read: Cualquier usuario autenticado
 allow if {
-    input.resource == "assignments.read"
+    input.resource == "asignaciones.read"
     input.user.id != ""
 }
 
-# assignments.list: propietario
+# asignaciones.list: propietario
 allow if {
-    input.resource == "assignments.list"
+    input.resource == "asignaciones.list"
     has_role("propietario")
 }
 
-# assignments.fleet: el propio propietario o admin
+# asignaciones.fleet: el propio propietario o admin
 allow if {
-    input.resource == "assignments.fleet"
+    input.resource == "asignaciones.fleet"
     input.user.id != ""
 }
 
-# assignments.update: propietario
+# asignaciones.update: propietario
 allow if {
-    input.resource == "assignments.update"
+    input.resource == "asignaciones.update"
     has_role("propietario")
 }
 
-# assignments.delete: Solo administradores (cubierto por admin universal)
+# asignaciones.delete: admin
+allow if {
+    input.resource == "asignaciones.delete"
+    has_role("admin")
+}
 
-# trazabilidad.read: Solo administradores (cubierto por admin universal)
+# asignaciones.physical_delete: Solo super_user
+allow if {
+    input.resource == "asignaciones.physical_delete"
+    has_role("super_user")
+}
+
+# trazabilidad.read: admin
+allow if {
+    input.resource == "trazabilidad.read"
+    has_role("admin")
+}
+
+# trazabilidad.physical_delete: Solo super_user
+allow if {
+    input.resource == "trazabilidad.physical_delete"
+    has_role("super_user")
+}

@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { Asignacion } from './asignacion/entities/asignacion.entity';
 import { EventoTrazabilidad } from './trazabilidad/entities/trazabilidad.entity';
+import { OpaModule } from './opa/opa.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { EventoTrazabilidad } from './trazabilidad/entities/trazabilidad.entity'
     TrazabilidadModule,
     VehiculosClientModule,
     UsuariosClientModule,
+    OpaModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

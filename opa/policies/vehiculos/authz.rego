@@ -36,4 +36,14 @@ allow if {
     has_role("propietario")
 }
 
-# vehiculos.delete: Solo administradores (cubierto por admin universal)
+# vehiculos.delete: admin
+allow if {
+    input.resource == "vehiculos.delete"
+    has_role("admin")
+}
+
+# vehiculos.physical_delete: Solo super_user
+allow if {
+    input.resource == "vehiculos.physical_delete"
+    has_role("super_user")
+}

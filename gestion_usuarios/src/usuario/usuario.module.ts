@@ -8,7 +8,7 @@ import { RolesUsuarios } from '../roles_usuario/entities/roles_usuario.entity';
 import { OpaModule } from '../opa/opa.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User,Person,RolesUsuarios]),OpaModule, ],
+  imports: [TypeOrmModule.forFeature([User,Person,RolesUsuarios]), OpaModule],
   controllers: [UsuarioController],
   providers: [UsuarioService],
   exports: [UsuarioService],

@@ -60,4 +60,26 @@ allow if {
     has_role("encargado_zona")
 }
 
-# spaces.delete: Solo administradores (cubierto por admin universal)
+# spaces.delete: admin
+allow if {
+    input.resource == "spaces.delete"
+    has_role("admin")
+}
+
+# zones.delete: admin
+allow if {
+    input.resource == "zones.delete"
+    has_role("admin")
+}
+
+# spaces.physical_delete: super_user
+allow if {
+    input.resource == "spaces.physical_delete"
+    has_role("super_user")
+}
+
+# zones.physical_delete: super_user
+allow if {
+    input.resource == "zones.physical_delete"
+    has_role("super_user")
+}

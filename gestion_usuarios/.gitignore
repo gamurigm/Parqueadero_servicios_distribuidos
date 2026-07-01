@@ -46,6 +46,9 @@ lerna-debug.log*
 .temp
 .tmp
 
+# JWT RSA keys
+/jwt-keys
+
 # Runtime data
 pids
 *.pid

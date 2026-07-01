@@ -13,7 +13,7 @@ import { OpaModule } from '../opa/opa.module';
   imports: [
     TypeOrmModule.forFeature([Person, User, Natural, Juridica]),
     UsuarioModule,
-    OpaModule,
+    OpaModule
   ],
   controllers: [PersonaController],
   providers: [PersonaService],

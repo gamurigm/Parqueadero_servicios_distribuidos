@@ -7,9 +7,37 @@ import data.authz.has_role
 
 default allow = false
 
-# Admin universal
+# Admin universal (incluye super_user via global_allow)
 allow if {
     global_allow
+}
+
+# ============================================
+# BORRADO FÍSICO — solo super_user
+# ============================================
+
+# usuarios.physical_delete: Solo super_user
+allow if {
+    input.resource == "usuarios.physical_delete"
+    has_role("super_user")
+}
+
+# personas.physical_delete: Solo super_user
+allow if {
+    input.resource == "personas.physical_delete"
+    has_role("super_user")
+}
+
+# roles.physical_delete: Solo super_user
+allow if {
+    input.resource == "roles.physical_delete"
+    has_role("super_user")
+}
+
+# roles_usuario.physical_delete: Solo super_user
+allow if {
+    input.resource == "roles_usuario.physical_delete"
+    has_role("super_user")
 }
 
 # ============================================
