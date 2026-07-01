@@ -1,5 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import * as fs from 'fs';
+import * as path from 'path';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -25,10 +27,24 @@ import { OpaModule } from '../opa/opa.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET', 'super-secret-key-change-in-production'),
-        signOptions: { expiresIn: config.get<any>('JWT_EXPIRATION', '15m') },
-      }),
+      useFactory: (config: ConfigService) => {
+        const privateKey = fs.readFileSync(
+          path.resolve(__dirname, '../../jwt-keys/jwt-private.pem'),
+          'utf-8',
+        );
+        const publicKey = fs.readFileSync(
+          path.resolve(__dirname, '../../jwt-keys/jwt-public.pem'),
+          'utf-8',
+        );
+        return {
+          privateKey,
+          publicKey,
+          signOptions: {
+            algorithm: 'RS256',
+            expiresIn: config.get<any>('JWT_EXPIRATION', '15m'),
+          },
+        };
+      },
     }),
     forwardRef(() => UsuarioModule),
     PersonaModule,

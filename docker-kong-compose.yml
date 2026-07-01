@@ -215,7 +215,7 @@ services:
       - JWT_ISSUER=gestion-usuarios
       - OPA_URL=http://opa:8181/v1/data
     ports:
-      - "8080:8080"
+      - "8081:8080"
     networks:
       - kong-net
     depends_on:
