@@ -255,7 +255,7 @@ services:
     container_name: swagger-ui
     environment:
       - URLS_PRIMARY_NAME=Usuarios
-      - URLS=[{"name":"Vehículos","url":"http://localhost:3000/api-json"},{"name":"Usuarios","url":"http://localhost:5000/docs-json"},{"name":"Zonas","url":"http://localhost:8080/v3/api-docs"},{"name":"Trazabilidad","url":"http://localhost:3002/docs-json"}]
+      - URLS=[{"name":"Vehículos","url":"http://172.21.110.197:8000/vehiculos/api-json"},{"name":"Usuarios","url":"http://172.21.110.197:8000/usuarios/docs-json"},{"name":"Zonas","url":"http://172.21.110.197:8000/zonas/v3/api-docs"},{"name":"Trazabilidad","url":"http://172.21.110.197:8000/trazabilidad/docs-json"}]
     ports:
       - "8085:8080"
     networks:
@@ -371,8 +371,20 @@ services:
         curl -s -X POST http://kong:8001/plugins \
           --data name=cors \
           --data "config.origins=*" \
-          --data "config.methods=GET, POST, PUT, DELETE, PATCH, OPTIONS" \
-          --data "config.headers=Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Auth-Token, Authorization" \
+          --data "config.methods=GET" \
+          --data "config.methods=POST" \
+          --data "config.methods=PUT" \
+          --data "config.methods=DELETE" \
+          --data "config.methods=PATCH" \
+          --data "config.methods=OPTIONS" \
+          --data "config.headers=Accept" \
+          --data "config.headers=Accept-Version" \
+          --data "config.headers=Content-Length" \
+          --data "config.headers=Content-MD5" \
+          --data "config.headers=Content-Type" \
+          --data "config.headers=Date" \
+          --data "config.headers=X-Auth-Token" \
+          --data "config.headers=Authorization" \
           --data "config.exposed_headers=X-Auth-Token" \
           --data "config.credentials=true" \
           --data "config.max_age=3600"
