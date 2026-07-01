@@ -3,6 +3,24 @@ networks:
     driver: bridge
 
 services:
+  # Open Policy Agent
+  opa:
+    image: openpolicyagent/opa:latest
+    container_name: opa
+    ports:
+      - "8181:8181"
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "--log-level=debug"
+      - "/policies"
+    volumes:
+      - ./opa/policies:/policies
+    networks:
+      - kong-net
+    restart: unless-stopped
+
   # Base de datos Usuarios
   usuarios-database:
     image: postgres:16-alpine
@@ -17,6 +35,7 @@ services:
       - kong-net
     volumes:
       - usuarios_postgres_data:/var/lib/postgresql/data
+      - ./gestion_usuarios/seed:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin_user"]
       interval: 10s
