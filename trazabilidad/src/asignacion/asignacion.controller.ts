@@ -8,6 +8,7 @@ import {
     Param,
     HttpCode,
     HttpStatus,
+    UseGuards,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -20,6 +21,7 @@ import { AsignacionService } from './asignacion.service';
 import { TrazabilidadService } from '../trazabilidad/trazabilidad.service';
 import { CreateAsignacionDto } from './dto/create-asignacion.dto';
 import { UpdateAsignacionDto } from './dto/update-asignacion.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 /**
  * Controlador de Asignaciones y Trazabilidad.
@@ -29,6 +31,7 @@ import { UpdateAsignacionDto } from './dto/update-asignacion.dto';
  */
 @ApiTags('Asignaciones')
 @Controller('asignaciones')
+@UseGuards(JwtAuthGuard) 
 export class AsignacionController {
     constructor(
         private readonly asignacionService: AsignacionService,

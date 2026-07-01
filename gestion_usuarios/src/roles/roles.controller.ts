@@ -7,6 +7,7 @@ import { Resource } from '../opa/decorators/resource.decorator';
 
 @ApiTags('roles')
 @Controller('roles')
+@UseGuards(JwtAuthGuard) 
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 

@@ -1,14 +1,16 @@
 // vehiculos.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Put, UseGuards } from '@nestjs/common';
 import { VehiculosService } from './vehiculos.service';
 import { CreateVehiculoDto } from './dto/create-vehiculo.dto';
 import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
 import { SanitizePipe } from './utils/SanitizePipe';
 import type { UUID } from 'crypto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Vehiculos')
 @Controller('vehiculos')
+@UseGuards(JwtAuthGuard) 
 export class VehiculosController {
   constructor(private readonly vehiculosService: VehiculosService) {}
 

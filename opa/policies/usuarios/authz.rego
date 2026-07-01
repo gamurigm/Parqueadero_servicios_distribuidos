@@ -10,10 +10,20 @@ allow if {
     global_allow
 }
 
+# ============================================
+# RECURSOS DE USUARIOS
+# ============================================
+
 # usuarios.read: Cualquier usuario autenticado
 allow if {
     input.resource == "usuarios.read"
     input.user.id != ""
+}
+
+# usuarios.create: Solo admin
+allow if {
+    input.resource == "usuarios.create"
+    has_role("admin")
 }
 
 # usuarios.update: El propio usuario o admin
@@ -22,17 +32,133 @@ allow if {
     input.user.id != ""
 }
 
-# roles.read: Cualquier usuario autenticado
 allow if {
-    startswith(input.resource, "roles.read")
-    input.user.id != ""
+    input.resource == "usuarios.update"
+    has_role("admin")
 }
+
+# usuarios.activate: Solo admin
+allow if {
+    input.resource == "usuarios.activate"
+    has_role("admin")
+}
+
+# usuarios.delete: Solo admin
+allow if {
+    input.resource == "usuarios.delete"
+    has_role("admin")
+}
+
+# ============================================
+# RECURSOS DE PERSONAS
+# ============================================
 
 # personas.read: Cualquier usuario autenticado
 allow if {
     input.resource == "personas.read"
     input.user.id != ""
 }
+
+# personas.create: Solo admin
+allow if {
+    input.resource == "personas.create"
+    has_role("admin")
+}
+
+# personas.update: El propio usuario o admin
+allow if {
+    input.resource == "personas.update"
+    input.user.id != ""
+}
+
+allow if {
+    input.resource == "personas.update"
+    has_role("admin")
+}
+
+# personas.activate: Solo admin
+allow if {
+    input.resource == "personas.activate"
+    has_role("admin")
+}
+
+# personas.delete: Solo admin
+allow if {
+    input.resource == "personas.delete"
+    has_role("admin")
+}
+
+# ============================================
+# RECURSOS DE ROLES
+# ============================================
+
+# roles.read: Cualquier usuario autenticado
+allow if {
+    startswith(input.resource, "roles.read")
+    input.user.id != ""
+}
+
+# roles.create: Solo admin
+allow if {
+    input.resource == "roles.create"
+    has_role("admin")
+}
+
+# roles.update: Solo admin
+allow if {
+    input.resource == "roles.update"
+    has_role("admin")
+}
+
+# roles.activate: Solo admin
+allow if {
+    input.resource == "roles.activate"
+    has_role("admin")
+}
+
+# roles.delete: Solo admin
+allow if {
+    input.resource == "roles.delete"
+    has_role("admin")
+}
+
+# ============================================
+# RECURSOS DE ROLES-USUARIO
+# ============================================
+
+# roles-usuario.read: Cualquier usuario autenticado
+allow if {
+    startswith(input.resource, "roles-usuario.read")
+    input.user.id != ""
+}
+
+# roles-usuario.create: Solo admin
+allow if {
+    input.resource == "roles-usuario.create"
+    has_role("admin")
+}
+
+# roles-usuario.update: Solo admin
+allow if {
+    input.resource == "roles-usuario.update"
+    has_role("admin")
+}
+
+# roles-usuario.activate: Solo admin
+allow if {
+    input.resource == "roles-usuario.activate"
+    has_role("admin")
+}
+
+# roles-usuario.delete: Solo admin
+allow if {
+    input.resource == "roles-usuario.delete"
+    has_role("admin")
+}
+
+# ============================================
+# RECURSOS DE AUTENTICACIÓN
+# ============================================
 
 # auth.profile: Cualquier usuario autenticado
 allow if {
