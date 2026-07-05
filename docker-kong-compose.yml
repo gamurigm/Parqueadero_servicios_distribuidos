@@ -215,6 +215,7 @@ services:
       opa:
         condition: service_started
     restart: unless-stopped
+
   # Servicio Zonas (Spring Boot - Puerto 8080)
   zonas:
     image: zonas:latest
@@ -317,7 +318,7 @@ services:
     container_name: swagger-ui
     environment:
       - URLS_PRIMARY_NAME=Usuarios
-      - URLS=[{"name":"Vehículos","url":"http://172.21.110.197:8000/vehiculos/api-json"},{"name":"Usuarios","url":"http://172.21.110.197:8000/usuarios/docs-json"},{"name":"Zonas","url":"http://172.21.110.197:8000/zonas/v3/api-docs"},{"name":"Trazabilidad","url":"http://172.21.110.197:8000/trazabilidad/docs-json"},{"name":"Tickets","url":"http://172.21.110.197:8000/tickets/docs-json"}]
+      - URLS=[{"name":"Vehículos","url":"http://localhost:8000/vehiculos/docs-json"},{"name":"Usuarios","url":"http://localhost:8000/usuarios/docs-json"},{"name":"Zonas","url":"http://localhost:8000/zonas/v3/api-docs"},{"name":"Trazabilidad","url":"http://localhost:8000/trazabilidad/docs-json"},{"name":"Tickets","url":"http://localhost:8000/tickets/docs-json"}]
     ports:
       - "8085:8080"
     networks:
@@ -357,7 +358,6 @@ services:
       timeout: 5s
       retries: 10
 
-  # Inicialización de Kong 
   kong-init:
     image: alpine:latest
     container_name: kong-init
@@ -368,10 +368,7 @@ services:
       - kong-net
     command: |
       sh -c '
-        echo "Instalando curl..."
         apk add --no-cache curl
-        
-        echo "Esperando a que Kong esté listo..."
         sleep 15
         
         echo "Configurando servicios..."
@@ -401,47 +398,97 @@ services:
           --data name=tickets-service \
           --data url=http://tickets:3003
         
+        echo "Configurando rutas de API (con strip_path=false)..."
         
-        #  IMPORTANTE: strip_path=true para que Kong quite el prefijo /usuarios
-        # Ruta para Usuarios - con strip_path=true
+        # ============================================
+        # RUTAS DE API
+        # ============================================
+        
+        # Usuarios API
         curl -s -X POST http://kong:8001/services/usuarios-service/routes \
           --data "paths[]=/usuarios" \
           --data name=usuarios-route \
-          --data strip_path=true \
+          --data strip_path=false \
           --data preserve_host=false
-      
         
-        # Rutas para Vehículos
+        # Usuarios - ruta adicional para el root
+        curl -s -X POST http://kong:8001/services/usuarios-service/routes \
+          --data "paths[]=/" \
+          --data name=usuarios-root-route \
+          --data strip_path=false \
+          --data preserve_host=false
+        
+        # Vehículos API
         curl -s -X POST http://kong:8001/services/vehiculos-service/routes \
           --data "paths[]=/vehiculos" \
           --data name=vehiculos-route \
-          --data strip_path=true \
+          --data strip_path=false \
           --data preserve_host=false
         
-        # Rutas para Zonas
+        # Zonas API
         curl -s -X POST http://kong:8001/services/zonas-service/routes \
           --data "paths[]=/zonas" \
           --data name=zonas-route \
-          --data strip_path=true \
+          --data strip_path=false \
           --data preserve_host=false
         
-        # Rutas para Trazabilidad
+        # Trazabilidad API
         curl -s -X POST http://kong:8001/services/trazabilidad-service/routes \
           --data "paths[]=/trazabilidad" \
           --data name=trazabilidad-route \
-          --data strip_path=true \
+          --data strip_path=false \
           --data preserve_host=false
         
-        # Rutas para Tickets
+        # Tickets API
         curl -s -X POST http://kong:8001/services/tickets-service/routes \
           --data "paths[]=/tickets" \
           --data name=tickets-route \
+          --data strip_path=false \
+          --data preserve_host=false
+        
+        echo "Configurando rutas de documentación..."
+        
+        # ============================================
+        # RUTAS DE DOCUMENTACIÓN
+        # ============================================
+        
+        # Usuarios Docs
+        curl -s -X POST http://kong:8001/services/usuarios-service/routes \
+          --data "paths[]=/usuarios/docs-json" \
+          --data name=usuarios-docs-route \
           --data strip_path=true \
           --data preserve_host=false
         
-        echo "Configurando plugins..."
+        # Vehículos Docs
+        curl -s -X POST http://kong:8001/services/vehiculos-service/routes \
+          --data "paths[]=/vehiculos/docs-json" \
+          --data name=vehiculos-docs-route \
+          --data strip_path=true \
+          --data preserve_host=false
         
-        # CORS
+        # Zonas Docs
+        curl -s -X POST http://kong:8001/services/zonas-service/routes \
+          --data "paths[]=/zonas/v3/api-docs" \
+          --data name=zonas-docs-route \
+          --data strip_path=true \
+          --data preserve_host=false
+        
+        # Trazabilidad Docs
+        curl -s -X POST http://kong:8001/services/trazabilidad-service/routes \
+          --data "paths[]=/trazabilidad/docs-json" \
+          --data name=trazabilidad-docs-route \
+          --data strip_path=true \
+          --data preserve_host=false
+        
+        # Tickets Docs
+        curl -s -X POST http://kong:8001/services/tickets-service/routes \
+          --data "paths[]=/tickets/docs-json" \
+          --data name=tickets-docs-route \
+          --data strip_path=true \
+          --data preserve_host=false
+        
+        echo "Configurando CORS..."
+        
         curl -s -X POST http://kong:8001/plugins \
           --data name=cors \
           --data "config.origins=*" \
@@ -463,10 +510,10 @@ services:
           --data "config.credentials=true" \
           --data "config.max_age=3600"
         
-      
+        echo "¡Configuración completada!"
       '
     restart: "no"
-  #konga para usar kong
+  # Konga para usar Kong
   konga:
     image: pantsel/konga:latest
     container_name: konga

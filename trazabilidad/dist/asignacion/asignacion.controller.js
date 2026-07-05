@@ -19,6 +19,8 @@ const asignacion_service_1 = require("./asignacion.service");
 const trazabilidad_service_1 = require("../trazabilidad/trazabilidad.service");
 const create_asignacion_dto_1 = require("./dto/create-asignacion.dto");
 const update_asignacion_dto_1 = require("./dto/update-asignacion.dto");
+const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
+const resource_decorator_1 = require("../opa/decorators/resource.decorator");
 let AsignacionController = class AsignacionController {
     constructor(asignacionService, trazabilidadService) {
         this.asignacionService = asignacionService;
@@ -29,15 +31,6 @@ let AsignacionController = class AsignacionController {
     }
     listar() {
         return this.asignacionService.listar();
-    }
-    buscarPorClave(userId, vehicleId) {
-        return this.asignacionService.buscarPorClave(userId, vehicleId);
-    }
-    actualizar(userId, vehicleId, dto) {
-        return this.asignacionService.actualizar(userId, vehicleId, dto);
-    }
-    eliminar(userId, vehicleId) {
-        return this.asignacionService.eliminar(userId, vehicleId);
     }
     obtenerFlota(userId) {
         return this.asignacionService.obtenerFlotaPorPropietario(userId);
@@ -51,11 +44,22 @@ let AsignacionController = class AsignacionController {
     listarTrazabilidadPorAsignacion(userId, vehicleId) {
         return this.trazabilidadService.listarPorAsignacion(userId, vehicleId);
     }
+    buscarPorClave(userId, vehicleId) {
+        return this.asignacionService.buscarPorClave(userId, vehicleId);
+    }
+    actualizar(userId, vehicleId, dto) {
+        return this.asignacionService.actualizar(userId, vehicleId, dto);
+    }
+    eliminar(userId, vehicleId) {
+        return this.asignacionService.eliminar(userId, vehicleId);
+    }
 };
 exports.AsignacionController = AsignacionController;
 __decorate([
     (0, common_1.Post)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, resource_decorator_1.Resource)('asignaciones.create'),
     (0, swagger_1.ApiOperation)({
         summary: 'RF1 - Crear asignación vehículo-propietario',
         description: 'Asocia un vehículo a un propietario usando clave compuesta (userId + vehicleId). ' +
@@ -72,6 +76,8 @@ __decorate([
 ], AsignacionController.prototype, "crear", null);
 __decorate([
     (0, common_1.Get)(),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, resource_decorator_1.Resource)('asignaciones.read'),
     (0, swagger_1.ApiOperation)({ summary: 'Listar todas las asignaciones' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Lista de asignaciones' }),
     __metadata("design:type", Function),
@@ -79,7 +85,63 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AsignacionController.prototype, "listar", null);
 __decorate([
+    (0, common_1.Get)('propietario/:userId'),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, resource_decorator_1.Resource)('asignaciones.read'),
+    (0, swagger_1.ApiOperation)({
+        summary: 'RF3 - Obtener flota de vehículos de un propietario',
+        description: 'Retorna la lista de vehículos asignados al propietario, ' +
+            'enriquecida con tipo y categoría obtenidos del Microservicio de Vehículos.',
+    }),
+    (0, swagger_1.ApiParam)({ name: 'userId', description: 'UUID del propietario', example: 'a3f1b2c4-1234-4abc-89de-1234567890ab' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Lista de vehículos asignados con tipo y categoría' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'UUID inválido' }),
+    __param(0, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AsignacionController.prototype, "obtenerFlota", null);
+__decorate([
+    (0, swagger_1.ApiTags)('Trazabilidad'),
+    (0, common_1.Get)('trazabilidad/historial'),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, resource_decorator_1.Resource)('trazabilidad.read'),
+    (0, swagger_1.ApiOperation)({ summary: 'RF2 - Obtener historial completo de auditoría' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Todos los eventos de auditoría' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AsignacionController.prototype, "listarTrazabilidad", null);
+__decorate([
+    (0, swagger_1.ApiTags)('Trazabilidad'),
+    (0, common_1.Get)('trazabilidad/propietario/:userId'),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, resource_decorator_1.Resource)('trazabilidad.read'),
+    (0, swagger_1.ApiOperation)({ summary: 'RF2 - Historial de auditoría de un propietario' }),
+    (0, swagger_1.ApiParam)({ name: 'userId', description: 'UUID del propietario' }),
+    __param(0, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AsignacionController.prototype, "listarTrazabilidadPorPropietario", null);
+__decorate([
+    (0, swagger_1.ApiTags)('Trazabilidad'),
+    (0, common_1.Get)('trazabilidad/:userId/:vehicleId'),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, resource_decorator_1.Resource)('trazabilidad.read'),
+    (0, swagger_1.ApiOperation)({ summary: 'RF2 - Historial de auditoría de una asignación específica' }),
+    (0, swagger_1.ApiParam)({ name: 'userId', description: 'UUID del propietario' }),
+    (0, swagger_1.ApiParam)({ name: 'vehicleId', description: 'UUID del vehículo' }),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Param)('vehicleId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], AsignacionController.prototype, "listarTrazabilidadPorAsignacion", null);
+__decorate([
     (0, common_1.Get)(':userId/:vehicleId'),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, resource_decorator_1.Resource)('asignaciones.read'),
     (0, swagger_1.ApiOperation)({ summary: 'RF1 - Buscar asignación por clave compuesta (userId + vehicleId)' }),
     (0, swagger_1.ApiParam)({ name: 'userId', description: 'UUID del propietario', example: 'a3f1b2c4-1234-4abc-89de-1234567890ab' }),
     (0, swagger_1.ApiParam)({ name: 'vehicleId', description: 'UUID del vehículo', example: 'b4e2c3d5-5678-4def-90ef-234567890bcd' }),
@@ -93,6 +155,8 @@ __decorate([
 ], AsignacionController.prototype, "buscarPorClave", null);
 __decorate([
     (0, common_1.Put)(':userId/:vehicleId'),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, resource_decorator_1.Resource)('asignaciones.update'),
     (0, swagger_1.ApiOperation)({
         summary: 'RF1 - Actualizar asignación (estado/notas)',
         description: 'Actualiza el estado o notas de una asignación. ' +
@@ -112,6 +176,8 @@ __decorate([
 ], AsignacionController.prototype, "actualizar", null);
 __decorate([
     (0, common_1.Delete)(':userId/:vehicleId'),
+    (0, swagger_1.ApiBearerAuth)('JWT-auth'),
+    (0, resource_decorator_1.Resource)('asignaciones.delete'),
     (0, swagger_1.ApiOperation)({
         summary: 'RF1 - Eliminar asignación',
         description: 'Elimina una asignación por su clave compuesta. ' +
@@ -127,55 +193,10 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], AsignacionController.prototype, "eliminar", null);
-__decorate([
-    (0, common_1.Get)('propietario/:userId'),
-    (0, swagger_1.ApiOperation)({
-        summary: 'RF3 - Obtener flota de vehículos de un propietario',
-        description: 'Retorna la lista de vehículos asignados al propietario, ' +
-            'enriquecida con tipo y categoría obtenidos del Microservicio de Vehículos.',
-    }),
-    (0, swagger_1.ApiParam)({ name: 'userId', description: 'UUID del propietario', example: 'a3f1b2c4-1234-4abc-89de-1234567890ab' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Lista de vehículos asignados con tipo y categoría' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'UUID inválido' }),
-    __param(0, (0, common_1.Param)('userId')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
-], AsignacionController.prototype, "obtenerFlota", null);
-__decorate([
-    (0, swagger_1.ApiTags)('Trazabilidad'),
-    (0, common_1.Get)('trazabilidad/historial'),
-    (0, swagger_1.ApiOperation)({ summary: 'RF2 - Obtener historial completo de auditoría' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Todos los eventos de auditoría' }),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], AsignacionController.prototype, "listarTrazabilidad", null);
-__decorate([
-    (0, swagger_1.ApiTags)('Trazabilidad'),
-    (0, common_1.Get)('trazabilidad/propietario/:userId'),
-    (0, swagger_1.ApiOperation)({ summary: 'RF2 - Historial de auditoría de un propietario' }),
-    (0, swagger_1.ApiParam)({ name: 'userId', description: 'UUID del propietario' }),
-    __param(0, (0, common_1.Param)('userId')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
-], AsignacionController.prototype, "listarTrazabilidadPorPropietario", null);
-__decorate([
-    (0, swagger_1.ApiTags)('Trazabilidad'),
-    (0, common_1.Get)('trazabilidad/:userId/:vehicleId'),
-    (0, swagger_1.ApiOperation)({ summary: 'RF2 - Historial de auditoría de una asignación específica' }),
-    (0, swagger_1.ApiParam)({ name: 'userId', description: 'UUID del propietario' }),
-    (0, swagger_1.ApiParam)({ name: 'vehicleId', description: 'UUID del vehículo' }),
-    __param(0, (0, common_1.Param)('userId')),
-    __param(1, (0, common_1.Param)('vehicleId')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", void 0)
-], AsignacionController.prototype, "listarTrazabilidadPorAsignacion", null);
 exports.AsignacionController = AsignacionController = __decorate([
     (0, swagger_1.ApiTags)('Asignaciones'),
     (0, common_1.Controller)('asignaciones'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __metadata("design:paramtypes", [asignacion_service_1.AsignacionService,
         trazabilidad_service_1.TrazabilidadService])
 ], AsignacionController);

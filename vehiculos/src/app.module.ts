@@ -1,3 +1,4 @@
+// vehiculos/app.module.ts
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -9,8 +10,7 @@ import { Vehiculo } from './vehiculos/entities/vehiculo.entity';
 import { Auto } from './vehiculos/entities/tipos/auto.entity';
 import { Motocicleta } from './vehiculos/entities/tipos/motocicleta.entity';
 import { Camioneta } from './vehiculos/entities/tipos/camioneta.entity';
-import { OpaModule } from './opa/opa.module';
-
+import { OpaModule } from './opa/opa.module';  
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,12 +21,12 @@ import { OpaModule } from './opa/opa.module';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-         host: configService.get('DB_HOST', 'localhost'),
-        port: configService.get('DB_PORT', 5432),  
+        host: configService.get('DB_HOST', 'localhost'),
+        port: configService.get('DB_PORT', 5432),
         username: configService.get('DB_USUARIO', 'admin_user'),
-        password: configService.get('DB_CONTRASENA', 'xasmdno123XAW2342as'),
+        password: configService.get('DB_CONTRASENA', 'xasmdnoasd65168zcs'),
         database: configService.get('DB_NOMBRE', 'VehiculosDB'),
-        entities:[Vehiculo, Auto, Motocicleta, Camioneta],
+        entities: [Vehiculo, Auto, Motocicleta, Camioneta],
         synchronize: true,
         logging: true,
       }),
@@ -34,10 +34,10 @@ import { OpaModule } from './opa/opa.module';
     }),
     AuthModule,
     VehiculosModule,
-    OpaModule,
+    OpaModule,  
   ],
   providers: [
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },  
   ],
 })
 export class AppModule {}

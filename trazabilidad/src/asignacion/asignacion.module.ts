@@ -1,3 +1,4 @@
+// asignacion.module.ts - VERSIÓN CORREGIDA
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Asignacion } from './entities/asignacion.entity';
@@ -6,13 +7,15 @@ import { AsignacionController } from './asignacion.controller';
 import { TrazabilidadModule } from '../trazabilidad/trazabilidad.module';
 import { VehiculosClientModule } from '../vehiculos-client/vehiculos-client.module';
 import { UsuariosClientModule } from '../usuarios-client/usuarios-client.module';
+import { OpaModule } from '../opa/opa.module';  
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Asignacion]),
-        TrazabilidadModule,        // Para inyectar TrazabilidadService
-        VehiculosClientModule,     // Para inyectar VehiculosClientService (RF3)
-        UsuariosClientModule,      // Para validar propietarios (API Usuarios)
+        TrazabilidadModule,
+        VehiculosClientModule,
+        UsuariosClientModule,
+        OpaModule,  
     ],
     controllers: [AsignacionController],
     providers: [AsignacionService],

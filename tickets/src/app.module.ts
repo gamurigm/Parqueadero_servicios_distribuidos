@@ -1,3 +1,4 @@
+// app.module.ts
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -14,10 +15,10 @@ import { TicketEntity } from './infrastructure/persistence/ticket.entity';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: ['../.env', './.env'],
     }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
+      imports: [ConfigModule], 
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get('DB_HOST', 'localhost'),
@@ -36,12 +37,15 @@ import { TicketEntity } from './infrastructure/persistence/ticket.entity';
       maxRedirects: 5,
     }),
     AuthModule,
-    TicketsModule,
+    TicketsModule, 
     OpaModule,
     InfrastructureServicesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
+  
 })
+
+
 export class AppModule {}

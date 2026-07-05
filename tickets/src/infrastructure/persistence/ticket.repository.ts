@@ -11,7 +11,6 @@ export class TicketRepository implements ITicketRepository {
   constructor(
     @InjectRepository(TicketEntity)
     private readonly repo: Repository<TicketEntity>,
-    private readonly dataSource: DataSource,
   ) {}
 
   async findById(id: string): Promise<Ticket | null> {

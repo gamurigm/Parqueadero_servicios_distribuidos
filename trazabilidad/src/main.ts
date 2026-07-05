@@ -33,22 +33,13 @@ async function bootstrap() {
         .addServer('http://localhost:3002', 'Local - Directo')
         .addServer('http://host.docker.internal:3002', 'Docker - Host')
         .addServer('http://localhost:8000/trazabilidad', 'Kong Gateway')
+        .addBearerAuth()
         .build();
 
+        
     const document = SwaggerModule.createDocument(app, config);
 
-    SwaggerModule.setup('docs', app, document, {
-        swaggerOptions: {
-            persistAuthorization: true,
-            displayRequestDuration: true,
-            filter: true,
-            tryItOutEnabled: true,
-            defaultModelsExpandDepth: 1,
-            defaultModelExpandDepth: 1,
-            docExpansion: 'list',
-        },
-        customSiteTitle: 'API Trazabilidad',
-    });
+    SwaggerModule.setup('docs', app, document);
 
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
     await app.listen(process.env.PORT ?? 3002, '0.0.0.0');

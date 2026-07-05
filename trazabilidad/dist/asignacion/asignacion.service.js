@@ -21,17 +21,24 @@ const factory_asignacion_1 = require("./factory/factory-asignacion");
 const trazabilidad_service_1 = require("../trazabilidad/trazabilidad.service");
 const trazabilidad_entity_1 = require("../trazabilidad/entities/trazabilidad.entity");
 const vehiculos_client_service_1 = require("../vehiculos-client/vehiculos-client.service");
+const usuarios_client_service_1 = require("../usuarios-client/usuarios-client.service");
 const utils_1 = require("../utils/utils");
 let AsignacionService = class AsignacionService {
-    constructor(asignacionRepo, trazabilidadService, vehiculosClientService) {
+    constructor(asignacionRepo, trazabilidadService, vehiculosClientService, usuariosClientService) {
         this.asignacionRepo = asignacionRepo;
         this.trazabilidadService = trazabilidadService;
         this.vehiculosClientService = vehiculosClientService;
+        this.usuariosClientService = usuariosClientService;
         this.utils = new utils_1.Utils();
     }
     async crear(dto) {
         const userId = this.utils.validateUUID(dto.userId);
         const vehicleId = this.utils.validateUUID(dto.vehicleId);
+        await this.usuariosClientService.validarPropietario(userId);
+        const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(vehicleId);
+        if (!vehiculoDetalle) {
+            throw new common_1.NotFoundException(`El vehículo con ID ${vehicleId} no existe en el sistema`);
+        }
         const asignacionExistente = await this.asignacionRepo.findOne({
             where: { userId, vehicleId },
         });
@@ -43,6 +50,9 @@ let AsignacionService = class AsignacionService {
         });
         if (vehiculoActivo) {
             throw new common_1.ConflictException(`El vehículo ${vehicleId} ya está asignado activamente al propietario ${vehiculoActivo.userId}`);
+        }
+        if (dto.descripcion) {
+            dto.descripcion = this.utils.sanitizeText(dto.descripcion);
         }
         const asignacion = factory_asignacion_1.FactoryAsignacion.crear({ ...dto, userId, vehicleId });
         const saved = await this.asignacionRepo.save(asignacion);
@@ -91,7 +101,7 @@ let AsignacionService = class AsignacionService {
         if (dto.estado !== undefined)
             asignacion.estado = dto.estado;
         if (dto.descripcion !== undefined)
-            asignacion.descripcion = dto.descripcion;
+            asignacion.descripcion = this.utils.sanitizeText(dto.descripcion);
         const saved = await this.asignacionRepo.save(asignacion);
         await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.MODIFICACION, saved.userId, saved.vehicleId, payloadAnterior, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
         return saved;
@@ -121,23 +131,25 @@ let AsignacionService = class AsignacionService {
         }
         const flota = await Promise.all(asignaciones.map(async (asignacion) => {
             const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(asignacion.vehicleId);
-            return {
-                userId: asignacion.userId,
-                vehicleId: asignacion.vehicleId,
-                estado: asignacion.estado,
-                descripcion: asignacion.descripcion,
-                fechaAsignacion: asignacion.fechaAsignacion,
-                vehiculo: vehiculoDetalle
-                    ? {
-                        id: vehiculoDetalle.id,
-                        tipo: vehiculoDetalle.tipo,
-                        categoria: vehiculoDetalle.categoria,
-                        marca: vehiculoDetalle.marca ?? null,
-                        modelo: vehiculoDetalle.modelo ?? null,
-                        placa: vehiculoDetalle.placa ?? null,
-                    }
-                    : { id: asignacion.vehicleId, error: 'Servicio de vehículos no disponible' },
-            };
+            if (vehiculoDetalle) {
+                return {
+                    id: vehiculoDetalle.id,
+                    tipo: vehiculoDetalle.tipo,
+                    categoria: vehiculoDetalle.categoria,
+                    marca: vehiculoDetalle.marca ?? null,
+                    modelo: vehiculoDetalle.modelo ?? null,
+                    placa: vehiculoDetalle.placa ?? null,
+                    fechaAsignacion: asignacion.fechaAsignacion,
+                    estadoAsignacion: asignacion.estado === 1 ? 'Activo' : 'Inactivo'
+                };
+            }
+            else {
+                return {
+                    id: asignacion.vehicleId,
+                    error: 'Servicio de vehículos no disponible o vehículo eliminado',
+                    fechaAsignacion: asignacion.fechaAsignacion
+                };
+            }
         }));
         return flota;
     }
@@ -148,6 +160,7 @@ exports.AsignacionService = AsignacionService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(asignacion_entity_1.Asignacion)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         trazabilidad_service_1.TrazabilidadService,
-        vehiculos_client_service_1.VehiculosClientService])
+        vehiculos_client_service_1.VehiculosClientService,
+        usuarios_client_service_1.UsuariosClientService])
 ], AsignacionService);
 //# sourceMappingURL=asignacion.service.js.map

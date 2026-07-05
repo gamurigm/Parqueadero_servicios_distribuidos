@@ -35,11 +35,12 @@ __decorate([
 ], CreateAsignacionDto.prototype, "vehicleId", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
-        description: 'Descripcion adicionales sobre la asignación',
+        description: 'Descripción adicional sobre la asignación',
         example: 'Vehículo asignado para estacionamiento zona norte',
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsString)({ message: 'La descripción debe ser un texto válido' }),
+    (0, class_validator_1.MaxLength)(500, { message: 'La descripción no puede exceder los 500 caracteres' }),
     __metadata("design:type", String)
 ], CreateAsignacionDto.prototype, "descripcion", void 0);
 //# sourceMappingURL=create-asignacion.dto.js.map

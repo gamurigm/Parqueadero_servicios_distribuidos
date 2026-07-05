@@ -17,6 +17,19 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const path = request.url || request.originalUrl || '';
+    
+    const isDocsPath = 
+      path.includes('/docs') || 
+      path.includes('/docs-json') || 
+      path.includes('/api-docs') ||
+      path.includes('/swagger-ui') ||
+      path.includes('/v3/api-docs');
+
+    if (isDocsPath) {
+      return true;
+    }
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),

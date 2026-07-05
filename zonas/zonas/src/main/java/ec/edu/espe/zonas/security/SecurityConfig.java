@@ -32,9 +32,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/swagger-ui/**",
-                    "/v3/api-docs/**"
+                    "/v3/api-docs/**",
+                    "/v3/api-docs",
+                    "/swagger-ui.html"
                 ).permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/zonas/", "/api/v1/espacios/").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
