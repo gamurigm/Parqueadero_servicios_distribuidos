@@ -91,6 +91,11 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
+    const lastLogin = await this.usuarioService.markLastLogin(user.id);
+    const nombreCompleto = [user.persona?.firstName, user.persona?.middleName, user.persona?.lastName]
+      .filter((part): part is string => typeof part === 'string' && part.trim().length > 0)
+      .join(' ') || null;
+
     const rolesAsignados = await this.rolesUsuarioRepository.find({
       where: { id_usuario: user.id, activo: true },
       relations: { role: true },
@@ -127,7 +132,15 @@ export class AuthService {
       user: {
         id: user.id,
         username: user.username,
+        nombreCompleto,
         roles: roleNames,
+        lastLogin,
+        persona: user.persona ? {
+          id: user.persona.id,
+          dni: user.persona.dni,
+          email: user.persona.email,
+          phone: user.persona.phone,
+        } : null,
       },
     };
   }
@@ -190,23 +203,6 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    const user = await this.usuarioService.findOne(userId);
-    
-    if (!user) {
-      throw new UnauthorizedException('Usuario no encontrado');
-    }
-
-    const roles = await this.rolesUsuarioRepository.find({
-      where: { id_usuario: user.id, activo: true },
-      relations: { role: true },
-    });
-    const roleNames = roles.map((r) => r.role.nombre);
-
-    return {
-      id: user.id,
-      username: user.username,
-      active: user.active,
-      roles: roleNames,
-    };
+    return this.usuarioService.findOne(userId);
   }
 }

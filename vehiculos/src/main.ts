@@ -29,9 +29,9 @@ async function bootstrap() {
     .setDescription('Documentación de la API')
     .setVersion('1.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'access-token')
-    .addServer('http://localhost:3000', 'Local - Directo')
-    .addServer('http://host.docker.internal:3000', 'Docker - Host')
     .addServer('http://localhost:8000/vehiculos', 'Kong Gateway')
+    .addServer('http://localhost:3001', 'Local - Directo')
+    .addServer('http://host.docker.internal:3000', 'Docker - Host')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

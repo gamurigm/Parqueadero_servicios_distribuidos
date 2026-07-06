@@ -45,13 +45,14 @@ export class VehiculosClientService {
      * @param vehicleId - UUID del vehículo
      * @returns Detalles del vehículo o null si no se pudo obtener
      */
-    async getVehiculo(vehicleId: string): Promise<VehiculoDetalle | null> {
+    async getVehiculo(vehicleId: string, authHeader?: string): Promise<VehiculoDetalle | null> {
         try {
             const url = `${this.vehiculosBaseUrl}/vehiculos/${vehicleId}`;
             this.logger.log(`Consultando vehículo: ${url}`);
 
+            const headers = authHeader ? { Authorization: authHeader } : undefined;
             const response = await firstValueFrom(
-                this.httpService.get<VehiculoDetalle>(url),
+                this.httpService.get<VehiculoDetalle>(url, { headers }),
             );
 
             return response.data;

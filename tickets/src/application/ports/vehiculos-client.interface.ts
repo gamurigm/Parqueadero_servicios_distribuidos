@@ -8,5 +8,5 @@ export interface VehiculoDetalle {
 }
 
 export interface IVehiculosClient {
-  buscarPorPlaca(placa: string): Promise<VehiculoDetalle | null>;
+  buscarPorPlaca(placa: string, authHeader?: string): Promise<VehiculoDetalle | null>;
 }

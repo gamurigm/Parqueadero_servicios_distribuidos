@@ -6,10 +6,8 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -19,68 +17,35 @@ import java.util.Base64;
 @Service
 public class JwtService {
 
-    @Value("${jwt.public-key-path:jwt-keys/jwt-public.pem}")
-    private String publicKeyPath;
-
     private PublicKey publicKey;
+    private final String expectedIssuer;
 
-    @PostConstruct
-    public void init() {
-        String[] possiblePaths = {
-            "/app/jwt-keys/jwt-public.pem",
-            "/app/" + publicKeyPath,
-            System.getProperty("user.dir") + "/jwt-keys/jwt-public.pem",
-            System.getProperty("user.dir") + "/../jwt-keys/jwt-public.pem",
-            "jwt-keys/jwt-public.pem",
-            "../jwt-keys/jwt-public.pem",
-            "../../jwt-keys/jwt-public.pem",
-        };
-
-        String publicKeyContent = null;
-        String foundPath = null;
-
-        for (String path : possiblePaths) {
-            try {
-                Path filePath = Paths.get(path);
-                if (Files.exists(filePath)) {
-                    publicKeyContent = new String(Files.readAllBytes(filePath), StandardCharsets.UTF_8);
-                    foundPath = path;
-                    break;
-                }
-            } catch (Exception e) {
-                // Continuar con la siguiente ruta
-            }
-        }
-
-        if (publicKeyContent == null) {
-            throw new RuntimeException(
-                "No se encontró el archivo de clave pública JWT. " +
-                "Buscado en: " + String.join(", ", possiblePaths)
-            );
-        }
-
-        System.out.println("✅ Clave pública JWT cargada desde: " + foundPath);
-
+    public JwtService(@Value("${JWT_SECRET:super-secret-key-change-in-production}") String secret,
+                      @Value("${JWT_ISSUER:gestion-usuarios}") String expectedIssuer) {
+        this.expectedIssuer = expectedIssuer;
         try {
-            String cleanPublicKey = publicKeyContent
-                    .replace("-----BEGIN PUBLIC KEY-----", "")
-                    .replace("-----END PUBLIC KEY-----", "")
-                    .replaceAll("\\s", "");
-            
-            byte[] keyBytes = Base64.getDecoder().decode(cleanPublicKey);
+            // Leer public key del volumen montado
+            String keyContent = new String(Files.readAllBytes(Paths.get("/keys/public.pem")), StandardCharsets.UTF_8);
+            keyContent = keyContent.replaceAll("-----BEGIN PUBLIC KEY-----", "")
+                                   .replaceAll("-----END PUBLIC KEY-----", "")
+                                   .replaceAll("\\s+", "");
+            byte[] keyBytes = Base64.getDecoder().decode(keyContent);
             X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            this.publicKey = keyFactory.generatePublic(spec);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            this.publicKey = kf.generatePublic(spec);
         } catch (Exception e) {
-            throw new RuntimeException("Error al procesar la clave pública JWT: " + e.getMessage(), e);
+            System.err.println("Advertencia: No se pudo cargar /keys/public.pem. El servicio fallará al validar JWTs si requiere RS256. Error: " + e.getMessage());
         }
     }
 
     public Claims validateToken(String token) {
         try {
-            // 🔥 Usar publicKey directamente en verifyWith
+            if (this.publicKey == null) {
+                throw new RuntimeException("La llave pública RSA no está inicializada.");
+            }
             return Jwts.parser()
-                    .verifyWith(publicKey)  
+                    .verifyWith(this.publicKey)
+                    .requireIssuer(expectedIssuer)
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();

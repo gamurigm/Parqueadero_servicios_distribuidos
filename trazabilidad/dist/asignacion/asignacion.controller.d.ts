@@ -9,9 +9,9 @@ export declare class AsignacionController {
     crear(dto: CreateAsignacionDto): Promise<import("./entities/asignacion.entity").Asignacion>;
     listar(): Promise<import("./entities/asignacion.entity").Asignacion[]>;
     obtenerFlota(userId: string): Promise<any[]>;
-    listarTrazabilidad(): Promise<import("../trazabilidad/entities/trazabilidad.entity").EventoTrazabilidad[]>;
-    listarTrazabilidadPorPropietario(userId: string): Promise<import("../trazabilidad/entities/trazabilidad.entity").EventoTrazabilidad[]>;
-    listarTrazabilidadPorAsignacion(userId: string, vehicleId: string): Promise<import("../trazabilidad/entities/trazabilidad.entity").EventoTrazabilidad[]>;
+    listarTrazabilidad(): Promise<any[]>;
+    listarTrazabilidadPorPropietario(userId: string): Promise<any[]>;
+    listarTrazabilidadPorAsignacion(userId: string, vehicleId: string): Promise<any[]>;
     buscarPorClave(userId: string, vehicleId: string): Promise<import("./entities/asignacion.entity").Asignacion>;
     actualizar(userId: string, vehicleId: string, dto: UpdateAsignacionDto): Promise<import("./entities/asignacion.entity").Asignacion>;
     eliminar(userId: string, vehicleId: string): Promise<{

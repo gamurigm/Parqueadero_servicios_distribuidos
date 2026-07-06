@@ -43,9 +43,9 @@ export class RegisterAuthDto {
   @ApiProperty({ example: 'Calle Principal 123', description: 'Dirección' })
   address!: string;
 
-  @IsUUID('4', { message: 'rolId debe ser un UUID v4 válido' })
+  @IsUUID('all', { message: 'rolId debe ser un UUID válido' })
   @IsNotEmpty()
-  @ApiProperty({ example: 'a1b2c3d4-e5f6-7890-ab12-cd34ef567890', description: 'ID (UUID) del rol a asignar al usuario' })
+  @ApiProperty({ example: 'f311601b-6143-4fd0-aea7-8536c7c6e2fa', description: 'ID (UUID) del rol a asignar al usuario' })
   rolId!: string;
 
   @IsString()

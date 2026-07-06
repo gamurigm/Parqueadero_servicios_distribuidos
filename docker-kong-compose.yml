@@ -21,6 +21,27 @@ services:
       - kong-net
     restart: unless-stopped
 
+  # Inicialización de llaves RSA compartidas
+  init-keys:
+    image: alpine:latest
+    container_name: init-keys
+    networks:
+      - kong-net
+    volumes:
+      - jwt_keys_data:/keys
+    command: >
+      sh -c "
+      apk add --no-cache openssl &&
+      if [ ! -f /keys/private.pem ]; then
+        echo 'Generando llaves RSA (RS256)...' &&
+        openssl genpkey -algorithm RSA -out /keys/private.pem -pkeyopt rsa_keygen_bits:2048 &&
+        openssl rsa -pubout -in /keys/private.pem -out /keys/public.pem &&
+        chmod 644 /keys/*.pem;
+      else
+        echo 'Las llaves RSA ya existen. Omitiendo generación.';
+      fi
+      "
+
   # Base de datos Usuarios
   usuarios-database:
     image: postgres:16-alpine
@@ -37,10 +58,12 @@ services:
       - usuarios_postgres_data:/var/lib/postgresql/data
       - ./gestion_usuarios/seed:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d UsuariosDB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   # Base de datos Vehiculos
   vehiculos-database:
@@ -57,10 +80,12 @@ services:
     volumes:
       - vehiculos_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d VehiculoDB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   # Base de datos Zonas
   zonas-database:
@@ -77,10 +102,12 @@ services:
     volumes:
       - zonas_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d ZonasDB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
     
   # Base de datos de Kong
   kong-database:
@@ -97,10 +124,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kong"]
+      test: ["CMD-SHELL", "pg_isready -U kong -d kong"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   # Migraciones de Kong
   kong-migrations:
@@ -135,10 +164,12 @@ services:
     volumes:
       - tickets_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d TicketsDB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   # Base de datos Trazabilidad
   trazabilidad-database:
@@ -155,10 +186,12 @@ services:
     volumes:
       - trazabilidad_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin_user"]
+      test: ["CMD-SHELL", "pg_isready -U admin_user -d TrazabilidadDB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   # Servicio Vehiculos (NestJS - Puerto 3000)
   vehiculos:
@@ -182,9 +215,13 @@ services:
       - "3001:3000"  
     networks:
       - kong-net
+    volumes:
+      - jwt_keys_data:/keys:ro
     depends_on:
       vehiculos-database:
         condition: service_healthy
+      init-keys:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   # Servicio Usuarios (NestJS - Puerto 5000)
@@ -209,9 +246,13 @@ services:
       - "5000:5000"
     networks:
       - kong-net
+    volumes:
+      - jwt_keys_data:/keys:ro
     depends_on:
       usuarios-database:
         condition: service_healthy
+      init-keys:
+        condition: service_completed_successfully
       opa:
         condition: service_started
     restart: unless-stopped
@@ -240,9 +281,13 @@ services:
       - "8081:8080"
     networks:
       - kong-net
+    volumes:
+      - jwt_keys_data:/keys:ro
     depends_on:
       zonas-database:  
         condition: service_healthy
+      init-keys:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   # Servicio Trazabilidad (NestJS - Puerto 3002)
@@ -269,11 +314,15 @@ services:
       - "3002:3002"
     networks:
       - kong-net
+    volumes:
+      - jwt_keys_data:/keys:ro
     depends_on:
       trazabilidad-database:
         condition: service_healthy
       vehiculos:
         condition: service_started
+      init-keys:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   # Servicio Tickets (NestJS - Puerto 3003)
@@ -307,9 +356,13 @@ services:
       - "3003:3003"
     networks:
       - kong-net
+    volumes:
+      - jwt_keys_data:/keys:ro
     depends_on:
       tickets-database:
         condition: service_healthy
+      init-keys:
+        condition: service_completed_successfully
     restart: unless-stopped
 
   #Unificacion de swaggers
@@ -533,3 +586,4 @@ volumes:
   postgres_data:
   trazabilidad_postgres_data:
   tickets_postgres_data:
+  jwt_keys_data:

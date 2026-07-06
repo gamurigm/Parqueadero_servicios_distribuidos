@@ -106,8 +106,12 @@ __decorate([
     (0, common_1.Get)('trazabilidad/historial'),
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, resource_decorator_1.Resource)('trazabilidad.read'),
-    (0, swagger_1.ApiOperation)({ summary: 'RF2 - Obtener historial completo de auditoría' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Todos los eventos de auditoría' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'RF2 - Obtener historial completo de auditoría (enriquecido)',
+        description: 'Retorna todos los eventos de auditoría con información amigable ' +
+            '(nombres de usuario, datos de vehículos). Endpoint principal: GET /trazabilidad/historial',
+    }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Todos los eventos de auditoría enriquecidos' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -117,7 +121,10 @@ __decorate([
     (0, common_1.Get)('trazabilidad/propietario/:userId'),
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, resource_decorator_1.Resource)('trazabilidad.read'),
-    (0, swagger_1.ApiOperation)({ summary: 'RF2 - Historial de auditoría de un propietario' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'RF2 - Historial de auditoría de un propietario (enriquecido)',
+        description: 'Retorna eventos de un propietario con datos legibles.',
+    }),
     (0, swagger_1.ApiParam)({ name: 'userId', description: 'UUID del propietario' }),
     __param(0, (0, common_1.Param)('userId')),
     __metadata("design:type", Function),
@@ -129,7 +136,10 @@ __decorate([
     (0, common_1.Get)('trazabilidad/:userId/:vehicleId'),
     (0, swagger_1.ApiBearerAuth)('JWT-auth'),
     (0, resource_decorator_1.Resource)('trazabilidad.read'),
-    (0, swagger_1.ApiOperation)({ summary: 'RF2 - Historial de auditoría de una asignación específica' }),
+    (0, swagger_1.ApiOperation)({
+        summary: 'RF2 - Historial de auditoría de una asignación específica (enriquecido)',
+        description: 'Retorna eventos de una asignación con datos legibles.',
+    }),
     (0, swagger_1.ApiParam)({ name: 'userId', description: 'UUID del propietario' }),
     (0, swagger_1.ApiParam)({ name: 'vehicleId', description: 'UUID del vehículo' }),
     __param(0, (0, common_1.Param)('userId')),

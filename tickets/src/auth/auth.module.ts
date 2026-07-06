@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import * as fs from 'fs';
-import * as path from 'path';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -15,14 +14,17 @@ import { OpaModule } from '../opa/opa.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: () => {
-        const publicKey = fs.readFileSync(
-          path.resolve(__dirname, '../../jwt-keys/jwt-public.pem'),
-          'utf-8',
-        );
+      useFactory: (configService: ConfigService) => {
+        let publicKey = configService.get<string>('JWT_SECRET', 'super-secret-key-change-in-production');
+        try {
+          publicKey = fs.readFileSync('/keys/public.pem', 'utf8');
+        } catch (e) {
+          console.warn('No se pudo leer /keys/public.pem');
+        }
         return {
-          publicKey,
-          signOptions: {
+          publicKey: publicKey,
+          signOptions: { 
+            expiresIn: '15m',
             algorithm: 'RS256',
           },
         };

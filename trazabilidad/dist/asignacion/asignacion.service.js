@@ -56,7 +56,8 @@ let AsignacionService = class AsignacionService {
         }
         const asignacion = factory_asignacion_1.FactoryAsignacion.crear({ ...dto, userId, vehicleId });
         const saved = await this.asignacionRepo.save(asignacion);
-        await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.CREACION, saved.userId, saved.vehicleId, null, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
+        const vehiculoInfo = vehiculoDetalle ? `${vehiculoDetalle.marca ?? ''} ${vehiculoDetalle.modelo ?? ''} (${vehiculoDetalle.placa ?? 'sin placa'})`.trim() : vehicleId;
+        await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.CREACION, saved.userId, saved.vehicleId, `Se creó asignación del vehículo ${vehiculoInfo} al propietario ${saved.userId}`, null, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
         return saved;
     }
     async listar() {
@@ -103,7 +104,12 @@ let AsignacionService = class AsignacionService {
         if (dto.descripcion !== undefined)
             asignacion.descripcion = this.utils.sanitizeText(dto.descripcion);
         const saved = await this.asignacionRepo.save(asignacion);
-        await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.MODIFICACION, saved.userId, saved.vehicleId, payloadAnterior, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
+        const cambios = [];
+        if (dto.estado !== undefined)
+            cambios.push(`estado: ${dto.estado === 1 ? 'Activo' : 'Inactivo'}`);
+        if (dto.descripcion !== undefined)
+            cambios.push(`descripción actualizada`);
+        await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.MODIFICACION, saved.userId, saved.vehicleId, `Se modificó asignación usuario=${saved.userId} / vehículo=${saved.vehicleId} - Cambios: ${cambios.join(', ')}`, payloadAnterior, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
         return saved;
     }
     async eliminar(userId, vehicleId) {
@@ -117,7 +123,7 @@ let AsignacionService = class AsignacionService {
         }
         const payloadAnterior = trazabilidad_service_1.TrazabilidadService.serializarAsignacion(asignacion);
         await this.asignacionRepo.remove(asignacion);
-        await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.ELIMINACION, uid, vid, payloadAnterior, null);
+        await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.ELIMINACION, uid, vid, `Se eliminó asignación usuario=${uid} / vehículo=${vid}`, payloadAnterior, null);
         return { message: `Asignación usuario=${uid} / vehículo=${vid} eliminada exitosamente` };
     }
     async obtenerFlotaPorPropietario(userId) {
