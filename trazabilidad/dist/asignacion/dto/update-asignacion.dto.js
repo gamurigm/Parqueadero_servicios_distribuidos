@@ -30,11 +30,12 @@ __decorate([
 ], UpdateAsignacionDto.prototype, "estado", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
-        description: 'Descripcion adicionales sobre la asignación',
+        description: 'Descripción adicional sobre la asignación',
         example: 'Asignación suspendida temporalmente',
     }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsString)({ message: 'La descripción debe ser un texto válido' }),
+    (0, class_validator_1.MaxLength)(140, { message: 'La descripción no puede exceder los 500 caracteres' }),
     __metadata("design:type", String)
 ], UpdateAsignacionDto.prototype, "descripcion", void 0);
 //# sourceMappingURL=update-asignacion.dto.js.map

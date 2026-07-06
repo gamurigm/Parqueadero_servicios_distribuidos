@@ -10,8 +10,8 @@ export class TicketResponseDto {
   @ApiProperty({ example: 'ESP-001' })
   idEspacio: string;
 
-  @ApiProperty({ example: '1234567890' })
-  cedula: string;
+  @ApiProperty({ example: '1234567890', required: false })
+  cedula?: string;
 
   @ApiProperty({ example: 'ABC-1234' })
   placa: string;

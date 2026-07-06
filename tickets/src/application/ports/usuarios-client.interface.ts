@@ -6,5 +6,5 @@ export interface VehiculoInfo {
 }
 
 export interface IUsuariosClient {
-  obtenerVehiculosPorCedula(cedula: string): Promise<VehiculoInfo[]>;
+  obtenerVehiculosPorCedula(cedula: string, authHeader?: string): Promise<VehiculoInfo[]>;
 }

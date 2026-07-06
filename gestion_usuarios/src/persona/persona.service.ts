@@ -147,6 +147,16 @@ export class PersonaService {
     return await this.personRepository.find();
   }
 
+  async findByCedula(cedula: string) {
+    const dni = this.utils.sanitizeString("cedula", cedula);
+    const person = await this.personRepository.findOne({
+      where: { dni },
+    });
+
+    if (!person) throw new NotFoundException('Persona no encontrada');
+
+    return person;
+  }
   async findOne(id: string) {
     const idPerson = this.utils.validateUUID(id);
     const person = await this.personRepository.findOne({

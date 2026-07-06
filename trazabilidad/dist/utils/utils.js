@@ -7,9 +7,12 @@ class Utils {
         this.uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     }
     validateUUID(id) {
-        const cleaned = this.sanitizeString('id', id);
+        if (!id)
+            throw new common_1.BadRequestException('ID no proporcionado');
+        const noSpaces = id.replace(/\s+/g, '');
+        const cleaned = this.sanitizeString('id', noSpaces);
         if (!this.uuidRegex.test(cleaned)) {
-            throw new common_1.BadRequestException('ID inválido: debe ser un UUID válido');
+            throw new common_1.BadRequestException('ID inválido: debe ser un UUID válido sin espacios en blanco');
         }
         return cleaned;
     }
@@ -19,6 +22,15 @@ class Utils {
         }
         let cleaned = value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
         cleaned = cleaned.replace(/<[^>]*>/g, '');
+        cleaned = cleaned.replace(/['";\\]/g, '');
+        return cleaned;
+    }
+    sanitizeText(value) {
+        if (!value)
+            return null;
+        let cleaned = value.trim().replace(/\s+/g, ' ');
+        cleaned = cleaned.replace(/<[^>]*>/g, '');
+        cleaned = cleaned.replace(/['";\\]/g, '');
         return cleaned;
     }
     escapeHtml(value) {

@@ -1,7 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import * as fs from 'fs';
-import * as path from 'path';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -28,17 +27,16 @@ import { OpaModule } from '../opa/opa.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const privateKey = fs.readFileSync(
-          path.resolve(__dirname, '../../jwt-keys/jwt-private.pem'),
-          'utf-8',
-        );
-        const publicKey = fs.readFileSync(
-          path.resolve(__dirname, '../../jwt-keys/jwt-public.pem'),
-          'utf-8',
-        );
+        let privateKey = config.get<string>('JWT_SECRET', 'super-secret-key-change-in-production');
+        try {
+          // Intentar leer la llave privada desde el archivo montado
+          privateKey = fs.readFileSync('/keys/private.pem', 'utf8');
+        } catch (error) {
+          console.warn('No se pudo leer /keys/private.pem. Asegúrese de montar la llave o definir la variable.');
+        }
+        
         return {
-          privateKey,
-          publicKey,
+          privateKey: privateKey,
           signOptions: {
             algorithm: 'RS256',
             expiresIn: config.get<any>('JWT_EXPIRATION', '15m'),

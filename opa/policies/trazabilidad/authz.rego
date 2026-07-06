@@ -12,10 +12,10 @@ allow if {
     global_allow
 }
 
-# asignaciones.create: propietario
+# asignaciones.create: empleado
 allow if {
     input.resource == "asignaciones.create"
-    has_role("propietario")
+    has_role("empleado")
 }
 
 # asignaciones.read: Cualquier usuario autenticado

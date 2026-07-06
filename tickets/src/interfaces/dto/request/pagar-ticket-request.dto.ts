@@ -1,21 +1,22 @@
-import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MinLength, ValidateIf, IsUUID } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PagarTicketRequestDto {
   @ApiPropertyOptional({ example: 'uuid-del-ticket', description: 'UUID del ticket (opcional si se envía código)' })
-  @IsOptional()
-  @IsString()
+  @ValidateIf(o => !o.codigoTicket)
+  @IsNotEmpty({ message: 'Debe proporcionar el idTicket si no proporciona el codigoTicket' })
+  @Transform(({ value }) => value?.trim())
+  @IsUUID('4', { message: 'El idTicket debe ser un UUID válido' })
   idTicket?: string;
 
   @ApiPropertyOptional({ example: '1000012345678901', description: 'Código único de 16 dígitos del ticket (opcional si se envía id)' })
-  @IsOptional()
+  @ValidateIf(o => !o.idTicket)
+  @IsNotEmpty({ message: 'Debe proporcionar el codigoTicket si no proporciona el idTicket' })
+  @Transform(({ value }) => value?.trim())
   @IsString()
   @MinLength(16)
   codigoTicket?: string;
 
-  @ApiProperty({ example: 'EMP-002', description: 'ID del empleado que procesa el pago' })
-  @IsNotEmpty({ message: 'El idEmpleado no puede estar vacío' })
-  @IsString()
-  @MinLength(1)
-  idEmpleado: string;
+
 }

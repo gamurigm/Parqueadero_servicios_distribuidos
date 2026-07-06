@@ -7,6 +7,7 @@ import { TicketsModule } from './interfaces/controllers/tickets.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { OpaModule } from './opa/opa.module';
+import { TrazabilidadClientModule } from './infrastructure/clients/trazabilidad-client.module';
 import { InfrastructureServicesModule } from './infrastructure/services/infrastructure-services.module';
 import { TicketEntity } from './infrastructure/persistence/ticket.entity';
 
@@ -38,6 +39,7 @@ import { TicketEntity } from './infrastructure/persistence/ticket.entity';
     AuthModule,
     TicketsModule,
     OpaModule,
+    TrazabilidadClientModule,
     InfrastructureServicesModule,
   ],
   providers: [

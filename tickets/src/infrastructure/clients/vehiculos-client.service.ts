@@ -16,28 +16,42 @@ export class VehiculosClientService implements IVehiculosClient {
     this.baseUrl = this.configService.get<string>('VEHICULOS_SERVICE_URL', 'http://localhost:3000');
   }
 
-  async buscarPorPlaca(placa: string): Promise<VehiculoDetalle | null> {
+  async buscarPorPlaca(placa: string, authHeader?: string): Promise<VehiculoDetalle | null> {
+    const placaNormalizada = placa.trim().toUpperCase();
+    const headers = authHeader ? { Authorization: authHeader } : undefined;
+
     try {
-      const url = `${this.baseUrl}/vehiculos/placa/${placa}`;
-      this.logger.log(`Buscando vehículo por placa: ${url}`);
-      const res = await firstValueFrom(this.httpService.get(url));
-
-      if (!res.data) return null;
-
-      const dto: VehiculoDetalle = {
-        id: res.data.id || '',
-        placa: res.data.placa || placa,
-        tipo: res.data.tipo || 'Automóvil',
-        cedulaPropietario: res.data.cedulaPropietario || res.data.cedula || '',
-      };
-      return dto;
+      const url = `${this.baseUrl}/vehiculos/placa/${encodeURIComponent(placaNormalizada)}`;
+      this.logger.log(`Buscando vehiculo por placa: ${url}`);
+      const res = await firstValueFrom(this.httpService.get(url, { headers }));
+      return this.mapVehiculo(res.data, placaNormalizada);
     } catch (error) {
-      if (error.response?.status === 404) {
-        this.logger.warn(`Vehículo con placa ${placa} no encontrado`);
-        return null;
+      if (error.response?.status !== 404) {
+        this.logger.warn(`Busqueda directa por placa no disponible: ${error.message}`);
       }
-      this.logger.error(`Error al buscar vehículo por placa ${placa}: ${error.message}`);
+    }
+
+    try {
+      const url = `${this.baseUrl}/vehiculos`;
+      this.logger.log(`Buscando vehiculo por placa en listado: ${url}`);
+      const res = await firstValueFrom(this.httpService.get(url, { headers }));
+      const vehiculos: any[] = Array.isArray(res.data) ? res.data : [];
+      const encontrado = vehiculos.find((v) => String(v.placa ?? '').trim().toUpperCase() === placaNormalizada);
+      return encontrado ? this.mapVehiculo(encontrado, placaNormalizada) : null;
+    } catch (error) {
+      this.logger.error(`Error al buscar vehiculo por placa ${placaNormalizada}: ${error.message}`);
       return null;
     }
+  }
+
+  private mapVehiculo(data: any, placa: string): VehiculoDetalle | null {
+    if (!data) return null;
+
+    return {
+      id: data.id || '',
+      placa: data.placa || placa,
+      tipo: data.tipo || data.type || data.discriminator || 'Automovil',
+      cedulaPropietario: data.cedulaPropietario || data.cedula || undefined,
+    };
   }
 }

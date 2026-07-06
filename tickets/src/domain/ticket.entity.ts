@@ -5,9 +5,9 @@ export class Ticket {
     public readonly id: string,
     public readonly codigoTicket: string,
     public readonly idEspacio: string,
-    public readonly cedula: string,
+    public readonly cedula: string | undefined,
     public readonly placa: string,
-    public readonly estado: TicketStatus,
+    public estado: TicketStatus,
     public readonly fechaIngreso: Date,
     public readonly idEmpleado: string,
     public fechaSalida?: Date,
@@ -19,7 +19,7 @@ export class Ticket {
     id: string,
     codigoTicket: string,
     idEspacio: string,
-    cedula: string,
+    cedula: string | undefined,
     placa: string,
     idEmpleado: string,
   ): Ticket {
@@ -41,13 +41,21 @@ export class Ticket {
     }
     this.fechaSalida = fechaSalida;
     this.valorRecaudado = valor;
+    this.estado = TicketStatus.PAGADO;
   }
 
-  anular(motivo: string, empleadoAnula: string): void {
+  anular(motivo: string, empleadoAnula: string, limiteMinutos: number = 15): void {
     if (this.estado !== TicketStatus.ACTIVO) {
       throw new Error(`No se puede anular un ticket en estado ${this.estado}`);
     }
+    const ahora = new Date();
+    const diffMs = ahora.getTime() - this.fechaIngreso.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins > limiteMinutos) {
+      throw new Error(`No se puede anular el ticket. Han pasado ${diffMins} minutos desde la emisión (límite: ${limiteMinutos} minutos)`);
+    }
     this.motivoAnulacion = motivo;
+    this.estado = TicketStatus.ANULADO;
   }
 
   get transicionEstado(): TicketStatus {

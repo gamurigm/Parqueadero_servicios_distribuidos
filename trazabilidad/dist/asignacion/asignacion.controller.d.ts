@@ -6,15 +6,15 @@ export declare class AsignacionController {
     private readonly asignacionService;
     private readonly trazabilidadService;
     constructor(asignacionService: AsignacionService, trazabilidadService: TrazabilidadService);
-    crear(dto: CreateAsignacionDto): Promise<import("./entities/asignacion.entity").Asignacion>;
-    listar(): Promise<import("./entities/asignacion.entity").Asignacion[]>;
-    buscarPorClave(userId: string, vehicleId: string): Promise<import("./entities/asignacion.entity").Asignacion>;
-    actualizar(userId: string, vehicleId: string, dto: UpdateAsignacionDto): Promise<import("./entities/asignacion.entity").Asignacion>;
-    eliminar(userId: string, vehicleId: string): Promise<{
+    crear(dto: CreateAsignacionDto, authHeader?: string): Promise<any>;
+    listar(authHeader?: string): Promise<any[]>;
+    obtenerFlota(userId: string, authHeader?: string): Promise<any[]>;
+    listarTrazabilidad(authHeader?: string): Promise<any[]>;
+    listarTrazabilidadPorPropietario(userId: string, authHeader?: string): Promise<any[]>;
+    listarTrazabilidadPorAsignacion(userId: string, vehicleId: string, authHeader?: string): Promise<any[]>;
+    buscarPorClave(userId: string, vehicleId: string, authHeader?: string): Promise<any>;
+    actualizar(userId: string, vehicleId: string, dto: UpdateAsignacionDto, authHeader?: string): Promise<any>;
+    eliminar(userId: string, vehicleId: string, authHeader?: string): Promise<{
         message: string;
     }>;
-    obtenerFlota(userId: string): Promise<any[]>;
-    listarTrazabilidad(): Promise<import("../trazabilidad/entities/trazabilidad.entity").EventoTrazabilidad[]>;
-    listarTrazabilidadPorPropietario(userId: string): Promise<import("../trazabilidad/entities/trazabilidad.entity").EventoTrazabilidad[]>;
-    listarTrazabilidadPorAsignacion(userId: string, vehicleId: string): Promise<import("../trazabilidad/entities/trazabilidad.entity").EventoTrazabilidad[]>;
 }
