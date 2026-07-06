@@ -1,6 +1,5 @@
-// tickets.module.ts - VERSIÓN CORREGIDA
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios'; // 👈 Importa HttpModule
+import { HttpModule } from '@nestjs/axios'; 
 import { TicketsController } from './tickets.controller';
 import { EmitirTicketUseCase } from '../../application/use-cases/emitir-ticket.use-case';
 import { PagarTicketUseCase } from '../../application/use-cases/pagar-ticket.use-case';
@@ -19,15 +18,12 @@ import { TarifaProviderService } from '../../infrastructure/services/tarifa-prov
 import { USUARIOS_CLIENT } from '../../application/ports/usuarios-client.interface';
 import { VEHICULOS_CLIENT } from '../../application/ports/vehiculos-client.interface';
 import { ZONAS_CLIENT } from '../../application/ports/zonas-client.interface';
-<<<<<<< HEAD
-import { TICKET_CODE_GENERATOR } from '../../application/ports/ticket-code-generator.interface';
-=======
 import {
   TICKET_CODE_GENERATOR,
 } from '../../application/ports/ticket-code-generator.interface';
-import { TRAZABILIDAD_CLIENT } from '../../application/ports/trazabilidad-client.interface';
->>>>>>> c1fcd81203b82c3c3faab7c399f9c07c1e843b32
 import { TARIFA_PROVIDER } from '../../application/ports/tarifa-provider.interface';
+import { TicketRepository } from 'src/infrastructure/persistence/ticket.repository';
+import { TICKET_REPOSITORY } from 'src/application/ports/ticket-repository.interface';
 
 @Module({
   imports: [
@@ -40,20 +36,12 @@ import { TARIFA_PROVIDER } from '../../application/ports/tarifa-provider.interfa
   ],
   controllers: [TicketsController],
   providers: [
-<<<<<<< HEAD
-    { provide: USUARIOS_CLIENT, useClass: UsuariosClientService },
-    { provide: VEHICULOS_CLIENT, useClass: VehiculosClientService },
-    { provide: ZONAS_CLIENT, useClass: ZonasClientService },
-    { provide: TICKET_CODE_GENERATOR, useClass: TicketCodeGeneratorService },
-    { provide: TARIFA_PROVIDER, useClass: TarifaProviderService },
-=======
     { provide: TICKET_REPOSITORY, useExisting: TicketRepository },
     { provide: USUARIOS_CLIENT, useExisting: UsuariosClientService },
     { provide: VEHICULOS_CLIENT, useExisting: VehiculosClientService },
     { provide: ZONAS_CLIENT, useExisting: ZonasClientService },
     { provide: TICKET_CODE_GENERATOR, useExisting: TicketCodeGeneratorService },
     { provide: TARIFA_PROVIDER, useExisting: TarifaProviderService },
->>>>>>> c1fcd81203b82c3c3faab7c399f9c07c1e843b32
     EmitirTicketUseCase,
     PagarTicketUseCase,
     AnularTicketUseCase,

@@ -22,11 +22,12 @@ let VehiculosClientService = VehiculosClientService_1 = class VehiculosClientSer
         this.logger = new common_1.Logger(VehiculosClientService_1.name);
         this.vehiculosBaseUrl = this.configService.get('VEHICULOS_SERVICE_URL', 'http://localhost:3000');
     }
-    async getVehiculo(vehicleId) {
+    async getVehiculo(vehicleId, authHeader) {
         try {
             const url = `${this.vehiculosBaseUrl}/vehiculos/${vehicleId}`;
             this.logger.log(`Consultando vehículo: ${url}`);
-            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url));
+            const headers = authHeader ? { Authorization: authHeader } : undefined;
+            const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, { headers }));
             return response.data;
         }
         catch (error) {

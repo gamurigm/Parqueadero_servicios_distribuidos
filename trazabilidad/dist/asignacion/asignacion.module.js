@@ -15,6 +15,7 @@ const asignacion_controller_1 = require("./asignacion.controller");
 const trazabilidad_module_1 = require("../trazabilidad/trazabilidad.module");
 const vehiculos_client_module_1 = require("../vehiculos-client/vehiculos-client.module");
 const usuarios_client_module_1 = require("../usuarios-client/usuarios-client.module");
+const opa_module_1 = require("../opa/opa.module");
 let AsignacionModule = class AsignacionModule {
 };
 exports.AsignacionModule = AsignacionModule;
@@ -25,10 +26,7 @@ exports.AsignacionModule = AsignacionModule = __decorate([
             trazabilidad_module_1.TrazabilidadModule,
             vehiculos_client_module_1.VehiculosClientModule,
             usuarios_client_module_1.UsuariosClientModule,
-<<<<<<< HEAD
             opa_module_1.OpaModule,
-=======
->>>>>>> c1fcd81203b82c3c3faab7c399f9c07c1e843b32
         ],
         controllers: [asignacion_controller_1.AsignacionController],
         providers: [asignacion_service_1.AsignacionService],

@@ -30,20 +30,10 @@ async function bootstrap() {
         .addServer('http://localhost:3002', 'Local - Directo')
         .addServer('http://host.docker.internal:3002', 'Docker - Host')
         .addServer('http://localhost:8000/trazabilidad', 'Kong Gateway')
+        .addBearerAuth()
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, config);
-    swagger_1.SwaggerModule.setup('docs', app, document, {
-        swaggerOptions: {
-            persistAuthorization: true,
-            displayRequestDuration: true,
-            filter: true,
-            tryItOutEnabled: true,
-            defaultModelsExpandDepth: 1,
-            defaultModelExpandDepth: 1,
-            docExpansion: 'list',
-        },
-        customSiteTitle: 'API Trazabilidad',
-    });
+    swagger_1.SwaggerModule.setup('docs', app, document);
     app.useGlobalPipes(new common_1.ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
     await app.listen(process.env.PORT ?? 3002, '0.0.0.0');
     console.log(`🚀 Trazabilidad Service corriendo en: http://localhost:${process.env.PORT ?? 3002}`);
