@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
 import {
   ITicketRepository,
@@ -18,7 +18,7 @@ import {
   TICKET_CODE_GENERATOR,
 } from '../ports/ticket-code-generator.interface';
 import { Ticket } from '../../domain/ticket.entity';
-import { BusinessError } from '../../domain/errors/business-error';
+//import { BusinessError } from '../../domain/errors/business-error';
 
 export interface EmitirTicketInput {
   idEspacio: string;
@@ -62,17 +62,17 @@ export class EmitirTicketUseCase {
 
     const espacio = await this.zonasClient.obtenerEspacio(idEspacio);
     if (!espacio) {
-      throw new BusinessError(`El espacio ${idEspacio} no existe`);
+      throw new NotFoundException(`El espacio ${idEspacio} no existe`);
     }
 
     const ticketActivoEspacio = await this.ticketRepo.findActivoByEspacio(idEspacio);
     if (ticketActivoEspacio) {
-      throw new BusinessError(`El espacio ${idEspacio} ya tiene un ticket activo`);
+      throw new ConflictException(`El espacio ${idEspacio} ya tiene un ticket activo`);
     }
 
     const ticketActivoPlaca = await this.ticketRepo.findActivoByPlaca(resolved.placa);
     if (ticketActivoPlaca) {
-      throw new BusinessError(`La placa ${resolved.placa} ya tiene un ticket activo en otro espacio`);
+      throw new ConflictException(`La placa ${resolved.placa} ya tiene un ticket activo en otro espacio`);
     }
 
     const codigoTicket = this.codeGenerator.generar(idEspacio, espacio.tipo);
@@ -90,7 +90,8 @@ export class EmitirTicketUseCase {
     try {
       saved = await this.ticketRepo.save(ticket);
     } catch (error) {
-      if (error.message?.includes('duplicate key') || error.message?.includes('unique')) {
+      const errorMessage = (error as any).message || '';
+      if (errorMessage.includes('duplicate key') || errorMessage.includes('unique')) {
         const codigoRetry = this.codeGenerator.generar(idEspacio, espacio.tipo);
         saved = await this.ticketRepo.save(
           Ticket.activo(uuid(), codigoRetry, idEspacio, resolved.cedula, resolved.placa, idEmpleado),
@@ -103,7 +104,7 @@ export class EmitirTicketUseCase {
     try {
       await this.zonasClient.marcarOcupado(idEspacio);
     } catch (error) {
-      this.logger.error(`Error al marcar espacio ${idEspacio} como ocupado: ${error.message}`);
+      this.logger.error(`Error al marcar espacio ${idEspacio} como ocupado: ${(error as any).message || error}`);
     }
 
     return {
@@ -125,10 +126,10 @@ export class EmitirTicketUseCase {
     if (placa) {
       const vehiculo = await this.vehiculosClient.buscarPorPlaca(placa);
       if (!vehiculo) {
-        throw new BusinessError(`Vehículo con placa ${placa} no encontrado`);
+        throw new NotFoundException(`Vehículo con placa ${placa} no encontrado`);
       }
       if (!vehiculo.cedulaPropietario) {
-        throw new BusinessError(`La placa ${placa} no tiene un propietario asignado`);
+        throw new BadRequestException(`La placa ${placa} no tiene un propietario asignado`);
       }
       return { cedula: vehiculo.cedulaPropietario, placa };
     }
@@ -136,16 +137,16 @@ export class EmitirTicketUseCase {
     if (cedula) {
       const vehiculos = await this.usuariosClient.obtenerVehiculosPorCedula(cedula);
       if (vehiculos.length === 0) {
-        throw new BusinessError(`La cédula ${cedula} no tiene vehículos asociados`);
+        throw new NotFoundException(`La cédula ${cedula} no tiene vehículos asociados`);
       }
       if (vehiculos.length > 1) {
-        throw new BusinessError(
+        throw new BadRequestException(
           `La cédula ${cedula} tiene ${vehiculos.length} vehículos. Debe especificar la placa`,
         );
       }
       return { cedula, placa: vehiculos[0].placa };
     }
 
-    throw new BusinessError('Debe proporcionar al menos cédula o placa');
+    throw new BadRequestException('Debe proporcionar al menos cédula o placa');
   }
 }

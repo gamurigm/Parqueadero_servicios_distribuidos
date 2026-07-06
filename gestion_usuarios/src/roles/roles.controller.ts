@@ -16,6 +16,7 @@ export class RolesController {
   @ApiBearerAuth('JWT-auth')
   @Resource('roles.create')
   @ApiOperation({ summary: 'Crear un nuevo rol' })
+  @ApiBody({ type: CreateRoleDto })
   @ApiResponse({ status: 201, description: 'Rol creado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   create(@Body() createRoleDto: CreateRoleDto) {
@@ -47,6 +48,7 @@ export class RolesController {
   @Resource('roles.update')
   @ApiOperation({ summary: 'Actualizar un rol' })
   @ApiParam({ name: 'id', description: 'ID del rol a actualizar' })
+  @ApiBody({ type: UpdateRoleDto })
   @ApiResponse({ status: 200, description: 'Rol actualizado exitosamente' })
   @ApiResponse({ status: 404, description: 'Rol no encontrado' })
   update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {

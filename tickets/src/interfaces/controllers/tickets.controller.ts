@@ -9,7 +9,7 @@ import {
   Inject,
   NotFoundException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { EmitirTicketUseCase } from '../../application/use-cases/emitir-ticket.use-case';
 import { PagarTicketUseCase } from '../../application/use-cases/pagar-ticket.use-case';
 import { AnularTicketUseCase } from '../../application/use-cases/anular-ticket.use-case';
@@ -38,6 +38,7 @@ export class TicketsController {
   @Post('emitir')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Emitir un nuevo ticket de parqueo' })
+  @ApiBody({ type: EmitirTicketRequestDto })
   @ApiResponse({ status: 201, description: 'Ticket emitido exitosamente', type: TicketResponseDto })
   @ApiResponse({ status: 400, description: 'Error de validación o regla de negocio' })
   async emitir(@Body() dto: EmitirTicketRequestDto): Promise<TicketResponseDto> {
@@ -53,6 +54,7 @@ export class TicketsController {
   @Post('pagar')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Pagar un ticket de parqueo' })
+  @ApiBody({ type: PagarTicketRequestDto })
   @ApiResponse({ status: 200, description: 'Ticket pagado exitosamente', type: PagoResponseDto })
   @ApiResponse({ status: 400, description: 'Error de validación o regla de negocio' })
   @ApiResponse({ status: 404, description: 'Ticket no encontrado' })
@@ -67,6 +69,7 @@ export class TicketsController {
   @Post('anular')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Anular un ticket de parqueo' })
+  @ApiBody({ type: AnularTicketRequestDto })
   @ApiResponse({ status: 200, description: 'Ticket anulado exitosamente', type: TicketResponseDto })
   @ApiResponse({ status: 400, description: 'Error de validación o regla de negocio' })
   async anular(@Body() dto: AnularTicketRequestDto): Promise<TicketResponseDto> {

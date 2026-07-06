@@ -1,4 +1,6 @@
+import { BusinessError } from './errors/business-error';
 import { TicketStatus } from './ticket-status.enum';
+import { ConflictException } from '@nestjs/common';
 
 export class Ticket {
   constructor(
@@ -37,7 +39,9 @@ export class Ticket {
 
   pagar(fechaSalida: Date, valor: number, empleadoPago: string): void {
     if (this.estado !== TicketStatus.ACTIVO) {
-      throw new Error(`No se puede pagar un ticket en estado ${this.estado}`);
+      throw new BusinessError(
+        `No se puede pagar el ticket porque su estado es '${this.estado}'. Solo los tickets en estado 'ACTIVO' pueden ser pagados.`,
+      );
     }
     this.fechaSalida = fechaSalida;
     this.valorRecaudado = valor;
@@ -45,7 +49,9 @@ export class Ticket {
 
   anular(motivo: string, empleadoAnula: string): void {
     if (this.estado !== TicketStatus.ACTIVO) {
-      throw new Error(`No se puede anular un ticket en estado ${this.estado}`);
+      throw new ConflictException(
+        `No se puede anular el ticket porque su estado es '${this.estado}'. Solo los tickets en estado 'ACTIVO' pueden ser anulados.`,
+      );
     }
     this.motivoAnulacion = motivo;
   }

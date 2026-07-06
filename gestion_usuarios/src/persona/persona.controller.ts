@@ -16,6 +16,7 @@ export class PersonaController {
   @ApiBearerAuth('JWT-auth')
   @Resource('personas.create')
   @ApiOperation({ summary: 'Crear una nueva persona' })
+  @ApiBody({ type: CreatePersonaDto })
   @ApiResponse({ status: 201, description: 'Persona creada exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   create(@Body() createPersonaDto: CreatePersonaDto) {
@@ -47,6 +48,7 @@ export class PersonaController {
   @Resource('personas.update')
   @ApiOperation({ summary: 'Actualizar una persona' })
   @ApiParam({ name: 'id', description: 'ID de la persona a actualizar' })
+  @ApiBody({ type: UpdatePersonaDto })
   @ApiResponse({ status: 200, description: 'Persona actualizada exitosamente' })
   @ApiResponse({ status: 404, description: 'Persona no encontrada' })
   update(@Param('id') id: string, @Body() updatePersonaDto: UpdatePersonaDto) {

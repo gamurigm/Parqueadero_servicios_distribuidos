@@ -19,9 +19,11 @@ export class UsuarioController {
     summary: 'Crear un nuevo usuario',
     description: 'Crea un usuario con username y password'
   })
+  @ApiBody({ type: CreateUsuarioDto })
   @ApiResponse({ 
     status: 201, 
-    description: 'Usuario creado exitosamente' 
+    description: 'Usuario creado exitosamente',
+    type: CreateUsuarioDto,
   })
   @ApiResponse({ 
     status: 400, 
@@ -81,9 +83,11 @@ export class UsuarioController {
     name: 'id', 
     description: 'ID del usuario a actualizar' 
   })
+  @ApiBody({ type: UpdateUsuarioDto })
   @ApiResponse({ 
     status: 200, 
-    description: 'Usuario actualizado exitosamente' 
+    description: 'Usuario actualizado exitosamente',
+    type: UpdateUsuarioDto,
   })
   @ApiResponse({ 
     status: 404, 
@@ -105,8 +109,13 @@ export class UsuarioController {
     description: 'ID del usuario' 
   })
   @ApiBody({ 
-    type: UpdateUsuarioDto,
-    description: 'Nueva contraseña del usuario'
+    schema: {
+      type: 'object',
+      properties: {
+        newpassword: { type: 'string', example: 'Password123' },
+      },
+      required: ['newpassword'],
+    },
   })
   @ApiResponse({ 
     status: 200, 

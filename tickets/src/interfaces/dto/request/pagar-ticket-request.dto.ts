@@ -2,7 +2,7 @@ import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PagarTicketRequestDto {
-  @ApiPropertyOptional({ example: 'uuid-del-ticket', description: 'UUID del ticket (opcional si se envía código)' })
+  @ApiProperty({ example: 'uuid-del-ticket', description: 'UUID del ticket (opcional si se envía código)', required: false })
   @IsOptional()
   @IsString()
   idTicket?: string;

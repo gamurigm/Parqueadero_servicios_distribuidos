@@ -17,6 +17,7 @@ export class RolesUsuarioController {
   @ApiBearerAuth('JWT-auth')
   @Resource('roles-usuario.create')
   @ApiOperation({ summary: 'Asignar un rol a un usuario' })
+  @ApiBody({ type: CreateRolesUsuarioDto })
   @ApiResponse({ status: 201, description: 'Rol asignado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   create(@Body() createRolesUsuarioDto: CreateRolesUsuarioDto) {
@@ -36,6 +37,7 @@ export class RolesUsuarioController {
   @ApiBearerAuth('JWT-auth')
   @Resource('roles-usuario.read')
   @ApiOperation({ summary: 'Obtener una asignación específica por usuario y rol' })
+  @ApiBody({ type: UpdateRolesUsuarioDto })
   @ApiResponse({ status: 200, description: 'Asignación encontrada' })
   @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
   findOne(@Body() updateRolesUsuarioDto: UpdateRolesUsuarioDto) {
@@ -66,6 +68,7 @@ export class RolesUsuarioController {
   @ApiBearerAuth('JWT-auth')
   @Resource('roles-usuario.update')
   @ApiOperation({ summary: 'Actualizar el rol de un usuario' })
+  @ApiBody({ type: UpdateRolesUsuarioDto })
   @ApiResponse({ status: 200, description: 'Rol actualizado exitosamente' })
   @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
   update(@Body() updateRolesUsuarioDto: UpdateRolesUsuarioDto) {
@@ -76,6 +79,7 @@ export class RolesUsuarioController {
   @ApiBearerAuth('JWT-auth')
   @Resource('roles-usuario.activate')
   @ApiOperation({ summary: 'Activar o desactivar una asignación de rol' })
+  @ApiBody({ type: ActiveDeactiveRolesUsuarioDto })
   @ApiResponse({ status: 200, description: 'Estado de la asignación actualizado' })
   @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
   active_deactive(@Body() activeDeactiveRolesUsuarioDTO: ActiveDeactiveRolesUsuarioDto) {
@@ -86,6 +90,7 @@ export class RolesUsuarioController {
   @ApiBearerAuth('JWT-auth')
   @Resource('roles-usuario.delete')
   @ApiOperation({ summary: 'Eliminar una asignación de rol' })
+  @ApiBody({ type: UpdateRolesUsuarioDto })
   @ApiResponse({ status: 200, description: 'Asignación eliminada exitosamente' })
   @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
   remove(@Body() updateRolesUsuarioDto: UpdateRolesUsuarioDto) {

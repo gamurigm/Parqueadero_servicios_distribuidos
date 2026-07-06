@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import {
   ITicketRepository,
   TICKET_REPOSITORY,
@@ -37,7 +37,7 @@ export class AnularTicketUseCase {
       : await this.ticketRepo.findByCodigo(input.codigoTicket);
 
     if (!ticket) {
-      throw new BusinessError('Ticket no encontrado');
+      throw new NotFoundException('Ticket no encontrado');
     }
 
     ticket.anular(input.motivo, input.idEmpleado);
@@ -46,7 +46,7 @@ export class AnularTicketUseCase {
     try {
       await this.zonasClient.marcarLibre(ticket.idEspacio);
     } catch (error) {
-      this.logger.error(`Error al liberar espacio ${ticket.idEspacio} tras anulación: ${error.message}`);
+      this.logger.error(`Error al liberar espacio ${ticket.idEspacio} tras anulación: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     return {

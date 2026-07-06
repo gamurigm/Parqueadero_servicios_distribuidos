@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import {
   ITicketRepository,
   TICKET_REPOSITORY,
@@ -12,7 +12,7 @@ import {
   IVehiculosClient,
   VEHICULOS_CLIENT,
 } from '../ports/vehiculos-client.interface';
-import { BusinessError } from '../../domain/errors/business-error';
+//import { BusinessError } from '../../domain/errors/business-error';
 
 export interface PagarTicketInput {
   idTicket?: string;
@@ -52,11 +52,11 @@ export class PagarTicketUseCase {
       : await this.ticketRepo.findByCodigo(input.codigoTicket);
 
     if (!ticket) {
-      throw new BusinessError('Ticket no encontrado');
+      throw new NotFoundException('Ticket no encontrado');
     }
 
     if (ticket.estado !== 'ACTIVO') {
-      throw new BusinessError(`No se puede pagar un ticket en estado ${ticket.estado}`);
+      throw new ConflictException(`No se puede pagar un ticket en estado ${ticket.estado}`);
     }
 
     const fechaSalida = new Date();
@@ -79,7 +79,7 @@ export class PagarTicketUseCase {
     try {
       await this.zonasClient.marcarLibre(ticket.idEspacio);
     } catch (error) {
-      this.logger.error(`Error al liberar espacio ${ticket.idEspacio}: ${error.message}`);
+      this.logger.error(`Error al liberar espacio ${ticket.idEspacio}: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     return {

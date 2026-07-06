@@ -53,6 +53,7 @@ export class AsignacionController {
             'Un vehículo solo puede tener una asignación activa a la vez. ' +
             'Genera automáticamente un evento de trazabilidad CREACION.',
     })
+    @ApiBody({ type: CreateAsignacionDto })
     @ApiResponse({ status: 201, description: 'Asignación creada exitosamente' })
     @ApiResponse({ status: 400, description: 'UUID inválido o datos incorrectos' })
     @ApiResponse({ status: 409, description: 'El vehículo ya está asignado activamente' })
@@ -155,6 +156,7 @@ export class AsignacionController {
     })
     @ApiParam({ name: 'userId', description: 'UUID del propietario' })
     @ApiParam({ name: 'vehicleId', description: 'UUID del vehículo' })
+    @ApiBody({ type: UpdateAsignacionDto })
     @ApiResponse({ status: 200, description: 'Asignación actualizada' })
     @ApiResponse({ status: 400, description: 'Sin cambios detectados o datos inválidos' })
     @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
