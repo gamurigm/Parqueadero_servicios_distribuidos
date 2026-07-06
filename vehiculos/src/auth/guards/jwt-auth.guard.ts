@@ -23,17 +23,14 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     ]);
     if (isPublic) return true;
 
-    // Primero validamos el JWT
     const isJwtValid = await super.canActivate(context);
     if (!isJwtValid) {
       return false;
     }
 
-    // Si el JWT es válido, extraemos el usuario y evaluamos con OPA
     const req = context.switchToHttp().getRequest();
     const user = req.user;
 
-    // Determinar recurso y acción. Soporta override con decoradores.
     const overrideResource = this.reflector.getAllAndOverride<string>(RESOURCE_KEY, [
       context.getHandler(),
       context.getClass(),
@@ -43,10 +40,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       context.getClass(),
     ]);
 
-    // Parse resource from route path (e.g. /usuarios -> usuarios)
     const defaultResource = req.route.path.split('/')[1] || 'root';
     
-    // Mapeo básico de métodos HTTP a acciones
     const methodMap = {
       GET: 'read',
       POST: 'create',

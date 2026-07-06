@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface JwtPayload {
   iss: string;
@@ -16,11 +17,15 @@ export interface JwtPayload {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(configService: ConfigService) {
+  constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET', 'super-secret-key-change-in-production'),
+      secretOrKey: fs.readFileSync(
+        path.resolve(__dirname, '../../../jwt-keys/jwt-public.pem'),
+        'utf-8',
+      ),
+      algorithms: ['RS256'],
     });
   }
 
@@ -28,7 +33,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       id: payload.sub,
       username: payload.username,
-      roles: payload.roles,
+      roles: payload.roles || [],
       iss: payload.iss,
       aud: payload.aud,
       jti: payload.jti,

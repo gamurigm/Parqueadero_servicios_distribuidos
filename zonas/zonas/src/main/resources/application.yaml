@@ -6,9 +6,9 @@ spring:
   application:
     name: zonas
   datasource:
-    url: jdbc:postgresql://usuarios-database:5432/UsuariosDB
+    url: jdbc:postgresql://zonas-database:5432/ZonasDB  # 🔥 CORREGIDO: zonas-database
     username: admin_user
-    password: xasmdno123XAW2342as
+    password: xas52sf6zxc123XAW25asdzxkmas
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -23,10 +23,17 @@ spring:
       pageable:
         max-page-size: 50
         default-page-size: 10
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+    deserialization:
+      fail-on-unknown-properties: false
 
+jwt:
+  public-key-path: ../jwt-keys/jwt-public.pem  
 springdoc:
   api-docs:
-    path: /v3/api-docs  # Cambiado a /v3/api-docs para compatibilidad
+    path: /v3/api-docs
     enabled: true
   swagger-ui:
     path: /swagger-ui.html
@@ -50,12 +57,6 @@ springdoc:
   remove-broken-reference-definitions: true
   model-and-view-allowed: false
 
-  jackson:
-    serialization:
-      fail-on-empty-beans: false
-    deserialization:
-      fail-on-unknown-properties: false
-
 # Configuración de CORS
 web:
   cors:
@@ -71,3 +72,7 @@ web:
     allowed-headers: "*"
     allow-credentials: true
     max-age: 3600
+
+opa:
+  url: ${OPA_URL:http://opa:8181/v1/data}
+  service: ${OPA_SERVICE:zonas}
