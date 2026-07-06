@@ -30,7 +30,7 @@ spring:
       fail-on-unknown-properties: false
 
 jwt:
-  public-key-path: ../jwt-keys/jwt-public.pem  
+  public-key-path: ../../keys/public.pem
 springdoc:
   api-docs:
     path: /v3/api-docs
