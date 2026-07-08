@@ -22,7 +22,7 @@ import { AsignacionService } from './asignacion.service';
 import { TrazabilidadService } from '../trazabilidad/trazabilidad.service';
 import { CreateAsignacionDto } from './dto/create-asignacion.dto';
 import { UpdateAsignacionDto } from './dto/update-asignacion.dto';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Resource } from '../opa/decorators/resource.decorator';
 
 @ApiTags('Asignaciones')
