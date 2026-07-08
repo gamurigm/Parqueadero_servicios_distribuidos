@@ -304,8 +304,8 @@ services:
       - DB_USUARIO=admin_user
       - DB_CONTRASENA=xasmdno123XAW2342as
       - DB_NOMBRE=TrazabilidadDB
-      - VEHICULOS_SERVICE_URL=http://vehiculos:3000
-      - USUARIOS_SERVICE_URL=http://usuarios:5000
+      - VEHICULOS_SERVICE_URL=http://kong:8000/vehiculos
+      - USUARIOS_SERVICE_URL=http://kong:8000/usuarios
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
       - JWT_ISSUER=gestion-usuarios
       - OPA_URL=http://opa:8181/v1/data
@@ -339,9 +339,10 @@ services:
       - DB_USUARIO=admin_user
       - DB_CONTRASENA=t1ck3tsP4ssX2342as
       - DB_NOMBRE=TicketsDB
-      - USUARIOS_SERVICE_URL=http://usuarios:5000
-      - VEHICULOS_SERVICE_URL=http://vehiculos:3000
-      - ZONAS_SERVICE_URL=http://zonas:8080
+      - USUARIOS_SERVICE_URL=http://kong:8000/usuarios
+      - VEHICULOS_SERVICE_URL=http://kong:8000/vehiculos
+      - ZONAS_SERVICE_URL=http://kong:8000/zonas
+      - TRAZABILIDAD_SERVICE_URL=http://kong:8000/trazabilidad
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
       - JWT_ISSUER=gestion-usuarios
       - OPA_URL=http://opa:8181/v1/data
