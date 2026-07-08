@@ -33,17 +33,17 @@ export class UsuariosClientService {
             const urlRoles = `${this.usuariosBaseUrl}/roles`;
             const resRoles = await firstValueFrom(this.httpService.get(urlRoles, { headers }));
             const roles: any[] = resRoles.data;
-            const rolPropietario = roles.find((r) => r.nombre.toLowerCase().includes('propietario'));
+            const rolesPropietario = roles.filter((r) => String(r.nombre ?? '').toLowerCase().includes('propietario'));
 
-            if (!rolPropietario) {
+            if (rolesPropietario.length === 0) {
                 this.logger.warn('El rol "Propietario" no esta definido en el sistema de roles.');
             } else {
                 const urlRolesUsuario = `${this.usuariosBaseUrl}/roles-Usuario/usuarios/${userId}`;
                 const resRolesUsuario = await firstValueFrom(this.httpService.get(urlRolesUsuario, { headers }));
                 const rolesAsignados: any[] = resRolesUsuario.data;
 
-                const tieneRol = rolesAsignados.some(
-                    (asignacion) => asignacion.id_rol === rolPropietario.id && asignacion.activo === true,
+                const tieneRol = rolesAsignados.some((asignacion) =>
+                    asignacion.activo === true && rolesPropietario.some((rol) => rol.id === asignacion.id_rol),
                 );
 
                 if (!tieneRol) {

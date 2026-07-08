@@ -176,12 +176,28 @@ export class UsuarioService {
 
   async updatePassword(id: string, newPassword: string) {
     const idUser = this.utils.validateUUID(id);
-    const user = await this.userRepository.findOne({ where: { id: idUser } });
+    const sanitizedPassword = typeof newPassword === 'string' ? newPassword.trim() : '';
+    if (!sanitizedPassword) {
+      throw new BadRequestException('La nueva contrasena no puede estar vacia');
+    }
+
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.id = :id', { id: idUser })
+      .getOne();
 
     if (!user) throw new NotFoundException('No se encontro el usuario para actualizar');
+    if (!user.passwordHash) {
+      throw new BadRequestException('No se pudo obtener la contrasena actual del usuario');
+    }
 
     const [currentSalt] = user.passwordHash.split(':');
-    const newHash = crypto.scryptSync(newPassword, currentSalt, 64).toString('hex');
+    if (!currentSalt) {
+      throw new BadRequestException('La contrasena actual del usuario no tiene un formato valido');
+    }
+
+    const newHash = crypto.scryptSync(sanitizedPassword, currentSalt, 64).toString('hex');
     const newPasswordHash = `${currentSalt}:${newHash}`;
 
     if (user.passwordHash === newPasswordHash) {
@@ -189,7 +205,7 @@ export class UsuarioService {
     }
 
     const salt = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.scryptSync(newPassword, salt, 64).toString('hex');
+    const hash = crypto.scryptSync(sanitizedPassword, salt, 64).toString('hex');
     const passwordHash = `${salt}:${hash}`;
 
     await this.userRepository.update(idUser, { passwordHash });
@@ -269,3 +285,4 @@ export class UsuarioService {
       .getOne();
   }
 }
+

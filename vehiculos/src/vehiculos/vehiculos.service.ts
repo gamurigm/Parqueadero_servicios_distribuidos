@@ -8,6 +8,7 @@ import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
 import { FactoryVehiculos } from './factory/factory-vehiculos';
 import { Utils } from './utils/utils';
 import type { UUID } from 'crypto';
+import { AuditEvent, EventPublisher } from './event-publisher.service';
 
 @Injectable()
 export class VehiculosService {
@@ -16,7 +17,24 @@ export class VehiculosService {
   constructor(
     @InjectRepository(Vehiculo)
     private vehiculoRepository: Repository<Vehiculo>,
-  ) {}
+    private eventPublisher: EventPublisher,
+  ) { }
+
+  // Método auxiliar para publicar eventos
+  private async emitEvent(
+    accion: string,
+    vehiculo: Vehiculo,
+    datosExtra?: any,
+  ) {
+    const event: AuditEvent = {
+      servicio: 'vehiculos',
+      accion,
+      entidad: 'Vehiculo',
+      datos: { ...vehiculo, ...datosExtra },
+      // usuario e ip se podrían obtener del contexto (request) si se inyecta
+    };
+    await this.eventPublisher.publish(event);
+  }
 
   async create(createVehiculoDto: CreateVehiculoDto) {
     try {
@@ -30,11 +48,14 @@ export class VehiculosService {
         throw new BadRequestException('Ya existe un vehículo con esta placa');
       }
 
-   // Crear el vehículo usando el factory con sanitización
+      // Crear el vehículo usando el factory con sanitización
       const vehiculo = FactoryVehiculos.crear(createVehiculoDto);
-      
+
       // Guardar en la base de datos
       const saved = await this.vehiculoRepository.save(vehiculo);
+
+      await this.emitEvent('CREATE', saved);
+
       return saved;
     } catch (error) {
       if (error instanceof BadRequestException) {
@@ -61,99 +82,99 @@ export class VehiculosService {
     return vehiculo;
   }
 
-async update(id: UUID, updateVehiculoDto: UpdateVehiculoDto) {
-  const idSanitizado = this.utils.validateUUID(id as string);
-  
-  const vehiculoExistente = await this.vehiculoRepository.findOne({
-    where: { id: idSanitizado }
-  });
+  async update(id: UUID, updateVehiculoDto: UpdateVehiculoDto) {
+    const idSanitizado = this.utils.validateUUID(id as string);
 
-  if (!vehiculoExistente) throw new NotFoundException('Vehículo no encontrado');
-  
+    const vehiculoExistente = await this.vehiculoRepository.findOne({
+      where: { id: idSanitizado }
+    });
 
-  try {
-    if (!updateVehiculoDto.datos || Object.keys(updateVehiculoDto.datos).length === 0) {
-      throw new BadRequestException('No se enviaron datos para actualizar');
-    }
+    if (!vehiculoExistente) throw new NotFoundException('Vehículo no encontrado');
 
-    if (updateVehiculoDto.datos?.placa) {
-      const placaSanitizada = this.utils.sanitizeString('placa', updateVehiculoDto.datos.placa);
-      const existe = await this.vehiculoRepository.findOne({
-        where: { placa: placaSanitizada }
-      });
 
-      if (existe && existe.id !== idSanitizado) throw new BadRequestException('Ya existe un vehículo con esta placa');
-    }
+    try {
+      if (!updateVehiculoDto.datos || Object.keys(updateVehiculoDto.datos).length === 0) {
+        throw new BadRequestException('No se enviaron datos para actualizar');
+      }
 
-    const datosSanitizados = FactoryVehiculos.sanitizarDatos(updateVehiculoDto.datos);
-    const hayCambios = this.hayCambios(vehiculoExistente, datosSanitizados);
-    
-    if (!hayCambios) {
+      if (updateVehiculoDto.datos?.placa) {
+        const placaSanitizada = this.utils.sanitizeString('placa', updateVehiculoDto.datos.placa);
+        const existe = await this.vehiculoRepository.findOne({
+          where: { placa: placaSanitizada }
+        });
+
+        if (existe && existe.id !== idSanitizado) throw new BadRequestException('Ya existe un vehículo con esta placa');
+      }
+
+      const datosSanitizados = FactoryVehiculos.sanitizarDatos(updateVehiculoDto.datos);
+      const hayCambios = this.hayCambios(vehiculoExistente, datosSanitizados);
+
+      if (!hayCambios) {
+        return {
+          message: 'No se realizaron cambios porque los datos son idénticos',
+          vehiculo: vehiculoExistente
+        };
+      }
+
+      const vehiculoActualizado = FactoryVehiculos.actualizar(
+        { datos: datosSanitizados },
+        vehiculoExistente
+      );
+
+      const saved = await this.vehiculoRepository.save(vehiculoActualizado);
       return {
-        message: 'No se realizaron cambios porque los datos son idénticos',
-        vehiculo: vehiculoExistente
+        message: 'Vehículo actualizado correctamente',
+        vehiculo: saved
       };
+    } catch (error) {
+      if (error instanceof BadRequestException)
+        throw new BadRequestException('Error al actualizar el vehículo');
+    }
+  }
+
+  private hayCambios(vehiculoExistente: Vehiculo, nuevosDatosSanitizados: any): boolean {
+    const datosExistentes: any = {
+      placa: vehiculoExistente.placa,
+      marca: vehiculoExistente.marca,
+      modelo: vehiculoExistente.modelo,
+      color: vehiculoExistente.color,
+      anio: vehiculoExistente.anio,
+      clasificacion: vehiculoExistente.clasificacion,
+    };
+
+    if ('numeroPuertas' in vehiculoExistente) {
+      datosExistentes.numeroPuertas = (vehiculoExistente as any).numeroPuertas;
+    }
+    if ('capacidadMaletero' in vehiculoExistente) {
+      datosExistentes.capacidadMaletero = (vehiculoExistente as any).capacidadMaletero;
+    }
+    if ('cabina' in vehiculoExistente) {
+      datosExistentes.cabina = (vehiculoExistente as any).cabina;
+    }
+    if ('capacidadCarga' in vehiculoExistente) {
+      datosExistentes.capacidadCarga = (vehiculoExistente as any).capacidadCarga;
+    }
+    if ('tipoMoto' in vehiculoExistente) {
+      datosExistentes.tipoMoto = (vehiculoExistente as any).tipoMoto;
     }
 
-    const vehiculoActualizado = FactoryVehiculos.actualizar(
-      { datos: datosSanitizados }, 
-      vehiculoExistente
-    );
-
-    const saved = await this.vehiculoRepository.save(vehiculoActualizado);
-    return {
-      message: 'Vehículo actualizado correctamente',
-      vehiculo: saved
-    };
-  } catch (error) {
-    if (error instanceof BadRequestException)
-    throw new BadRequestException('Error al actualizar el vehículo' );
-  }
-}
-
-private hayCambios(vehiculoExistente: Vehiculo, nuevosDatosSanitizados: any): boolean {
-  const datosExistentes: any = {
-    placa: vehiculoExistente.placa,
-    marca: vehiculoExistente.marca,
-    modelo: vehiculoExistente.modelo,
-    color: vehiculoExistente.color,
-    anio: vehiculoExistente.anio,
-    clasificacion: vehiculoExistente.clasificacion,
-  };
-
-  if ('numeroPuertas' in vehiculoExistente) {
-    datosExistentes.numeroPuertas = (vehiculoExistente as any).numeroPuertas;
-  }
-  if ('capacidadMaletero' in vehiculoExistente) {
-    datosExistentes.capacidadMaletero = (vehiculoExistente as any).capacidadMaletero;
-  }
-  if ('cabina' in vehiculoExistente) {
-    datosExistentes.cabina = (vehiculoExistente as any).cabina;
-  }
-  if ('capacidadCarga' in vehiculoExistente) {
-    datosExistentes.capacidadCarga = (vehiculoExistente as any).capacidadCarga;
-  }
-  if ('tipoMoto' in vehiculoExistente) {
-    datosExistentes.tipoMoto = (vehiculoExistente as any).tipoMoto;
-  }
-
-  for (const key of Object.keys(nuevosDatosSanitizados)) {
-    if (key in datosExistentes) {
-      const valorNuevo = nuevosDatosSanitizados[key];
-      const valorExistente = datosExistentes[key];
-      //cambio existe
-      if (valorNuevo !== valorExistente) {
-        return true;
+    for (const key of Object.keys(nuevosDatosSanitizados)) {
+      if (key in datosExistentes) {
+        const valorNuevo = nuevosDatosSanitizados[key];
+        const valorExistente = datosExistentes[key];
+        //cambio existe
+        if (valorNuevo !== valorExistente) {
+          return true;
+        }
       }
     }
+    //cambio no existe
+    return false;
   }
-  //cambio no existe
-  return false;
-}
 
   async remove(id: UUID) {
     const idSanitizado = this.utils.validateUUID(id as string);
-    
+
     const vehiculo = await this.vehiculoRepository.findOne({
       where: { id: idSanitizado }
     });
