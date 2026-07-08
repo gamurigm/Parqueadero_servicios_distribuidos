@@ -1,7 +1,8 @@
 // vehiculos.service.ts
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Vehiculo } from './entities/vehiculo.entity';
 import { CreateVehiculoDto } from './dto/create-vehiculo.dto';
 import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
@@ -16,6 +17,7 @@ export class VehiculosService {
   constructor(
     @InjectRepository(Vehiculo)
     private vehiculoRepository: Repository<Vehiculo>,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(createVehiculoDto: CreateVehiculoDto) {
@@ -151,18 +153,112 @@ private hayCambios(vehiculoExistente: Vehiculo, nuevosDatosSanitizados: any): bo
   return false;
 }
 
-  async remove(id: UUID) {
+  //Es el metodo que elimina un vehiculo, donde recibe el id y el header authorization
+  //para usarlo en validaciones con servicios externos
+  async remove(id: UUID, authHeader?: string) {
     const idSanitizado = this.utils.validateUUID(id as string);
-    
+
     const vehiculo = await this.vehiculoRepository.findOne({
-      where: { id: idSanitizado }
+      where: { id: idSanitizado },
     });
 
     if (!vehiculo) {
       throw new NotFoundException('Vehículo no encontrado');
     }
 
+    //Llama a la validacion de tickets activos. Verifica en el microservicio tickets
+    //si la placa del vehiculo tiene algun ticket en estado activo
+    await this.assertNoActiveTicket(vehiculo.placa, authHeader);
+
+    //LLama la validacion de las asignaciones en trazabilidad y verifica si el vehiculo
+    //con el id tiene una asignacion activa
+    await this.assertNoActiveAssignment(vehiculo.id, authHeader);
+
     await this.vehiculoRepository.remove(vehiculo);
     return { message: 'Vehículo eliminado correctamente' };
+  }
+
+  //Inicia una funcion que pregunta a tickets por la existencia de tickets
+  //activos parac la placa dada
+  private async assertNoActiveTicket(placa: string, authHeader?: string): Promise<void> {
+    const ticketsServiceUrl = this.configService.get<string>(
+      'TICKETS_SERVICE_URL',
+      'http://localhost:3003',
+    ).replace(/\/$/, '');
+
+    const url = `${ticketsServiceUrl}/`; // no specific tickets-by-plate endpoint available
+
+    //Construye headers HTTP para enviar el token a tickets
+    const headers: Record<string, string> = authHeader ? { Authorization: authHeader } : {};
+    try {
+      const response = await fetch(url, { method: 'GET', headers });
+      if (!response.ok) {
+        throw new BadRequestException('No se pudo validar si el vehículo tiene tickets activos');
+      }
+      const tickets = await response.json();
+      if (!Array.isArray(tickets)) {
+        return;
+      }
+      const placaNormalized = String(placa ?? '').trim().toUpperCase();
+      const hasActive = tickets.some((ticket: any) =>
+        String(ticket?.placa ?? '').trim().toUpperCase() === placaNormalized &&
+        String(ticket?.estado ?? '').trim().toUpperCase() === 'ACTIVO',
+      );
+      if (hasActive) {
+        throw new ConflictException(
+          'No se puede eliminar el vehículo porque tiene un ticket activo en tickets',
+        );
+      }
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al validar si el vehículo tiene tickets activos');
+    }
+  }
+
+  //Pregunta a trazabilidad si el vehiculo esta asignado
+  private async assertNoActiveAssignment(vehicleId: string, authHeader?: string): Promise<void> {
+    const trazabilidadServiceUrl = this.configService.get<string>(
+      'TRAZABILIDAD_SERVICE_URL',
+      'http://localhost:3002',
+    ).replace(/\/$/, '');
+
+    const url = `${trazabilidadServiceUrl}/asignaciones`;
+
+    //Contruye headers HTTP para enviar el token a
+    //trazabilidad si existe
+    const headers: Record<string, string> = authHeader ? { Authorization: authHeader } : {};
+    try {
+      const response = await fetch(url, { method: 'GET', headers });
+      if (!response.ok) {
+        throw new BadRequestException('No se pudo validar si el vehículo está asignado en trazabilidad');
+      }
+      const assignments = await response.json();
+      if (!Array.isArray(assignments)) {
+        return;
+      }
+      const normalizedId = String(vehicleId).trim().toLowerCase();
+      const hasActive = assignments.some((assignment: any) =>
+        String(assignment?.vehicleId ?? '').trim().toLowerCase() === normalizedId &&
+        (assignment?.estado === 1 || String(assignment?.estado ?? '').trim() === '1'),
+      );
+      if (hasActive) {
+        throw new ConflictException(
+          'No se puede eliminar el vehículo porque está asignado en trazabilidad',
+        );
+      }
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al validar si el vehículo está asignado en trazabilidad');
+    }
   }
 }

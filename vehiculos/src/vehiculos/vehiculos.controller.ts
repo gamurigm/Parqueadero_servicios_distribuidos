@@ -1,5 +1,5 @@
 // vehiculos.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Put, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Put, UseGuards, Headers } from '@nestjs/common';
 import { VehiculosService } from './vehiculos.service';
 import { CreateVehiculoDto } from './dto/create-vehiculo.dto';
 import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
@@ -48,10 +48,13 @@ export class VehiculosController {
     return this.vehiculosService.update(id, updateVehiculoDto);
   }
 
+  //Define el endpoint HTTP DELETE /vehiculos/:id.
   @Delete(':id')
   @Resource('vehiculos.delete')
   @ApiOperation({ summary: 'Eliminar vehículo' })
-  remove(@Param('id') id: UUID) {
-    return this.vehiculosService.remove(id);
+
+  //Recibe el id del vehículo y también el header authorization de la petición.
+  remove(@Param('id') id: UUID, @Headers('authorization') authHeader?: string) {
+    return this.vehiculosService.remove(id, authHeader);
   }
 }
