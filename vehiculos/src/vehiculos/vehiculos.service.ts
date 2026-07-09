@@ -19,6 +19,7 @@ export class VehiculosService {
     @InjectRepository(Vehiculo)
     private vehiculoRepository: Repository<Vehiculo>,
     private eventPublisher: EventPublisher,
+    private configService: ConfigService,
   ) { }
 
   // Método auxiliar para publicar eventos
