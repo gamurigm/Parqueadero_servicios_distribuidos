@@ -118,8 +118,9 @@ export class UsuarioController {
   })
   updatePassword(
     @Param('id') id: string,
-    @Body('newpassword') newpassword: string 
+    @Body() body: Record<string, any>,
   ) {
+    const newpassword = body?.newpassword ?? body?.newPassword ?? body?.password;
     return this.usuarioService.updatePassword(id, newpassword);
   }
 
