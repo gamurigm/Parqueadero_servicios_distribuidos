@@ -30,7 +30,7 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) { }
 
-  async register(registerAuthDto: RegisterAuthDto) {
+  async register(registerAuthDto: RegisterAuthDto, ip?: string, mac?: string) {
     const { cedula, firstName, middleName, lastName, email, nationality, phone, address, rolId, password } = registerAuthDto;
 
     // Validar rolId como UUID (las demás entradas las valida PersonaService internamente)
@@ -48,20 +48,20 @@ export class AuthService {
       phone,
       address,
       tipo: 'natural',
-    });
+    }, ip, mac);
 
     // 2. Crear Usuario — UsuarioService valida UUID del id y sanitiza username, hashea la contraseña
     const savedUser = await this.usuarioService.create({
       id: savedPerson.id,
       username: savedPerson.username,
       password,
-    });
+    }, ip, mac);
 
     // 3. Asignar el rol — RolesUsuarioService sanitiza ambos IDs internamente
     await this.rolesUsuarioService.create({
       id_user: savedUser.id,
       id_rol: rolIdValidado,
-    });
+    }, ip, mac);
 
     return {
       ...savedUser,

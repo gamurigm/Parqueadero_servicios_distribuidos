@@ -23,15 +23,30 @@ const trazabilidad_entity_1 = require("../trazabilidad/entities/trazabilidad.ent
 const vehiculos_client_service_1 = require("../vehiculos-client/vehiculos-client.service");
 const usuarios_client_service_1 = require("../usuarios-client/usuarios-client.service");
 const utils_1 = require("../utils/utils");
+const event_publisher_service_1 = require("../event-publisher.service");
 let AsignacionService = class AsignacionService {
-    constructor(asignacionRepo, trazabilidadService, vehiculosClientService, usuariosClientService) {
+    constructor(asignacionRepo, trazabilidadService, vehiculosClientService, usuariosClientService, eventPublisher) {
         this.asignacionRepo = asignacionRepo;
         this.trazabilidadService = trazabilidadService;
         this.vehiculosClientService = vehiculosClientService;
         this.usuariosClientService = usuariosClientService;
+        this.eventPublisher = eventPublisher;
         this.utils = new utils_1.Utils();
     }
-    async crear(dto, authHeader) {
+    async emitEvent(accion, datos, usuario, rol, ip, mac) {
+        const event = {
+            servicio: 'ms-trazabilidad',
+            accion,
+            entidad: 'ASIGNACION',
+            usuario,
+            rol,
+            ip,
+            mac,
+            datos,
+        };
+        await this.eventPublisher.publish(event);
+    }
+    async crear(dto, authHeader, ip, mac) {
         const userId = this.utils.validateUUID(dto.userId);
         const vehicleId = this.utils.validateUUID(dto.vehicleId);
         const propietario = await this.usuariosClientService.validarPropietario(userId, authHeader);
@@ -56,6 +71,7 @@ let AsignacionService = class AsignacionService {
         }
         const asignacion = factory_asignacion_1.FactoryAsignacion.crear({ ...dto, userId, vehicleId });
         const saved = await this.asignacionRepo.save(asignacion);
+        await this.emitEvent('CREATE', saved, undefined, undefined, ip, mac);
         const propietarioNombre = this.obtenerNombrePropietario(propietario);
         const vehiculoInfo = this.obtenerEtiquetaVehiculo(vehicleId, vehiculoDetalle);
         await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.CREACION, saved.userId, saved.vehicleId, `Se creo asignacion del vehiculo ${vehiculoInfo} al propietario ${propietarioNombre}`, null, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
@@ -78,7 +94,7 @@ let AsignacionService = class AsignacionService {
         }
         return this.enriquecerAsignacion(asignacion, authHeader);
     }
-    async actualizar(userId, vehicleId, dto, authHeader) {
+    async actualizar(userId, vehicleId, dto, authHeader, ip, mac) {
         const uid = this.utils.validateUUID(userId);
         const vid = this.utils.validateUUID(vehicleId);
         const asignacion = await this.asignacionRepo.findOne({
@@ -106,6 +122,7 @@ let AsignacionService = class AsignacionService {
         if (dto.descripcion !== undefined)
             asignacion.descripcion = this.utils.sanitizeText(dto.descripcion);
         const saved = await this.asignacionRepo.save(asignacion);
+        await this.emitEvent('UPDATE', saved, undefined, undefined, ip, mac);
         const propietario = await this.usuariosClientService.obtenerUsuario(saved.userId, authHeader);
         const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(saved.vehicleId, authHeader);
         const propietarioNombre = this.obtenerNombrePropietario(propietario);
@@ -118,7 +135,7 @@ let AsignacionService = class AsignacionService {
         await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.MODIFICACION, saved.userId, saved.vehicleId, `Se modifico asignacion de ${propietarioNombre} sobre ${vehiculoInfo} - Cambios: ${cambios.join(', ')}`, payloadAnterior, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
         return this.enriquecerAsignacion(saved, authHeader, propietario, vehiculoDetalle);
     }
-    async eliminar(userId, vehicleId, authHeader) {
+    async eliminar(userId, vehicleId, authHeader, ip, mac) {
         const uid = this.utils.validateUUID(userId);
         const vid = this.utils.validateUUID(vehicleId);
         const asignacion = await this.asignacionRepo.findOne({
@@ -133,6 +150,7 @@ let AsignacionService = class AsignacionService {
         const propietarioNombre = this.obtenerNombrePropietario(propietario);
         const vehiculoInfo = this.obtenerEtiquetaVehiculo(asignacion.vehicleId, vehiculoDetalle);
         await this.asignacionRepo.remove(asignacion);
+        await this.emitEvent('DELETE', { userId: uid, vehicleId: vid }, undefined, undefined, ip, mac);
         await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.ELIMINACION, uid, vid, `Se elimino asignacion de ${propietarioNombre} sobre ${vehiculoInfo}`, payloadAnterior, null);
         return { message: `Asignacion de ${propietarioNombre} sobre ${vehiculoInfo} eliminada exitosamente` };
     }
@@ -230,6 +248,7 @@ exports.AsignacionService = AsignacionService = __decorate([
     __metadata("design:paramtypes", [typeorm_2.Repository,
         trazabilidad_service_1.TrazabilidadService,
         vehiculos_client_service_1.VehiculosClientService,
-        usuarios_client_service_1.UsuariosClientService])
+        usuarios_client_service_1.UsuariosClientService,
+        event_publisher_service_1.EventPublisher])
 ], AsignacionService);
 //# sourceMappingURL=asignacion.service.js.map

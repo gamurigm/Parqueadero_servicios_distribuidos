@@ -15,13 +15,13 @@ public interface EspacioServicio {
 
     Page<EspacioResponseDTO> obtenerEspacios(Pageable pageable);
 
-    EspacioResponseDTO crearEspacio(EspacioRequestDTO dto);
+    EspacioResponseDTO crearEspacio(EspacioRequestDTO dto, String ip, String mac);
 
-    EspacioResponseDTO actualizarEspacio(UUID id, EspacioRequestDTO dto);
+    EspacioResponseDTO actualizarEspacio(UUID id, EspacioRequestDTO dto, String ip, String mac);
 
-    String eliminarEspacio(UUID id);
+    String eliminarEspacio(UUID id, String ip, String mac);
 
-    EspacioResponseDTO cambiarEstado(UUID id, EstadoEspacio estado);
+    EspacioResponseDTO cambiarEstado(UUID id, EstadoEspacio estado, String ip, String mac);
 
     List<EspacioResponseDTO> obtenerEspaciosPorEstado(EstadoEspacio estado);
 
@@ -29,10 +29,10 @@ public interface EspacioServicio {
 
     List<EspacioResponseDTO> obtenerEspaciosPorZona(UUID idZona);
 
-    void cambiarActivo(UUID id, boolean activo);
+    void cambiarActivo(UUID id, boolean activo, String ip, String mac);
 
-    String toggleActivo(UUID id);
+    String toggleActivo(UUID id, String ip, String mac);
 
-    int cambiarActivoMasivo(UUID idZona, boolean activo);
+    int cambiarActivoMasivo(UUID idZona, boolean activo, String ip, String mac);
 
 }

@@ -10,7 +10,9 @@ import {
   NotFoundException,
   Req,
   ParseUUIDPipe,
+  Headers,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { EmitirTicketUseCase } from '../../application/use-cases/emitir-ticket.use-case';
 import { PagarTicketUseCase } from '../../application/use-cases/pagar-ticket.use-case';
@@ -44,13 +46,17 @@ export class TicketsController {
   @ApiOperation({ summary: 'Emitir un nuevo ticket de parqueo' })
   @ApiResponse({ status: 201, description: 'Ticket emitido exitosamente', type: TicketResponseDto })
   @ApiResponse({ status: 400, description: 'Error de validación o regla de negocio' })
-  async emitir(@Body() dto: EmitirTicketRequestDto, @Req() req: any): Promise<TicketResponseDto> {
+  async emitir(@Body() dto: EmitirTicketRequestDto, @Req() req: any, @Headers('x-mac-address') mac?: string): Promise<TicketResponseDto> {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
     const result = await this.emitirUseCase.execute({
       idEspacio: dto.idEspacio,
       cedula: dto.cedula,
       placa: dto.placa,
       idEmpleado: req.user.id,
+      username: req.user.username,
       authHeader: req.headers.authorization,
+      ip,
+      mac: mac || '',
     });
     return result as TicketResponseDto;
   }
@@ -62,12 +68,16 @@ export class TicketsController {
   @ApiResponse({ status: 200, description: 'Ticket pagado exitosamente', type: PagoResponseDto })
   @ApiResponse({ status: 400, description: 'Error de validación o regla de negocio' })
   @ApiResponse({ status: 404, description: 'Ticket no encontrado' })
-  async pagar(@Body() dto: PagarTicketRequestDto, @Req() req: any): Promise<PagoResponseDto> {
+  async pagar(@Body() dto: PagarTicketRequestDto, @Req() req: any, @Headers('x-mac-address') mac?: string): Promise<PagoResponseDto> {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
     return await this.pagarUseCase.execute({
       idTicket: dto.idTicket,
       codigoTicket: dto.codigoTicket,
       idEmpleado: req.user.id,
+      username: req.user.username,
       authHeader: req.headers.authorization,
+      ip,
+      mac: mac || '',
     });
   }
 
@@ -77,12 +87,17 @@ export class TicketsController {
   @ApiOperation({ summary: 'Anular un ticket de parqueo' })
   @ApiResponse({ status: 200, description: 'Ticket anulado exitosamente', type: TicketResponseDto })
   @ApiResponse({ status: 400, description: 'Error de validación o regla de negocio' })
-  async anular(@Body() dto: AnularTicketRequestDto, @Req() req: any): Promise<TicketResponseDto> {
+  async anular(@Body() dto: AnularTicketRequestDto, @Req() req: any, @Headers('x-mac-address') mac?: string): Promise<TicketResponseDto> {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
     const result = await this.anularUseCase.execute({
       idTicket: dto.idTicket,
       codigoTicket: dto.codigoTicket,
       idEmpleado: req.user.id,
+      username: req.user.username,
+      authHeader: req.headers.authorization,
       motivo: dto.motivo,
+      ip,
+      mac: mac || '',
     });
     return result as TicketResponseDto;
   }

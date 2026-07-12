@@ -17,12 +17,16 @@ import {
   TRAZABILIDAD_CLIENT,
 } from '../ports/trazabilidad-client.interface';
 import { BusinessError } from '../../domain/errors/business-error';
+import { AuditEvent, EventPublisher } from '../../event-publisher.service';
 
 export interface PagarTicketInput {
   idTicket?: string;
   codigoTicket?: string;
   idEmpleado: string;
+  username?: string;
   authHeader?: string;
+  ip?: string;
+  mac?: string;
 }
 
 export interface PagarTicketOutput {
@@ -51,6 +55,7 @@ export class PagarTicketUseCase {
     private readonly vehiculosClient: IVehiculosClient,
     @Inject(TRAZABILIDAD_CLIENT)
     private readonly trazabilidadClient: ITrazabilidadClient,
+    private readonly eventPublisher: EventPublisher,
   ) {}
 
   async execute(input: PagarTicketInput): Promise<PagarTicketOutput> {
@@ -110,6 +115,17 @@ export class PagarTicketUseCase {
       payloadAnterior: { estado: 'ACTIVO' },
       payloadNuevo: { estado: 'PAGADO', valorRecaudado: valor, fechaSalida },
     });
+
+    const auditEvent: AuditEvent = {
+      servicio: 'ms-tickets',
+      accion: 'UPDATE',
+      entidad: 'TICKET',
+      usuario: input.username || input.idEmpleado,
+      ip: input.ip,
+      mac: input.mac,
+      datos: { id: updated.id, codigoTicket: updated.codigoTicket, estado: 'PAGADO', valorRecaudado: valor, horasCobradas, tarifaPorHora },
+    };
+    await this.eventPublisher.publish(auditEvent);
 
     return {
       id: updated.id,

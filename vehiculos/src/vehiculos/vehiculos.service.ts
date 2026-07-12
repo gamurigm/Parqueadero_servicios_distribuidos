@@ -26,19 +26,26 @@ export class VehiculosService {
   private async emitEvent(
     accion: string,
     vehiculo: Vehiculo,
+    usuario?: string,
+    rol?: string,
+    ip?: string,
+    mac?: string,
     datosExtra?: any,
   ) {
     const event: AuditEvent = {
-      servicio: 'vehiculos',
+      servicio: 'ms-vehiculos',
       accion,
-      entidad: 'Vehiculo',
+      entidad: 'VEHICULO',
+      usuario,
+      rol,
+      ip,
+      mac,
       datos: { ...vehiculo, ...datosExtra },
-      // usuario e ip se podrían obtener del contexto (request) si se inyecta
     };
     await this.eventPublisher.publish(event);
   }
 
-  async create(createVehiculoDto: CreateVehiculoDto) {
+  async create(createVehiculoDto: CreateVehiculoDto, user?: any, ip?: string, mac?: string) {
     try {
       // Validar que no exista una placa duplicada
       const placaSanitizada = this.utils.sanitizeString('placa', createVehiculoDto.datos.placa);
@@ -56,7 +63,8 @@ export class VehiculosService {
       // Guardar en la base de datos
       const saved = await this.vehiculoRepository.save(vehiculo);
 
-      await this.emitEvent('CREATE', saved);
+      const rol = user?.roles?.[0];
+      await this.emitEvent('CREATE', saved, user?.username, rol, ip, mac);
 
       return saved;
     } catch (error) {
@@ -84,7 +92,7 @@ export class VehiculosService {
     return vehiculo;
   }
 
-  async update(id: UUID, updateVehiculoDto: UpdateVehiculoDto) {
+  async update(id: UUID, updateVehiculoDto: UpdateVehiculoDto, user?: any, ip?: string, mac?: string) {
     const idSanitizado = this.utils.validateUUID(id as string);
 
     const vehiculoExistente = await this.vehiculoRepository.findOne({
@@ -124,6 +132,12 @@ export class VehiculosService {
       );
 
       const saved = await this.vehiculoRepository.save(vehiculoActualizado);
+
+      const rol = user?.roles?.[0];
+      await this.emitEvent('UPDATE', saved, user?.username, rol, ip, mac, {
+        cambios: datosSanitizados,
+      });
+
       return {
         message: 'Vehículo actualizado correctamente',
         vehiculo: saved
@@ -176,7 +190,7 @@ export class VehiculosService {
 
   //Es el metodo que elimina un vehiculo, donde recibe el id y el header authorization
   //para usarlo en validaciones con servicios externos
-  async remove(id: UUID, authHeader?: string) {
+  async remove(id: UUID, authHeader?: string, user?: any, ip?: string, mac?: string) {
     const idSanitizado = this.utils.validateUUID(id as string);
 
     const vehiculo = await this.vehiculoRepository.findOne({
@@ -196,6 +210,10 @@ export class VehiculosService {
     await this.assertNoActiveAssignment(vehiculo.id, authHeader);
 
     await this.vehiculoRepository.remove(vehiculo);
+
+    const rol = user?.roles?.[0];
+    await this.emitEvent('DELETE', vehiculo, user?.username, rol, ip, mac);
+
     return { message: 'Vehículo eliminado correctamente' };
   }
 

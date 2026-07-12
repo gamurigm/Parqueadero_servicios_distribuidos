@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Put, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Put, UseGuards, Req, Headers } from '@nestjs/common';
 import { UsuarioService } from './usuario.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
@@ -27,8 +27,9 @@ export class UsuarioController {
     status: 400, 
     description: 'Datos inválidos (username duplicado, password muy corta)' 
   })
-  create(@Body() createUsuarioDto: CreateUsuarioDto) {
-    return this.usuarioService.create(createUsuarioDto);
+  create(@Body() createUsuarioDto: CreateUsuarioDto, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
+    return this.usuarioService.create(createUsuarioDto, ip, mac || '');
   }
 
   @Get()
@@ -89,8 +90,9 @@ export class UsuarioController {
     status: 404, 
     description: 'Usuario no encontrado' 
   })
-  updateUser(@Param('id') id: string, @Body() updateUsuarioDto: UpdateUsuarioDto) {
-    return this.usuarioService.update(id, updateUsuarioDto);
+  updateUser(@Param('id') id: string, @Body() updateUsuarioDto: UpdateUsuarioDto, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
+    return this.usuarioService.update(id, updateUsuarioDto, ip, mac || '');
   }
 
   @Patch('/:id')
@@ -143,8 +145,8 @@ export class UsuarioController {
     status: 404, 
     description: 'Usuario no encontrado' 
   })
-  activarDesactivar(@Param('id') id: string) {
-    return this.usuarioService.activarDesactivar(id);
+  activarDesactivar(@Param('id') id: string, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    return this.usuarioService.activarDesactivar(id, req?.ip, mac);
   }
 
   @Delete('/:id')
@@ -166,7 +168,8 @@ export class UsuarioController {
     status: 404, 
     description: 'Usuario no encontrado' 
   })
-  remove(@Param('id') id: string) {
-    return this.usuarioService.remove(id);
+  remove(@Param('id') id: string, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
+    return this.usuarioService.remove(id, ip, mac || '');
   }
 }

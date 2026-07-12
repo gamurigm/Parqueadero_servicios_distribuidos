@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
     IsIP,
     IsMACAddress,
@@ -33,9 +34,9 @@ export class CreateAuditEventDto {
     @IsString()
     @IsNotEmpty()
     @MinLength(3)
-    @MaxLength(15)
-    @Matches(/^[A-Z-]+$/, {
-        message: 'El campo solo debe contener letras mayúsculas y guiones medios.',
+    @MaxLength(20)
+    @Matches(/^[A-Z_-]+$/, {
+        message: 'El campo solo debe contener letras mayúsculas, guiones bajos y guiones medios.',
     })
     entidad!: string; // ROL-USUARIO.
 
@@ -55,21 +56,24 @@ export class CreateAuditEventDto {
     usuario!: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     @MinLength(3)
     @MaxLength(15)
+    @Transform(({ value }) => (typeof value === 'string' ? value.toUpperCase() : value))
     @Matches(/^[A-Z-]+$/, {
         message: 'El campo solo debe contener letras mayúsculas y guiones medios.',
     })
     rol?: string;
 
     @IsIP('4', { message: 'La dirección IP debe ser una dirección IPv4 válida.' })
-    @IsNotEmpty()
-    ip!: string;
+    @IsOptional()
+    @Transform(({ value }) => (value === '' ? undefined : value))
+    ip?: string;
 
     @IsMACAddress({
         message: 'La dirección MAC debe ser una dirección MAC válida.',
     })
-    @IsNotEmpty()
-    mac!: string;
+    @IsOptional()
+    @Transform(({ value }) => (value === '' ? undefined : value))
+    mac?: string;
 }

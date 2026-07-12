@@ -10,7 +10,9 @@ import {
     HttpStatus,
     UseGuards,
     Headers,
+    Req,
 } from '@nestjs/common';
+import { Request } from 'express';
 import {
     ApiTags,
     ApiOperation,
@@ -50,8 +52,12 @@ export class AsignacionController {
     crear(
         @Body() dto: CreateAsignacionDto,
         @Headers('authorization') authHeader?: string,
+        @Req() req?: Request,
+        @Headers('x-mac-address') mac?: string,
     ) {
-        return this.asignacionService.crear(dto, authHeader);
+        const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
+        const username = (req as any)?.user?.username || '';
+        return this.asignacionService.crear(dto, authHeader, ip, mac || '', username);
     }
 
     @Get()
@@ -163,8 +169,12 @@ export class AsignacionController {
         @Param('vehicleId') vehicleId: string,
         @Body() dto: UpdateAsignacionDto,
         @Headers('authorization') authHeader?: string,
+        @Req() req?: Request,
+        @Headers('x-mac-address') mac?: string,
     ) {
-        return this.asignacionService.actualizar(userId, vehicleId, dto, authHeader);
+        const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
+        const username = (req as any)?.user?.username || '';
+        return this.asignacionService.actualizar(userId, vehicleId, dto, authHeader, ip, mac || '', username);
     }
 
     @Delete(':userId/:vehicleId')
@@ -183,7 +193,11 @@ export class AsignacionController {
         @Param('userId') userId: string,
         @Param('vehicleId') vehicleId: string,
         @Headers('authorization') authHeader?: string,
+        @Req() req?: Request,
+        @Headers('x-mac-address') mac?: string,
     ) {
-        return this.asignacionService.eliminar(userId, vehicleId, authHeader);
+        const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
+        const username = (req as any)?.user?.username || '';
+        return this.asignacionService.eliminar(userId, vehicleId, authHeader, ip, mac || '', username);
     }
 }

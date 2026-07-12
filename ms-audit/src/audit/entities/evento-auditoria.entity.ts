@@ -29,7 +29,7 @@ export class EventoAuditoria {
     @Column({ type: 'varchar', length: 50, nullable: true })
     mac!: string
 
-    @CreateDateColumn('timestamp')
+    @CreateDateColumn()
     timestamp!: Date;
 
 

@@ -73,10 +73,10 @@ allow if {
     has_role("admin")
 }
 
-# usuarios.delete: Solo admin
+# usuarios.delete: Solo super_user (admin no puede eliminar)
 allow if {
     input.resource == "usuarios.delete"
-    has_role("admin")
+    has_role("super_user")
 }
 
 # ============================================
@@ -112,10 +112,10 @@ allow if {
     has_role("admin")
 }
 
-# personas.delete: Solo admin
+# personas.delete: Solo super_user (admin no puede eliminar)
 allow if {
     input.resource == "personas.delete"
-    has_role("admin")
+    has_role("super_user")
 }
 
 # ============================================
@@ -146,10 +146,10 @@ allow if {
     has_role("admin")
 }
 
-# roles.delete: Solo admin
+# roles.delete: Solo super_user (admin no puede eliminar)
 allow if {
     input.resource == "roles.delete"
-    has_role("admin")
+    has_role("super_user")
 }
 
 # ============================================
@@ -180,10 +180,10 @@ allow if {
     has_role("admin")
 }
 
-# roles-usuario.delete: Solo admin
+# roles-usuario.delete: Solo super_user (admin no puede eliminar)
 allow if {
     input.resource == "roles-usuario.delete"
-    has_role("admin")
+    has_role("super_user")
 }
 
 # ============================================

@@ -15,6 +15,7 @@ const asignacion_controller_1 = require("./asignacion.controller");
 const trazabilidad_module_1 = require("../trazabilidad/trazabilidad.module");
 const vehiculos_client_module_1 = require("../vehiculos-client/vehiculos-client.module");
 const usuarios_client_module_1 = require("../usuarios-client/usuarios-client.module");
+const event_publisher_service_1 = require("../event-publisher.service");
 let AsignacionModule = class AsignacionModule {
 };
 exports.AsignacionModule = AsignacionModule;
@@ -27,7 +28,7 @@ exports.AsignacionModule = AsignacionModule = __decorate([
             usuarios_client_module_1.UsuariosClientModule,
         ],
         controllers: [asignacion_controller_1.AsignacionController],
-        providers: [asignacion_service_1.AsignacionService],
+        providers: [asignacion_service_1.AsignacionService, event_publisher_service_1.EventPublisher],
     })
 ], AsignacionModule);
 //# sourceMappingURL=asignacion.module.js.map

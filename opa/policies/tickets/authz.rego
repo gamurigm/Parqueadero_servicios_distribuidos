@@ -29,8 +29,8 @@ allow if {
     has_role("empleado")
 }
 
-# Consultar tickets requiere un usuario autenticado.
+# Consultar tickets: solo empleado, admin y super_user (propietario NO)
 allow if {
     input.resource == "tickets.read"
-    input.user.id != ""
+    has_role("empleado")
 }

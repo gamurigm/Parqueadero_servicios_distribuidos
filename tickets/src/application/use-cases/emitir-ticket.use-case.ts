@@ -23,13 +23,17 @@ import {
 } from '../ports/trazabilidad-client.interface';
 import { Ticket } from '../../domain/ticket.entity';
 import { BusinessError } from '../../domain/errors/business-error';
+import { AuditEvent, EventPublisher } from '../../event-publisher.service';
 
 export interface EmitirTicketInput {
   idEspacio: string;
   cedula?: string;
   placa?: string;
   idEmpleado: string;
+  username?: string;
   authHeader?: string;
+  ip?: string;
+  mac?: string;
 }
 
 export interface EmitirTicketOutput {
@@ -60,10 +64,11 @@ export class EmitirTicketUseCase {
     private readonly codeGenerator: ITicketCodeGenerator,
     @Inject(TRAZABILIDAD_CLIENT)
     private readonly trazabilidadClient: ITrazabilidadClient,
+    private readonly eventPublisher: EventPublisher,
   ) {}
 
   async execute(input: EmitirTicketInput): Promise<EmitirTicketOutput> {
-    const { idEspacio, cedula, placa, idEmpleado, authHeader } = input;
+    const { idEspacio, cedula, placa, idEmpleado, username, authHeader, ip, mac } = input;
 
     const resolved = await this.resolverClaveCompuesta(cedula, placa, authHeader);
 
@@ -134,6 +139,17 @@ export class EmitirTicketUseCase {
       usuarioEjecutor: idEmpleado,
       payloadNuevo: { id: saved.id, codigoTicket: saved.codigoTicket, placa: saved.placa, idEspacio },
     });
+
+    const auditEvent: AuditEvent = {
+      servicio: 'ms-tickets',
+      accion: 'CREATE',
+      entidad: 'TICKET',
+      usuario: username || idEmpleado,
+      ip,
+      mac,
+      datos: { id: saved.id, codigoTicket: saved.codigoTicket, placa: saved.placa, idEspacio, estado: saved.estado },
+    };
+    await this.eventPublisher.publish(auditEvent);
 
     return {
       id: saved.id,

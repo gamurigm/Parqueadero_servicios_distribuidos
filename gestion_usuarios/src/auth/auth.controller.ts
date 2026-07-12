@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Req, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Get, Req, HttpCode, HttpStatus, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -19,8 +19,9 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'Usuario registrado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos o cédula inválida' })
   @ApiResponse({ status: 409, description: 'Cédula o username ya existen' })
-  register(@Body() registerAuthDto: RegisterAuthDto) {
-    return this.authService.register(registerAuthDto);
+  register(@Body() registerAuthDto: RegisterAuthDto, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
+    return this.authService.register(registerAuthDto, ip, mac);
   }
 
   @Public()

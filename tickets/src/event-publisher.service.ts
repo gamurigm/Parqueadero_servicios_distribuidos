@@ -22,7 +22,7 @@ export interface AuditEvent {
 @Injectable()
 export class EventPublisher implements OnModuleInit, OnModuleDestroy {
     private readonly logger = new Logger(EventPublisher.name);
-    private connection: any = null; // any para evitar conflictos de tipos
+    private connection: any = null;
     private channel: any = null;
     private exchange: string;
     private routingKey: string;
@@ -68,12 +68,11 @@ export class EventPublisher implements OnModuleInit, OnModuleDestroy {
                 durable: true,
             });
             this.isConnected = true;
-            this.logger.log('✅ Conectado a RabbitMQ para publicación de eventos');
+            this.logger.log('Conectado a RabbitMQ para publicacion de eventos');
 
-            // Manejar cierre inesperado
             this.connection.on('close', () => {
                 this.logger.warn(
-                    '⚠️ Conexión a RabbitMQ cerrada, intentando reconectar...',
+                    'Conexion a RabbitMQ cerrada, intentando reconectar...',
                 );
                 this.isConnected = false;
                 this.channel = null;
@@ -82,7 +81,7 @@ export class EventPublisher implements OnModuleInit, OnModuleDestroy {
             });
 
             this.connection.on('error', (err: any) => {
-                this.logger.error(`❌ Error en conexión RabbitMQ: ${err.message}`);
+                this.logger.error(`Error en conexion RabbitMQ: ${err.message}`);
                 this.isConnected = false;
                 this.channel = null;
                 this.connection = null;
@@ -92,7 +91,7 @@ export class EventPublisher implements OnModuleInit, OnModuleDestroy {
             this.isConnected = false;
             const errorMessage =
                 error instanceof Error ? error.message : 'Error desconocido';
-            this.logger.error(`❌ Error conectando a RabbitMQ: ${errorMessage}`);
+            this.logger.error(`Error conectando a RabbitMQ: ${errorMessage}`);
             this.scheduleReconnect();
             throw error;
         }
@@ -107,14 +106,13 @@ export class EventPublisher implements OnModuleInit, OnModuleDestroy {
     }
 
     async publish(event: AuditEvent): Promise<void> {
-        // Si no está conectado, intenta conectar (espera hasta 5s)
         if (!this.isConnected || !this.channel) {
-            this.logger.warn('⏳ Canal no establecido, intentando conectar...');
+            this.logger.warn('Canal no establecido, intentando conectar...');
             await this.connect();
 
             if (!this.isConnected || !this.channel) {
                 this.logger.error(
-                    '❌ No se pudo establecer conexión con RabbitMQ, evento no publicado',
+                    'No se pudo establecer conexion con RabbitMQ, evento no publicado',
                 );
                 return;
             }
@@ -126,12 +124,12 @@ export class EventPublisher implements OnModuleInit, OnModuleDestroy {
                 persistent: true,
             });
             this.logger.debug(
-                `📤 Evento publicado: ${event.accion} en ${event.servicio}`,
+                `Evento publicado: ${event.accion} en ${event.servicio}`,
             );
         } catch (error) {
             const errorMessage =
                 error instanceof Error ? error.message : 'Error desconocido';
-            this.logger.error(`❌ Error publicando evento: ${errorMessage}`);
+            this.logger.error(`Error publicando evento: ${errorMessage}`);
             this.isConnected = false;
             this.channel = null;
         }
@@ -143,8 +141,7 @@ export class EventPublisher implements OnModuleInit, OnModuleDestroy {
             if (this.channel) await this.channel.close();
             if (this.connection) await this.connection.close();
         } catch (error) {
-            // Ignoramos errores al cerrar
         }
-        this.logger.log('Conexión a RabbitMQ cerrada');
+        this.logger.log('Conexion a RabbitMQ cerrada');
     }
 }

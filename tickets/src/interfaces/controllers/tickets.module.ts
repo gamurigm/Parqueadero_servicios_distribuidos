@@ -26,6 +26,7 @@ import {
 } from '../../application/ports/ticket-code-generator.interface';
 import { TRAZABILIDAD_CLIENT } from '../../application/ports/trazabilidad-client.interface';
 import { TARIFA_PROVIDER } from '../../application/ports/tarifa-provider.interface';
+import { EventPublisher } from '../../event-publisher.service';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { TARIFA_PROVIDER } from '../../application/ports/tarifa-provider.interfa
     EmitirTicketUseCase,
     PagarTicketUseCase,
     AnularTicketUseCase,
+    EventPublisher,
   ],
 })
 export class TicketsModule {}
