@@ -6,11 +6,12 @@ import { User } from './entities/usuario.entity';
 import { Person } from '../persona/entities/persona.entity';
 import { RolesUsuarios } from '../roles_usuario/entities/roles_usuario.entity';
 import { OpaModule } from '../opa/opa.module';
+import { EventPublisher } from '../event-publisher.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User,Person,RolesUsuarios]), OpaModule],
   controllers: [UsuarioController],
-  providers: [UsuarioService],
+  providers: [UsuarioService, EventPublisher],
   exports: [UsuarioService],
 })
 export class UsuarioModule {}

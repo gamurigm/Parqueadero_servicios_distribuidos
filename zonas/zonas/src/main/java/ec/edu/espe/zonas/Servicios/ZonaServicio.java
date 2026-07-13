@@ -20,11 +20,11 @@ public interface ZonaServicio {
     // OPERACIONES CRUD
     Page<ZonaResponseDTO> listarZonas(Pageable pageable);
 
-    ZonaResponseDTO crearZona(ZonaRequestDTO req);
+    ZonaResponseDTO crearZona(ZonaRequestDTO req, String ip, String mac);
 
-    ZonaResponseDTO actualizarZona(UUID idZona, ZonaRequestDTO req);
+    ZonaResponseDTO actualizarZona(UUID idZona, ZonaRequestDTO req, String ip, String mac);
 
-    String eliminarZona(UUID idZona);
+    String eliminarZona(UUID idZona, String ip, String mac);
 
-    String activarDesactivar(UUID idZona, boolean forzar);
+    String activarDesactivar(UUID idZona, boolean forzar, String ip, String mac);
 }

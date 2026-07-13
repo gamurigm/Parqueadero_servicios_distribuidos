@@ -60,16 +60,16 @@ allow if {
     has_role("encargado_zona")
 }
 
-# spaces.delete: admin
+# spaces.delete: Solo super_user (admin no puede eliminar)
 allow if {
     input.resource == "spaces.delete"
-    has_role("admin")
+    has_role("super_user")
 }
 
-# zones.delete: admin
+# zones.delete: Solo super_user (admin no puede eliminar)
 allow if {
     input.resource == "zones.delete"
-    has_role("admin")
+    has_role("super_user")
 }
 
 # spaces.physical_delete: super_user

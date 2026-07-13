@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Put, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Put, UseGuards, Req, Headers } from '@nestjs/common';
 import { PersonaService } from './persona.service';
 import { CreatePersonaDto } from './dto/create-persona.dto';
 import { UpdatePersonaDto } from './dto/update-persona.dto';
@@ -18,8 +18,9 @@ export class PersonaController {
   @ApiOperation({ summary: 'Crear una nueva persona' })
   @ApiResponse({ status: 201, description: 'Persona creada exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  create(@Body() createPersonaDto: CreatePersonaDto) {
-    return this.personaService.create(createPersonaDto);
+  create(@Body() createPersonaDto: CreatePersonaDto, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
+    return this.personaService.create(createPersonaDto, ip, mac || '');
   }
 
   @Get()
@@ -59,8 +60,9 @@ export class PersonaController {
   @ApiParam({ name: 'id', description: 'ID de la persona a actualizar' })
   @ApiResponse({ status: 200, description: 'Persona actualizada exitosamente' })
   @ApiResponse({ status: 404, description: 'Persona no encontrada' })
-  update(@Param('id') id: string, @Body() updatePersonaDto: UpdatePersonaDto) {
-    return this.personaService.update(id, updatePersonaDto);
+  update(@Param('id') id: string, @Body() updatePersonaDto: UpdatePersonaDto, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
+    return this.personaService.update(id, updatePersonaDto, ip, mac || '');
   }
 
   @Patch('/:id/cambio-de-estado')
@@ -70,8 +72,8 @@ export class PersonaController {
   @ApiParam({ name: 'id', description: 'ID de la persona' })
   @ApiResponse({ status: 200, description: 'Estado de la persona actualizado' })
   @ApiResponse({ status: 404, description: 'Persona no encontrada' })
-  cambioDeEstado(@Param('id') id: string) {
-    return this.personaService.cambioDeEstado(id);
+  cambioDeEstado(@Param('id') id: string, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    return this.personaService.cambioDeEstado(id, req?.ip, mac);
   }
 
   @Delete('/:id')
@@ -81,7 +83,8 @@ export class PersonaController {
   @ApiParam({ name: 'id', description: 'ID de la persona a eliminar' })
   @ApiResponse({ status: 200, description: 'Persona eliminada exitosamente' })
   @ApiResponse({ status: 404, description: 'Persona no encontrada' })
-  remove(@Param('id') id: string) {
-    return this.personaService.remove(id);
+  remove(@Param('id') id: string, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
+    return this.personaService.remove(id, ip, mac || '');
   }
 }

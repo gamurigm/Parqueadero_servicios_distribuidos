@@ -8,6 +8,7 @@ import * as crypto from 'crypto';
 import { Utils } from '../utils/utils';
 import { Person } from '../persona/entities/persona.entity';
 import { RolesUsuarios } from '../roles_usuario/entities/roles_usuario.entity';
+import { AuditEvent, EventPublisher } from '../event-publisher.service';
 
 @Injectable()
 export class UsuarioService {
@@ -26,6 +27,7 @@ export class UsuarioService {
     private readonly personRepository: Repository<Person>,
     @InjectRepository(RolesUsuarios)
     private readonly rolesUsuarioRepository: Repository<RolesUsuarios>,
+    private readonly eventPublisher: EventPublisher,
   ) {
     this.utils = new Utils();
   }
@@ -80,7 +82,28 @@ export class UsuarioService {
     };
   }
 
-  async create(createUsuarioDto: CreateUsuarioDto) {
+  private async emitEvent(
+    accion: string,
+    datos: any,
+    usuario?: string,
+    rol?: string,
+    ip?: string,
+    mac?: string,
+  ) {
+    const event: AuditEvent = {
+      servicio: 'ms-usuarios',
+      accion,
+      entidad: 'USUARIO',
+      usuario,
+      rol,
+      ip,
+      mac,
+      datos,
+    };
+    await this.eventPublisher.publish(event);
+  }
+
+  async create(createUsuarioDto: CreateUsuarioDto, ip?: string, mac?: string) {
     const idSnt = this.utils.sanitizeString('id', createUsuarioDto.id);
     const existPerson = await this.personRepository.findOne({
       where: {
@@ -122,6 +145,9 @@ export class UsuarioService {
 
     const savedUser = await this.userRepository.save(user);
     delete (savedUser as any).passwordHash;
+
+    await this.emitEvent('CREATE', savedUser, savedUser.username, undefined, ip, mac);
+
     return savedUser;
   }
 
@@ -149,7 +175,7 @@ export class UsuarioService {
     return this.toUserResponse(user);
   }
 
-  async update(id: string, updateUsuarioDto: UpdateUsuarioDto) {
+  async update(id: string, updateUsuarioDto: UpdateUsuarioDto, ip?: string, mac?: string) {
     const idUser = this.utils.validateUUID(id);
     const user = await this.userRepository.findOne({ where: { id: idUser } });
 
@@ -170,18 +196,37 @@ export class UsuarioService {
 
     user.username = username;
 
-    await this.userRepository.save(user);
+    const saved = await this.userRepository.save(user);
+
+    await this.emitEvent('UPDATE', saved, saved.username, undefined, ip, mac);
+
     return this.findOne(idUser);
   }
 
   async updatePassword(id: string, newPassword: string) {
     const idUser = this.utils.validateUUID(id);
-    const user = await this.userRepository.findOne({ where: { id: idUser } });
+    const sanitizedPassword = typeof newPassword === 'string' ? newPassword.trim() : '';
+    if (!sanitizedPassword) {
+      throw new BadRequestException('La nueva contrasena no puede estar vacia');
+    }
+
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.id = :id', { id: idUser })
+      .getOne();
 
     if (!user) throw new NotFoundException('No se encontro el usuario para actualizar');
+    if (!user.passwordHash) {
+      throw new BadRequestException('No se pudo obtener la contrasena actual del usuario');
+    }
 
     const [currentSalt] = user.passwordHash.split(':');
-    const newHash = crypto.scryptSync(newPassword, currentSalt, 64).toString('hex');
+    if (!currentSalt) {
+      throw new BadRequestException('La contrasena actual del usuario no tiene un formato valido');
+    }
+
+    const newHash = crypto.scryptSync(sanitizedPassword, currentSalt, 64).toString('hex');
     const newPasswordHash = `${currentSalt}:${newHash}`;
 
     if (user.passwordHash === newPasswordHash) {
@@ -189,7 +234,7 @@ export class UsuarioService {
     }
 
     const salt = crypto.randomBytes(16).toString('hex');
-    const hash = crypto.scryptSync(newPassword, salt, 64).toString('hex');
+    const hash = crypto.scryptSync(sanitizedPassword, salt, 64).toString('hex');
     const passwordHash = `${salt}:${hash}`;
 
     await this.userRepository.update(idUser, { passwordHash });
@@ -197,7 +242,7 @@ export class UsuarioService {
     return { message: 'Contrasena actualizada' };
   }
 
-  async activarDesactivar(id: string) {
+  async activarDesactivar(id: string, ip?: string, mac?: string) {
     const idUser = this.utils.validateUUID(id);
 
     const user = await this.userRepository.findOne({
@@ -219,13 +264,16 @@ export class UsuarioService {
       if (rolesAsigned) throw new ConflictException('El usuario tiene roles activos asignados no se puede desactivar');
     }
 
+    const previousActive = user.active;
     user.active = !user.active;
     await this.userRepository.update(idUser, user);
+
+    await this.emitEvent('UPDATE', user, user.username, undefined, ip, mac);
 
     return this.findOne(idUser);
   }
 
-  async remove(id: string) {
+  async remove(id: string, ip?: string, mac?: string) {
     const idUser = this.utils.validateUUID(id);
 
     const userExist = await this.userRepository.findOne({
@@ -246,6 +294,8 @@ export class UsuarioService {
     if (rolesAsigned) throw new ConflictException('El usuario tiene roles activos asignados no se puede eliminar');
 
     await this.userRepository.delete(idUser);
+
+    await this.emitEvent('DELETE', { id: idUser, username: userExist.username }, userExist.username, undefined, ip, mac);
 
     return { message: 'usuario eliminado' };
   }
@@ -269,3 +319,4 @@ export class UsuarioService {
       .getOne();
   }
 }
+

@@ -1,10 +1,12 @@
 // vehiculos.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Put, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UsePipes, Put, UseGuards, Headers, Req } from '@nestjs/common';
 import { VehiculosService } from './vehiculos.service';
 import { CreateVehiculoDto } from './dto/create-vehiculo.dto';
 import { UpdateVehiculoDto } from './dto/update-vehiculo.dto';
 import { SanitizePipe } from './utils/SanitizePipe';
+import { Utils } from './utils/utils';
 import type { UUID } from 'crypto';
+import type { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Resource } from '../opa/decorators/resource.decorator';
@@ -14,6 +16,8 @@ import { Resource } from '../opa/decorators/resource.decorator';
 @Controller('vehiculos')
 @UseGuards(JwtAuthGuard) 
 export class VehiculosController {
+  private utils = new Utils();
+
   constructor(private readonly vehiculosService: VehiculosService) {}
 
   @Post()
@@ -22,8 +26,9 @@ export class VehiculosController {
   @ApiOperation({ summary: 'Crear un vehiculo' })
   @ApiResponse({ status: 201, description: 'Vehiculo creado correctamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  create(@Body() createVehiculoDto: CreateVehiculoDto) {
-    return this.vehiculosService.create(createVehiculoDto);
+  create(@Body() createVehiculoDto: CreateVehiculoDto, @Req() req: Request, @Headers('x-mac-address') mac?: string) {
+    const { ip, mac: macAddr } = this.utils.obtenerIpYMac(req, mac);
+    return this.vehiculosService.create(createVehiculoDto, req.user as any, ip, macAddr);
   }
 
   @Get()
@@ -44,14 +49,19 @@ export class VehiculosController {
   @UsePipes(new SanitizePipe())
   @Resource('vehiculos.update')
   @ApiOperation({ summary: 'Actualizar vehículo' })
-  update(@Param('id') id: UUID, @Body() updateVehiculoDto: UpdateVehiculoDto) {
-    return this.vehiculosService.update(id, updateVehiculoDto);
+  update(@Param('id') id: UUID, @Body() updateVehiculoDto: UpdateVehiculoDto, @Req() req: Request, @Headers('x-mac-address') mac?: string) {
+    const { ip, mac: macAddr } = this.utils.obtenerIpYMac(req, mac);
+    return this.vehiculosService.update(id, updateVehiculoDto, req.user as any, ip, macAddr);
   }
 
+  //Define el endpoint HTTP DELETE /vehiculos/:id.
   @Delete(':id')
   @Resource('vehiculos.delete')
   @ApiOperation({ summary: 'Eliminar vehículo' })
-  remove(@Param('id') id: UUID) {
-    return this.vehiculosService.remove(id);
+
+  //Recibe el id del vehículo y también el header authorization de la petición.
+  remove(@Param('id') id: UUID, @Headers('authorization') authHeader?: string, @Req() req?: Request, @Headers('x-mac-address') mac?: string) {
+    const { ip, mac: macAddr } = this.utils.obtenerIpYMac(req!, mac);
+    return this.vehiculosService.remove(id, authHeader, req?.user as any, ip, macAddr);
   }
 }

@@ -8,6 +8,7 @@ import { User } from '../usuario/entities/usuario.entity';
 import { Role } from '../roles/entities/role.entity';
 import { ActiveDeactiveRolesUsuarioDto } from './dto/active-deactive-roles_usuario.dto';
 import { Utils } from '../utils/utils';
+import { AuditEvent, EventPublisher } from '../event-publisher.service';
 
 @Injectable()
 export class RolesUsuarioService {
@@ -26,8 +27,30 @@ export class RolesUsuarioService {
     private repositorioUsuario: Repository<User>,
     @InjectRepository(Role)
     private repositorioRoles: Repository<Role>,
+    private readonly eventPublisher: EventPublisher,
   ) {
     this.utils = new Utils();
+  }
+
+  private async emitEvent(
+    accion: string,
+    datos: any,
+    usuario?: string,
+    rol?: string,
+    ip?: string,
+    mac?: string,
+  ) {
+    const event: AuditEvent = {
+      servicio: 'ms-usuarios',
+      accion,
+      entidad: 'ROLES_USUARIO',
+      usuario,
+      rol,
+      ip,
+      mac,
+      datos,
+    };
+    await this.eventPublisher.publish(event);
   }
 
   private validateRequiredUuid(fieldName: string, value?: string) {
@@ -104,7 +127,7 @@ export class RolesUsuarioService {
     return this.toAssignmentResponse(assignment);
   }
 
-  async create(createRolesUsuarioDto: CreateRolesUsuarioDto) {
+  async create(createRolesUsuarioDto: CreateRolesUsuarioDto, ip?: string, mac?: string) {
     const idUser = this.utils.validateUUID(createRolesUsuarioDto.id_user);
     const idRol = this.utils.validateUUID(createRolesUsuarioDto.id_rol);
 
@@ -139,7 +162,11 @@ export class RolesUsuarioService {
     });
 
     const savedRole = await this.repositorioRolesUsuario.save(userRole);
-    return this.findAssignment(savedRole.id_usuario, savedRole.id_rol);
+    const result = await this.findAssignment(savedRole.id_usuario, savedRole.id_rol);
+
+    await this.emitEvent('CREATE', result, user.username, role.nombre, ip, mac);
+
+    return result;
   }
 
   async findAll() {
@@ -228,7 +255,7 @@ export class RolesUsuarioService {
     return this.findAssignment(savedRole.id_usuario, savedRole.id_rol);
   }
 
-  async activarDesactivar(activeDeactiveRolesUsuarioDTO: ActiveDeactiveRolesUsuarioDto) {
+  async activarDesactivar(activeDeactiveRolesUsuarioDTO: ActiveDeactiveRolesUsuarioDto, ip?: string, mac?: string) {
     const idUser = this.validateRequiredUuid('id_user', activeDeactiveRolesUsuarioDTO.id_user);
     const idRol = this.validateRequiredUuid('id_rol', activeDeactiveRolesUsuarioDTO.id_rol);
 
@@ -248,9 +275,16 @@ export class RolesUsuarioService {
 
     await this.repositorioRolesUsuario.save(userRole);
 
+    const result = await this.findAssignment(idUser, idRol);
+
+    const user = await this.repositorioUsuario.findOne({ where: { id: idUser } });
+    const role = await this.repositorioRoles.findOne({ where: { id: idRol } });
+
+    await this.emitEvent('UPDATE', result, user?.username, role?.nombre, ip, mac);
+
     return {
       message: `Rol ${userRole.activo ? 'activado' : 'desactivado'} correctamente al usuario`,
-      userRole: await this.findAssignment(idUser, idRol),
+      userRole: result,
     };
   }
 

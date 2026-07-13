@@ -1,5 +1,6 @@
 // utils.ts
 import { BadRequestException } from "@nestjs/common";
+import type { Request } from "express";
 
 export class Utils{
   private readonly uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -57,5 +58,11 @@ export class Utils{
     const sanitized1 = this.sanitizeString(value1, str1).toLowerCase();
     const sanitized2 = this.sanitizeString(value2, str2).toLowerCase();
     return sanitized1 === sanitized2;
+  }
+
+  public obtenerIpYMac(req?: Request, macHeader?: string): { ip: string; mac: string } {
+    const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
+    const mac = macHeader || '';
+    return { ip, mac };
   }
 }

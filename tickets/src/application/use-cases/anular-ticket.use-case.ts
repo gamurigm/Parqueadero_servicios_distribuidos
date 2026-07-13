@@ -9,12 +9,17 @@ import {
   TRAZABILIDAD_CLIENT,
 } from '../ports/trazabilidad-client.interface';
 import { BusinessError } from '../../domain/errors/business-error';
+import { AuditEvent, EventPublisher } from '../../event-publisher.service';
 
 export interface AnularTicketInput {
   idTicket?: string;
   codigoTicket?: string;
   idEmpleado: string;
+  username?: string;
+  authHeader?: string;
   motivo: string;
+  ip?: string;
+  mac?: string;
 }
 
 export interface AnularTicketOutput {
@@ -35,6 +40,7 @@ export class AnularTicketUseCase {
     private readonly zonasClient: IZonasClient,
     @Inject(TRAZABILIDAD_CLIENT)
     private readonly trazabilidadClient: ITrazabilidadClient,
+    private readonly eventPublisher: EventPublisher,
   ) {}
 
   async execute(input: AnularTicketInput): Promise<AnularTicketOutput> {
@@ -52,7 +58,7 @@ export class AnularTicketUseCase {
     let retries = 3;
     while (retries > 0) {
       try {
-        await this.zonasClient.marcarLibre(ticket.idEspacio);
+        await this.zonasClient.marcarLibre(ticket.idEspacio, input.authHeader);
         break;
       } catch (error) {
         retries--;
@@ -76,6 +82,17 @@ export class AnularTicketUseCase {
       payloadAnterior: { estado: 'ACTIVO' },
       payloadNuevo: { estado: 'ANULADO', motivo: input.motivo },
     });
+
+    const auditEvent: AuditEvent = {
+      servicio: 'ms-tickets',
+      accion: 'UPDATE',
+      entidad: 'TICKET',
+      usuario: input.username || input.idEmpleado,
+      ip: input.ip,
+      mac: input.mac,
+      datos: { id: updated.id, codigoTicket: updated.codigoTicket, estado: 'ANULADO', motivo: input.motivo },
+    };
+    await this.eventPublisher.publish(auditEvent);
 
     return {
       id: updated.id,

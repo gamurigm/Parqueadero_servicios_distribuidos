@@ -27,7 +27,8 @@ public class OpaService {
 
             // Map method and path to resource and action
             String action = getAction(method);
-            String resource = getResource(path, action);
+            String normalizedPath = normalizePath(path);
+            String resource = getResource(normalizedPath, method, action);
 
             OpaInput input = new OpaInput();
             input.setUser(new OpaUser(userId, username, roles));
@@ -68,11 +69,54 @@ public class OpaService {
         };
     }
 
-    private String getResource(String path, String action) {
+    private String getResource(String path, String method, String action) {
         if (path.startsWith("/api/v1/espacios")) {
-            return "spaces." + action;
+            if ("GET".equalsIgnoreCase(method)) {
+                return "zones.spaces.read";
+            }
+            if ("POST".equalsIgnoreCase(method)) {
+                return "spaces.create";
+            }
+            if ("PUT".equalsIgnoreCase(method)) {
+                return "spaces.update";
+            }
+            if ("PATCH".equalsIgnoreCase(method)) {
+                if (path.endsWith("/estado")) {
+                    return "spaces.change-status";
+                }
+                if (path.endsWith("/activar-desactivar")) {
+                    return "spaces.activate";
+                }
+                return "spaces.update";
+            }
+            if ("DELETE".equalsIgnoreCase(method)) {
+                return "spaces.delete";
+            }
+            return "zones.spaces.read";
+        }
+
+        if (path.startsWith("/api/v1/zonas")) {
+            if ("GET".equalsIgnoreCase(method)) {
+                return "zones.read";
+            }
+            if ("POST".equalsIgnoreCase(method)) {
+                return "zones.create";
+            }
+            if ("DELETE".equalsIgnoreCase(method)) {
+                return "zones.delete";
+            }
+            if ("PUT".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method)) {
+                return "zones.update";
+            }
         }
         return "zones." + action;
+    }
+
+    private String normalizePath(String path) {
+        if (path == null) {
+            return "";
+        }
+        return path.replaceAll("/+$", "");
     }
 
     @Data
@@ -121,3 +165,4 @@ public class OpaService {
         private boolean allow;
     }
 }
+

@@ -19,6 +19,7 @@ import ec.edu.espe.zonas.Servicios.EspacioServicio;
 import ec.edu.espe.zonas.DTOs.EspacioResponseDTO;
 import ec.edu.espe.zonas.DTOs.EspacioRequestDTO;
 import ec.edu.espe.zonas.entidades.EstadoEspacio;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -66,8 +67,11 @@ public class EspacioControlador {
     public ResponseEntity<EspacioResponseDTO> crearEspacio(
             @Valid @RequestBody
             @Schema(description = "Datos del espacio a crear", required = true)
-            EspacioRequestDTO request) {
-        EspacioResponseDTO response = espacioServicio.crearEspacio(request);
+            EspacioRequestDTO request,
+            HttpServletRequest httpRequest,
+            @RequestHeader(value = "x-mac-address", required = false) String mac) {
+        String ip = httpRequest.getRemoteAddr();
+        EspacioResponseDTO response = espacioServicio.crearEspacio(request, ip, mac);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -87,8 +91,11 @@ public class EspacioControlador {
             @PathVariable UUID id,
             @Valid @RequestBody
             @Schema(description = "Datos actualizados del espacio", required = true)
-            EspacioRequestDTO request) {
-        return ResponseEntity.ok(espacioServicio.actualizarEspacio(id, request));
+            EspacioRequestDTO request,
+            HttpServletRequest httpRequest,
+            @RequestHeader(value = "x-mac-address", required = false) String mac) {
+        String ip = httpRequest.getRemoteAddr();
+        return ResponseEntity.ok(espacioServicio.actualizarEspacio(id, request, ip, mac));
     }
 
     @DeleteMapping("/{id}")
@@ -102,8 +109,11 @@ public class EspacioControlador {
             @Parameter(description = "ID del espacio a eliminar",
                     example = "123e4567-e89b-12d3-a456-426614174000",
                     required = true)
-            @PathVariable UUID id) {
-        String mensaje = espacioServicio.eliminarEspacio(id);
+            @PathVariable UUID id,
+            HttpServletRequest httpRequest,
+            @RequestHeader(value = "x-mac-address", required = false) String mac) {
+        String ip = httpRequest.getRemoteAddr();
+        String mensaje = espacioServicio.eliminarEspacio(id, ip, mac);
         return ResponseEntity.ok(mensaje);
     }
 
@@ -123,8 +133,11 @@ public class EspacioControlador {
                     example = "OCUPADO",
                     required = true,
                     schema = @Schema(allowableValues = {"DISPONIBLE", "OCUPADO", "MANTENIMIENTO"}))
-            @RequestParam @jakarta.validation.constraints.NotNull EstadoEspacio estado) {
-        return ResponseEntity.ok(espacioServicio.cambiarEstado(id, estado));
+            @RequestParam @jakarta.validation.constraints.NotNull EstadoEspacio estado,
+            HttpServletRequest httpRequest,
+            @RequestHeader(value = "x-mac-address", required = false) String mac) {
+        String ip = httpRequest.getRemoteAddr();
+        return ResponseEntity.ok(espacioServicio.cambiarEstado(id, estado, ip, mac));
     }
 
     @PatchMapping("/{id}/activar-desactivar")
@@ -138,8 +151,11 @@ public class EspacioControlador {
             @Parameter(description = "ID del espacio",
                     example = "123e4567-e89b-12d3-a456-426614174000",
                     required = true)
-            @PathVariable UUID id) {
-        String mensaje = espacioServicio.toggleActivo(id);
+            @PathVariable UUID id,
+            HttpServletRequest httpRequest,
+            @RequestHeader(value = "x-mac-address", required = false) String mac) {
+        String ip = httpRequest.getRemoteAddr();
+        String mensaje = espacioServicio.toggleActivo(id, ip, mac);
         return ResponseEntity.ok(mensaje);
     }
 }

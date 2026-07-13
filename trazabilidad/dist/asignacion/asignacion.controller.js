@@ -26,8 +26,9 @@ let AsignacionController = class AsignacionController {
         this.asignacionService = asignacionService;
         this.trazabilidadService = trazabilidadService;
     }
-    crear(dto, authHeader) {
-        return this.asignacionService.crear(dto, authHeader);
+    crear(dto, authHeader, req, mac) {
+        const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
+        return this.asignacionService.crear(dto, authHeader, ip, mac || '');
     }
     listar(authHeader) {
         return this.asignacionService.listar(authHeader);
@@ -47,11 +48,13 @@ let AsignacionController = class AsignacionController {
     buscarPorClave(userId, vehicleId, authHeader) {
         return this.asignacionService.buscarPorClave(userId, vehicleId, authHeader);
     }
-    actualizar(userId, vehicleId, dto, authHeader) {
-        return this.asignacionService.actualizar(userId, vehicleId, dto, authHeader);
+    actualizar(userId, vehicleId, dto, authHeader, req, mac) {
+        const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
+        return this.asignacionService.actualizar(userId, vehicleId, dto, authHeader, ip, mac || '');
     }
-    eliminar(userId, vehicleId, authHeader) {
-        return this.asignacionService.eliminar(userId, vehicleId, authHeader);
+    eliminar(userId, vehicleId, authHeader, req, mac) {
+        const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
+        return this.asignacionService.eliminar(userId, vehicleId, authHeader, ip, mac || '');
     }
 };
 exports.AsignacionController = AsignacionController;
@@ -71,8 +74,10 @@ __decorate([
     (0, swagger_1.ApiResponse)({ status: 409, description: 'El vehiculo ya esta asignado activamente' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Headers)('authorization')),
+    __param(2, (0, common_1.Req)()),
+    __param(3, (0, common_1.Headers)('x-mac-address')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_asignacion_dto_1.CreateAsignacionDto, String]),
+    __metadata("design:paramtypes", [create_asignacion_dto_1.CreateAsignacionDto, String, Object, String]),
     __metadata("design:returntype", void 0)
 ], AsignacionController.prototype, "crear", null);
 __decorate([
@@ -188,8 +193,10 @@ __decorate([
     __param(1, (0, common_1.Param)('vehicleId')),
     __param(2, (0, common_1.Body)()),
     __param(3, (0, common_1.Headers)('authorization')),
+    __param(4, (0, common_1.Req)()),
+    __param(5, (0, common_1.Headers)('x-mac-address')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, update_asignacion_dto_1.UpdateAsignacionDto, String]),
+    __metadata("design:paramtypes", [String, String, update_asignacion_dto_1.UpdateAsignacionDto, String, Object, String]),
     __metadata("design:returntype", void 0)
 ], AsignacionController.prototype, "actualizar", null);
 __decorate([
@@ -208,8 +215,10 @@ __decorate([
     __param(0, (0, common_1.Param)('userId')),
     __param(1, (0, common_1.Param)('vehicleId')),
     __param(2, (0, common_1.Headers)('authorization')),
+    __param(3, (0, common_1.Req)()),
+    __param(4, (0, common_1.Headers)('x-mac-address')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, Object, String]),
     __metadata("design:returntype", void 0)
 ], AsignacionController.prototype, "eliminar", null);
 exports.AsignacionController = AsignacionController = __decorate([

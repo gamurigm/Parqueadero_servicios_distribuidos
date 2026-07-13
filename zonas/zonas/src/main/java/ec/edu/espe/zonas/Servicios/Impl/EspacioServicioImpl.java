@@ -21,8 +21,12 @@ import ec.edu.espe.zonas.repositorios.EspacioRepositorio;
 import ec.edu.espe.zonas.repositorios.ZonaRepositorio;
 import ec.edu.espe.zonas.utils.UtilsMappers;
 import ec.edu.espe.zonas.utils.SanitizadorEntradas;
+import ec.edu.espe.zonas.utils.AuditEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +35,12 @@ public class EspacioServicioImpl implements EspacioServicio {
     private final EspacioRepositorio repositorioEspacio;
     private final ZonaRepositorio zonaRepositorio;
     private final UtilsMappers mapper;
+    private final AuditEventPublisher auditEventPublisher;
+
+    private String getCurrentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.getName() != null) ? auth.getName() : "";
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -48,7 +58,7 @@ public class EspacioServicioImpl implements EspacioServicio {
     }
 
     @Override
-    public EspacioResponseDTO crearEspacio(EspacioRequestDTO dto) {
+    public EspacioResponseDTO crearEspacio(EspacioRequestDTO dto, String ip, String mac) {
 
         Zona objZona = zonaRepositorio.findById(dto.getIdZona())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Zona no encontrada con id: " + dto.getIdZona()));
@@ -76,6 +86,7 @@ public class EspacioServicioImpl implements EspacioServicio {
         Espacio nuevoEspacio = mapper.toEntity(dto);
         nuevoEspacio.setZona(objZona);
         nuevoEspacio.setEstado(EstadoEspacio.DISPONIBLE);
+        nuevoEspacio.setActivo(true);
         
         // Generar código basado en el Último código existente en la zona
         String codigoGenerado = generarCodigoEspacio(objZona);
@@ -85,6 +96,9 @@ public class EspacioServicioImpl implements EspacioServicio {
         nuevoEspacio.setFechaModificacion(LocalDateTime.now());
 
         Espacio espacioGuardado = repositorioEspacio.save(nuevoEspacio);
+
+        auditEventPublisher.publish("ms-zonas", "CREATE", "ESPACIO", getCurrentUsername(), ip, mac,
+                Map.of("id", espacioGuardado.getId().toString(), "codigo", espacioGuardado.getCodigo(), "idZona", objZona.getId().toString(), "tipoEspacio", espacioGuardado.getTipoEspacio().name()));
 
         return mapper.toResponseDTO(espacioGuardado);
 
@@ -113,7 +127,7 @@ public class EspacioServicioImpl implements EspacioServicio {
     }
 
     @Override
-    public EspacioResponseDTO actualizarEspacio(UUID id, EspacioRequestDTO dto) {
+    public EspacioResponseDTO actualizarEspacio(UUID id, EspacioRequestDTO dto, String ip, String mac) {
         Espacio espacio = repositorioEspacio.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
 
@@ -143,11 +157,15 @@ public class EspacioServicioImpl implements EspacioServicio {
         espacio.setFechaModificacion(LocalDateTime.now());
 
         Espacio espacioGuardado = repositorioEspacio.save(espacio);
+
+        auditEventPublisher.publish("ms-zonas", "UPDATE", "ESPACIO", getCurrentUsername(), ip, mac,
+                Map.of("id", espacioGuardado.getId().toString(), "codigo", espacioGuardado.getCodigo(), "idZona", objZona.getId().toString(), "tipoEspacio", espacioGuardado.getTipoEspacio().name()));
+
         return mapper.toResponseDTO(espacioGuardado);
     }
 
     @Override
-    public String eliminarEspacio(UUID id) {
+    public String eliminarEspacio(UUID id, String ip, String mac) {
         Espacio espacio = repositorioEspacio.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
         
@@ -158,34 +176,40 @@ public class EspacioServicioImpl implements EspacioServicio {
         String codigoEspacio = espacio.getCodigo();
         String nombreZona = espacio.getZona().getNombre();
         repositorioEspacio.delete(espacio);
+
+        auditEventPublisher.publish("ms-zonas", "DELETE", "ESPACIO", getCurrentUsername(), ip, mac,
+                Map.of("id", espacio.getId().toString(), "codigo", codigoEspacio, "nombreZona", nombreZona));
+
         return "Espacio '" + codigoEspacio + "' de la zona '" + nombreZona + "' eliminado exitosamente.";
     }
 
     @Override
-    public EspacioResponseDTO cambiarEstado(UUID id, EstadoEspacio estado) {
-        // Validación: el nuevo estado no puede ser nulo
+    public EspacioResponseDTO cambiarEstado(UUID id, EstadoEspacio estado, String ip, String mac) {
         if (estado == null) {
             throw new IllegalArgumentException("El estado no puede ser nulo");
         }
 
-        // Validación: el espacio debe existir
         Espacio espacio = repositorioEspacio.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
 
-        // Validación: el espacio debe estar activo para poder cambiar su estado
         if (!espacio.isActivo()) {
             throw new IllegalStateException("No se puede cambiar el estado de un espacio inactivo");
         }
 
-        // Validación: el nuevo estado no puede ser igual al actual
         if (espacio.getEstado() == estado) {
             throw new IllegalArgumentException("El espacio ya se encuentra en estado: " + estado);
         }
 
+        String estadoAnterior = espacio.getEstado().name();
         espacio.setEstado(estado);
         espacio.setFechaModificacion(LocalDateTime.now());
 
         Espacio espacioGuardado = repositorioEspacio.save(espacio);
+
+        auditEventPublisher.publish("ms-zonas", "UPDATE", "ESPACIO", getCurrentUsername(), ip, mac,
+                Map.of("id", espacioGuardado.getId().toString(), "campo", "estado",
+                        "valorAnterior", estadoAnterior, "valorNuevo", estado.name()));
+
         return mapper.toResponseDTO(espacioGuardado);
     }
 
@@ -215,30 +239,47 @@ public class EspacioServicioImpl implements EspacioServicio {
 
     @Override
     @Transactional
-    public void cambiarActivo(UUID id, boolean activo) {
+    public void cambiarActivo(UUID id, boolean activo, String ip, String mac) {
         Espacio espacio = repositorioEspacio.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
+        boolean anterior = espacio.isActivo();
         espacio.setActivo(activo);
         espacio.setFechaModificacion(LocalDateTime.now());
         repositorioEspacio.save(espacio);
+
+        auditEventPublisher.publish("ms-zonas", "UPDATE", "ESPACIO", getCurrentUsername(), ip, mac,
+                Map.of("id", id.toString(), "campo", "activo",
+                        "valorAnterior", String.valueOf(anterior), "valorNuevo", String.valueOf(activo)));
     }
 
     @Override
     @Transactional
-    public String toggleActivo(UUID id) {
+    public String toggleActivo(UUID id, String ip, String mac) {
         Espacio espacio = repositorioEspacio.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Espacio no encontrado con id: " + id));
-        boolean nuevoEstado = !espacio.isActivo();
+        boolean anterior = espacio.isActivo();
+        boolean nuevoEstado = !anterior;
         espacio.setActivo(nuevoEstado);
         espacio.setFechaModificacion(LocalDateTime.now());
         repositorioEspacio.save(espacio);
+
+        auditEventPublisher.publish("ms-zonas", "UPDATE", "ESPACIO", getCurrentUsername(), ip, mac,
+                Map.of("id", id.toString(), "campo", "activo",
+                        "valorAnterior", String.valueOf(anterior), "valorNuevo", String.valueOf(nuevoEstado)));
+
         return nuevoEstado ? "El espacio ha sido ACTIVADO exitosamente." : "El espacio ha sido DESACTIVADO exitosamente.";
     }
 
     @Override
     @Transactional
-    public int cambiarActivoMasivo(UUID idZona, boolean activo) {
-        return repositorioEspacio.actualizarActivoPorZona(idZona, activo);
+    public int cambiarActivoMasivo(UUID idZona, boolean activo, String ip, String mac) {
+        int cantidad = repositorioEspacio.actualizarActivoPorZona(idZona, activo);
+
+        auditEventPublisher.publish("ms-zonas", "UPDATE", "ESPACIO", getCurrentUsername(), ip, mac,
+                Map.of("zonaId", idZona.toString(), "campo", "activo",
+                        "valorNuevo", String.valueOf(activo), "espaciosAfectados", String.valueOf(cantidad)));
+
+        return cantidad;
     }
 
 }

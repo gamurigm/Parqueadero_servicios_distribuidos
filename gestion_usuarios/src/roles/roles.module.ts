@@ -5,6 +5,7 @@ import { Role } from './entities/role.entity';
 import { RolesUsuarios } from '../roles_usuario/entities/roles_usuario.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OpaModule } from '../opa/opa.module';
+import { EventPublisher } from '../event-publisher.service';
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { OpaModule } from '../opa/opa.module';
     OpaModule
   ],
   controllers: [RolesController],
-  providers: [RolesService],
+  providers: [RolesService, EventPublisher],
   exports: [RolesService]
 })
 export class RolesModule {}

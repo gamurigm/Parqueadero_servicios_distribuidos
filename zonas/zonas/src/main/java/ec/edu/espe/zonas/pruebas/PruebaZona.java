@@ -29,7 +29,7 @@ public class PruebaZona {
                 });
 
         // 2. Instanciar el servicio inyectando el mock manualmente
-        ZonaServicioImpl zonaServicio = new ZonaServicioImpl(mockRepositorio, null);
+        ZonaServicioImpl zonaServicio = new ZonaServicioImpl(mockRepositorio, null, null);
 
         System.out.println("===============================================================");
         System.out.println(" INICIANDO PRUEBAS DE GENERACIÓN DE CÓDIGO (SIN SPRING BOOT) ");

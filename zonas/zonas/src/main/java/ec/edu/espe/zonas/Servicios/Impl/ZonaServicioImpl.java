@@ -21,18 +21,29 @@ import ec.edu.espe.zonas.entidades.Zona;
 import ec.edu.espe.zonas.entidades.EstadoEspacio;
 import ec.edu.espe.zonas.repositorios.ZonaRepositorio;
 import ec.edu.espe.zonas.utils.SanitizadorEntradas;
+import ec.edu.espe.zonas.utils.AuditEventPublisher;
 import java.util.stream.Collectors;
+import java.util.Map;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
 public class ZonaServicioImpl implements ZonaServicio {
 
     private final ZonaRepositorio zonaRepositorio;
     private final EspacioServicio espacioServicio;
+    private final AuditEventPublisher auditEventPublisher;
 
     @Autowired
-    public ZonaServicioImpl(ZonaRepositorio zonaRepositorio, EspacioServicio espacioServicio) {
+    public ZonaServicioImpl(ZonaRepositorio zonaRepositorio, EspacioServicio espacioServicio, AuditEventPublisher auditEventPublisher) {
         this.zonaRepositorio = zonaRepositorio;
         this.espacioServicio = espacioServicio;
+        this.auditEventPublisher = auditEventPublisher;
+    }
+
+    private String getCurrentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.getName() != null) ? auth.getName() : "";
     }
 
     @Override
@@ -103,7 +114,7 @@ public class ZonaServicioImpl implements ZonaServicio {
     }
 
     @Override
-    public ZonaResponseDTO crearZona(ZonaRequestDTO request) {
+    public ZonaResponseDTO crearZona(ZonaRequestDTO request, String ip, String mac) {
 
         // 1. Sanitizar nombre
         String nombreSanitizado = SanitizadorEntradas.trimYNormalizar(request.getNombre());
@@ -137,12 +148,16 @@ public class ZonaServicioImpl implements ZonaServicio {
         objZona.setFechaModificacion(java.time.LocalDateTime.now());
 
         Zona saved = zonaRepositorio.save(objZona);
+        
+        auditEventPublisher.publish("ms-zonas", "CREATE", "ZONA", getCurrentUsername(), ip, mac,
+                Map.of("id", saved.getId().toString(), "nombre", saved.getNombre(), "codigo", saved.getCodigo(), "tipoZona", saved.getTipoZona().name(), "capacidad", saved.getCapacidad()));
+        
         return toResponseDTO(saved);
 
     }
 
     @Override
-    public ZonaResponseDTO actualizarZona(UUID idZona, ZonaRequestDTO req) {
+    public ZonaResponseDTO actualizarZona(UUID idZona, ZonaRequestDTO req, String ip, String mac) {
         
         // 1. Sanitizar nombre
         String nombreSanitizado = SanitizadorEntradas.trimYNormalizar(req.getNombre());
@@ -195,11 +210,15 @@ public class ZonaServicioImpl implements ZonaServicio {
         zona.setFechaModificacion(java.time.LocalDateTime.now());
 
         Zona zonaGuardada = zonaRepositorio.save(zona);
+        
+        auditEventPublisher.publish("ms-zonas", "UPDATE", "ZONA", getCurrentUsername(), ip, mac,
+                Map.of("id", zonaGuardada.getId().toString(), "nombre", zonaGuardada.getNombre(), "codigo", zonaGuardada.getCodigo(), "capacidad", zonaGuardada.getCapacidad()));
+        
         return toResponseDTO(zonaGuardada);
     }
 
     @Override
-    public String eliminarZona(UUID idZona) {
+    public String eliminarZona(UUID idZona, String ip, String mac) {
         Zona zona = zonaRepositorio.findById(idZona)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Zona no encontrada con id: " + idZona));
@@ -212,12 +231,16 @@ public class ZonaServicioImpl implements ZonaServicio {
         String nombreZona = zona.getNombre();
         String codigoZona = zona.getCodigo();
         zonaRepositorio.delete(zona);
+        
+        auditEventPublisher.publish("ms-zonas", "DELETE", "ZONA", getCurrentUsername(), ip, mac,
+                Map.of("id", zona.getId().toString(), "nombre", nombreZona, "codigo", codigoZona));
+        
         return "Zona '" + nombreZona + "' (código: " + codigoZona + ") eliminada exitosamente.";
     }
 
     @Override
     @jakarta.transaction.Transactional
-    public String activarDesactivar(UUID idZona, boolean forzar) {
+    public String activarDesactivar(UUID idZona, boolean forzar, String ip, String mac) {
         // Validación de entrada: ID no puede ser nulo
         if (idZona == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -270,9 +293,13 @@ public class ZonaServicioImpl implements ZonaServicio {
         // Efecto Cascada: Actualizar todos los espacios de la zona usando
         // EspacioServicio de manera masiva (Bulk Update)
         boolean estaActiva = (nuevoEstado == 1);
-        espacioServicio.cambiarActivoMasivo(idZona, estaActiva);
+        espacioServicio.cambiarActivoMasivo(idZona, estaActiva, ip, mac);
 
         zonaRepositorio.save(zona);
+        
+        auditEventPublisher.publish("ms-zonas", "UPDATE", "ZONA", getCurrentUsername(), ip, mac,
+                Map.of("id", zona.getId().toString(), "nombre", zona.getNombre(), "estado", nuevoEstado, "accion", estaActiva ? "ACTIVAR" : "DESACTIVAR"));
+        
         return estaActiva ? "La zona ha sido ACTIVADA exitosamente y sus espacios ahora están disponibles." : "La zona ha sido DESACTIVADA exitosamente y sus espacios han sido bloqueados.";
     }
 }
