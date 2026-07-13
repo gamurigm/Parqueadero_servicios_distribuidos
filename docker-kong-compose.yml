@@ -471,15 +471,23 @@ services:
       - RABBITMQ_QUEUE=audit_queue
       - RABBITMQ_EXCHANGE=audit_exchange
       - RABBITMQ_ROUTING_KEY=audit.event
+      - OPA_URL=http://opa:8181/v1/data
+      - OPA_SERVICE=audit
     ports:
       - "3004:3006"
     networks:
       - kong-net
+    volumes:
+      - jwt_keys_data:/keys:ro
     depends_on:
       rabbitmq:
         condition: service_healthy
       audit-database:
         condition: service_healthy
+      init-keys:
+        condition: service_completed_successfully
+      opa:
+        condition: service_started
     restart: unless-stopped
 
   #Unificacion de swaggers
