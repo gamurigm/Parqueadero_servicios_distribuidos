@@ -363,6 +363,46 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
+  # Servicio ms-audit (NestJS - RabbitMQ Consumer)
+  ms-audit:
+    image: ms-audit:latest
+    container_name: ms-audit
+    build:
+      context: ./ms-audit
+      dockerfile: ms-audit.dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3006
+      - DB_HOST=audit-database
+      - DB_PORT=5432
+      - DB_USER=audit_user
+      - DB_PASSWORD=xasmdno123XAW2342asasd
+      - DB_NAME=audit_db
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASS=guest
+      - RABBITMQ_QUEUE=audit_queue
+      - RABBITMQ_EXCHANGE=audit_exchange
+      - RABBITMQ_ROUTING_KEY=audit.event
+      - OPA_URL=http://opa:8181/v1/data
+      - OPA_SERVICE=audit
+    ports:
+      - "3004:3006"
+    networks:
+      - kong-net
+    volumes:
+      - jwt_keys_data:/keys:ro
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      audit-database:
+        condition: service_healthy
+      opa:
+        condition: service_started
+      init-keys:
+        condition: service_completed_successfully
+    restart: unless-stopped
   #Unificacion de swaggers
   swagger-ui:
     image: swaggerapi/swagger-ui:latest
