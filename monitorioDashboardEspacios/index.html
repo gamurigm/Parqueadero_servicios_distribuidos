@@ -1,23 +1,41 @@
-index.html
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard - Espacios de Estacionamiento</title>
-    <!-- Tailwind CSS vía CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Estilos adicionales -->
     <link rel="stylesheet" href="app.css" />
 </head>
 <body class="bg-gray-100 p-6 font-sans antialiased">
 
-    <div class="max-w-7xl mx-auto">
+    <!-- Login Panel -->
+    <div id="loginPanel" class="max-w-md mx-auto mt-20">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">Iniciar Sesion</h2>
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+                    <input type="text" id="loginUser" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="admin1" />
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Contrasena</label>
+                    <input type="password" id="loginPass" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Admin123!" />
+                </div>
+                <button type="submit" id="loginBtn" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Entrar</button>
+                <p id="loginError" class="text-red-500 text-sm mt-3 text-center hidden"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard (oculto hasta login) -->
+    <div id="dashboardPanel" class="max-w-7xl mx-auto hidden">
         <!-- Encabezado -->
         <header class="flex items-center justify-between mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">🅿️ Dashboard de Espacios</h1>
+            <h1 class="text-3xl font-bold text-gray-800">Dashboard de Espacios</h1>
             <div class="flex items-center gap-4">
+                <span id="userLabel" class="text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded-full"></span>
+                <button id="logoutBtn" class="text-sm bg-red-100 text-red-700 px-3 py-1 rounded-full hover:bg-red-200">Salir</button>
                 <span id="totalEspacios" class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full">Cargando...</span>
                 <span id="statusConexion" class="flex items-center gap-2 text-sm">
                     <span class="w-3 h-3 bg-green-500 rounded-full inline-block" id="indicator"></span>
@@ -28,16 +46,14 @@ index.html
 
         <!-- Contenedor de tarjetas (grid) -->
         <div id="espaciosContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            <!-- Las tarjetas se inyectan dinámicamente desde app.js -->
         </div>
 
-        <!-- Pie de página con timestamp de última actualización -->
+        <!-- Pie de pagina -->
         <footer class="mt-8 text-sm text-gray-500 text-center border-t pt-4">
-            Última actualización: <span id="lastUpdate">--</span>
+            Ultima actualizacion: <span id="lastUpdate">--</span>
         </footer>
     </div>
 
-    <!-- Nuestro JavaScript -->
     <script src="app.js"></script>
 </body>
 </html>

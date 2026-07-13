@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -51,7 +53,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             auth.setDetails(userId);
 
             SecurityContextHolder.getContext().setAuthentication(auth);
+            log.debug("Authenticated user={} roles={}", username, roles);
         } catch (Exception e) {
+            log.warn("Token validation failed: {}", e.getMessage());
             SecurityContextHolder.clearContext();
         }
 

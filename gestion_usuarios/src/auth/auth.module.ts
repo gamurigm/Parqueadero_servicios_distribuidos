@@ -18,6 +18,7 @@ import { UsuarioModule } from '../usuario/usuario.module';
 import { PersonaModule } from '../persona/persona.module';
 import { RolesUsuarioModule } from '../roles_usuario/roles_usuario.module';
 import { OpaModule } from '../opa/opa.module';
+import { EventPublisher } from '../event-publisher.service';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { OpaModule } from '../opa/opa.module';
   providers: [
     AuthService,
     JwtStrategy,
+    EventPublisher,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
   exports: [AuthService, JwtModule],

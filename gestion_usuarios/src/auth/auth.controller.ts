@@ -31,8 +31,9 @@ export class AuthController {
   @ApiBody({ type: LoginDto })
   @ApiResponse({ status: 200, description: 'Login exitoso' })
   @ApiResponse({ status: 401, description: 'Credenciales inválidas o usuario inactivo' })
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  login(@Body() loginDto: LoginDto, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
+    return this.authService.login(loginDto, ip, mac);
   }
 
   @Public()
@@ -53,8 +54,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Cerrar sesión y revocar el token de refresh' })
   @ApiBody({ type: RefreshDto })
   @ApiResponse({ status: 200, description: 'Sesión cerrada exitosamente' })
-  logout(@Body() refreshDto: RefreshDto) {
-    return this.authService.logout(refreshDto);
+  logout(@Body() refreshDto: RefreshDto, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
+    return this.authService.logout(refreshDto, req.user?.username, ip, mac);
   }
 
   @Get('profile')

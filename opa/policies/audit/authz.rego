@@ -12,7 +12,18 @@ allow if {
     global_allow
 }
 
-# Solo auditor y super_user pueden leer logs de auditoria
+# Admin puede leer logs de auditoria (incluye logs de login)
+allow if {
+    input.resource == "audit.read"
+    has_role("admin")
+}
+
+allow if {
+    input.resource == "audit.detail"
+    has_role("admin")
+}
+
+# Auditor puede leer logs de auditoria
 allow if {
     input.resource == "audit.read"
     has_role("auditor")

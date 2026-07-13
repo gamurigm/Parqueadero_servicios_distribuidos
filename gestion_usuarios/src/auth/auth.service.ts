@@ -13,6 +13,7 @@ import * as crypto from 'node:crypto';
 import { PersonaService } from '../persona/persona.service';
 import { UsuarioService } from '../usuario/usuario.service';
 import { RolesUsuarioService } from '../roles_usuario/roles_usuario.service';
+import { AuditEvent, EventPublisher } from '../event-publisher.service';
 
 @Injectable()
 export class AuthService {
@@ -28,7 +29,22 @@ export class AuthService {
     private readonly rolesUsuarioService: RolesUsuarioService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly eventPublisher: EventPublisher,
   ) { }
+
+  private async emitAudit(accion: string, username: string, rol?: string, ip?: string, mac?: string, datos?: Record<string, any>) {
+    const event: AuditEvent = {
+      servicio: 'ms-usuarios',
+      accion,
+      entidad: 'AUTH',
+      usuario: username,
+      rol,
+      ip,
+      mac,
+      datos,
+    };
+    await this.eventPublisher.publish(event);
+  }
 
   async register(registerAuthDto: RegisterAuthDto, ip?: string, mac?: string) {
     const { cedula, firstName, middleName, lastName, email, nationality, phone, address, rolId, password } = registerAuthDto;
@@ -69,7 +85,7 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, ip?: string, mac?: string) {
     const { username, password } = loginDto;
 
     // Sanitizar entradas antes de usarlas
@@ -125,6 +141,13 @@ export class AuthService {
       roles: roleNames,
     });
     await this.refreshTokenRepository.save(refreshToken);
+
+    // Emitir evento de auditoría LOGIN
+    this.emitAudit('LOGIN', user.username, roleNames[0], ip, mac, {
+      userId: user.id,
+      nombreCompleto,
+      roles: roleNames,
+    }).catch(() => {});
 
     return {
       access_token,
@@ -192,13 +215,19 @@ export class AuthService {
     };
   }
 
-  async logout(refreshDto: RefreshDto) {
+  async logout(refreshDto: RefreshDto, username?: string, ip?: string, mac?: string) {
     const { refreshToken: token } = refreshDto;
     const refreshToken = await this.refreshTokenRepository.findOne({ where: { token } });
     if (refreshToken) {
       refreshToken.revoked = true;
       await this.refreshTokenRepository.save(refreshToken);
     }
+
+    // Emitir evento de auditoría LOGOUT
+    if (username) {
+      this.emitAudit('LOGOUT', username, undefined, ip, mac).catch(() => {});
+    }
+
     return { message: 'Sesión cerrada' };
   }
 

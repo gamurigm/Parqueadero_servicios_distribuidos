@@ -666,6 +666,8 @@ services:
           --data "config.origins=http://localhost:3004" \
           --data "config.origins=http://127.0.0.1:3004" \
           --data "config.origins=http://host.docker.internal:3004" \
+          --data "config.origins=http://localhost:5500" \
+          --data "config.origins=http://127.0.0.1:5500" \
           --data "config.methods=GET" \
           --data "config.methods=POST" \
           --data "config.methods=PUT" \

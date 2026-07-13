@@ -10,6 +10,7 @@ import {
 } from '../ports/trazabilidad-client.interface';
 import { BusinessError } from '../../domain/errors/business-error';
 import { AuditEvent, EventPublisher } from '../../event-publisher.service';
+import { SseService } from '../../sse/sse.service';
 
 export interface AnularTicketInput {
   idTicket?: string;
@@ -41,6 +42,7 @@ export class AnularTicketUseCase {
     @Inject(TRAZABILIDAD_CLIENT)
     private readonly trazabilidadClient: ITrazabilidadClient,
     private readonly eventPublisher: EventPublisher,
+    private readonly sseService: SseService,
   ) {}
 
   async execute(input: AnularTicketInput): Promise<AnularTicketOutput> {
@@ -93,6 +95,11 @@ export class AnularTicketUseCase {
       datos: { id: updated.id, codigoTicket: updated.codigoTicket, estado: 'ANULADO', motivo: input.motivo },
     };
     await this.eventPublisher.publish(auditEvent);
+
+    await this.sseService.emitEvent('espacio-actualizado', {
+      id: ticket.idEspacio,
+      estado: 'DISPONIBLE',
+    });
 
     return {
       id: updated.id,

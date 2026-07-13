@@ -18,6 +18,7 @@ import {
 } from '../ports/trazabilidad-client.interface';
 import { BusinessError } from '../../domain/errors/business-error';
 import { AuditEvent, EventPublisher } from '../../event-publisher.service';
+import { SseService } from '../../sse/sse.service';
 
 export interface PagarTicketInput {
   idTicket?: string;
@@ -56,6 +57,7 @@ export class PagarTicketUseCase {
     @Inject(TRAZABILIDAD_CLIENT)
     private readonly trazabilidadClient: ITrazabilidadClient,
     private readonly eventPublisher: EventPublisher,
+    private readonly sseService: SseService,
   ) {}
 
   async execute(input: PagarTicketInput): Promise<PagarTicketOutput> {
@@ -126,6 +128,11 @@ export class PagarTicketUseCase {
       datos: { id: updated.id, codigoTicket: updated.codigoTicket, estado: 'PAGADO', valorRecaudado: valor, horasCobradas, tarifaPorHora },
     };
     await this.eventPublisher.publish(auditEvent);
+
+    await this.sseService.emitEvent('espacio-actualizado', {
+      id: ticket.idEspacio,
+      estado: 'DISPONIBLE',
+    });
 
     return {
       id: updated.id,
