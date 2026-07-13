@@ -20,7 +20,8 @@ export class RolesController {
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   create(@Body() createRoleDto: CreateRoleDto, @Req() req: any, @Headers('x-mac-address') mac?: string) {
     const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
-    return this.rolesService.create(createRoleDto, ip, mac);
+    const username = req.user?.username;
+    return this.rolesService.create(createRoleDto, ip, mac, username);
   }
 
   @Get()
@@ -52,7 +53,8 @@ export class RolesController {
   @ApiResponse({ status: 404, description: 'Rol no encontrado' })
   update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto, @Req() req: any, @Headers('x-mac-address') mac?: string) {
     const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
-    return this.rolesService.update(id, updateRoleDto, ip, mac);
+    const username = req.user?.username;
+    return this.rolesService.update(id, updateRoleDto, ip, mac, username);
   }
 
   @Patch(':id')
@@ -64,7 +66,8 @@ export class RolesController {
   @ApiResponse({ status: 404, description: 'Rol no encontrado' })
   activarDesactivar(@Param('id') id: string, @Req() req: any, @Headers('x-mac-address') mac?: string) {
     const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
-    return this.rolesService.activarDesactivar(id, ip, mac);
+    const username = req.user?.username;
+    return this.rolesService.activarDesactivar(id, ip, mac, username);
   }
 
   @Delete(':id')
@@ -76,6 +79,7 @@ export class RolesController {
   @ApiResponse({ status: 404, description: 'Rol no encontrado' })
   remove(@Param('id') id: string, @Req() req: any, @Headers('x-mac-address') mac?: string) {
     const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
-    return this.rolesService.remove(id, ip, mac);
+    const username = req.user?.username;
+    return this.rolesService.remove(id, ip, mac, username);
   }
 }

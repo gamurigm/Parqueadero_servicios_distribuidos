@@ -56,7 +56,7 @@ export class AsignacionController {
         @Headers('x-mac-address') mac?: string,
     ) {
         const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
-        const username = (req as any)?.user?.username || '';
+        const username = (req as any)?.user?.username;
         return this.asignacionService.crear(dto, authHeader, ip, mac || '', username);
     }
 
@@ -173,7 +173,7 @@ export class AsignacionController {
         @Headers('x-mac-address') mac?: string,
     ) {
         const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
-        const username = (req as any)?.user?.username || '';
+        const username = (req as any)?.user?.username;
         return this.asignacionService.actualizar(userId, vehicleId, dto, authHeader, ip, mac || '', username);
     }
 
@@ -197,7 +197,7 @@ export class AsignacionController {
         @Headers('x-mac-address') mac?: string,
     ) {
         const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
-        const username = (req as any)?.user?.username || '';
+        const username = (req as any)?.user?.username;
         return this.asignacionService.eliminar(userId, vehicleId, authHeader, ip, mac || '', username);
     }
 }

@@ -87,7 +87,7 @@ export class AnularTicketUseCase {
       servicio: 'ms-tickets',
       accion: 'UPDATE',
       entidad: 'TICKET',
-      usuario: input.username || input.idEmpleado,
+      usuario: input.username || 'system',
       ip: input.ip,
       mac: input.mac,
       datos: { id: updated.id, codigoTicket: updated.codigoTicket, estado: 'ANULADO', motivo: input.motivo },

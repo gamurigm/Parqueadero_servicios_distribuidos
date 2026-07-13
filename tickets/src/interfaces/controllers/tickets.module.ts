@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Sse } from '@nestjs/common';
 import { TicketsController } from './tickets.controller';
 import { EmitirTicketUseCase } from '../../application/use-cases/emitir-ticket.use-case';
 import { PagarTicketUseCase } from '../../application/use-cases/pagar-ticket.use-case';
@@ -27,6 +27,7 @@ import {
 import { TRAZABILIDAD_CLIENT } from '../../application/ports/trazabilidad-client.interface';
 import { TARIFA_PROVIDER } from '../../application/ports/tarifa-provider.interface';
 import { EventPublisher } from '../../event-publisher.service';
+import { SseService } from 'src/sse/sse.service';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { EventPublisher } from '../../event-publisher.service';
     PagarTicketUseCase,
     AnularTicketUseCase,
     EventPublisher,
+    SseService,
   ],
 })
 export class TicketsModule {}

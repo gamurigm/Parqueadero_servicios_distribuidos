@@ -41,7 +41,7 @@ export class RolesService {
     await this.eventPublisher.publish(event);
   }
 
-  async create(createRoleDto: CreateRoleDto, ip?: string, mac?: string) {
+  async create(createRoleDto: CreateRoleDto, ip?: string, mac?: string, username?: string) {
     const nombre = this.utils.sanitizeString("nombre rol",createRoleDto.nombre);
     
     const existe = await this.repositorioRoles.findOne({
@@ -61,7 +61,7 @@ export class RolesService {
     
     const saved = await this.repositorioRoles.save(nuevaAsignacion);
 
-    await this.emitEvent('CREATE', saved, undefined, undefined, ip, mac);
+    await this.emitEvent('CREATE', saved, username, undefined, ip, mac);
 
     return saved;
   }
@@ -85,7 +85,7 @@ export class RolesService {
     return existe;
   }
 
-  async update(id: string, updateRoleDto: UpdateRoleDto, ip?: string, mac?: string) {
+  async update(id: string, updateRoleDto: UpdateRoleDto, ip?: string, mac?: string, username?: string) {
     const idRol = this.utils.validateUUID(id);
 
     const existe = await this.repositorioRoles.findOne({
@@ -125,12 +125,12 @@ export class RolesService {
 
     const updated = await this.findOne(idRol);
 
-    await this.emitEvent('UPDATE', updated, undefined, undefined, ip, mac);
+    await this.emitEvent('UPDATE', updated, username, undefined, ip, mac);
 
     return updated;
   }
 
-  async activarDesactivar(id: string, ip?: string, mac?: string) {
+  async activarDesactivar(id: string, ip?: string, mac?: string, username?: string) {
     const idRol = this.utils.validateUUID(id);
 
     const rol = await this.repositorioRoles.findOne({
@@ -158,12 +158,12 @@ export class RolesService {
 
     const updated = await this.findOne(id);
 
-    await this.emitEvent('UPDATE', updated, undefined, undefined, ip, mac);
+    await this.emitEvent('UPDATE', updated, username, undefined, ip, mac);
 
     return updated;
   }
 
-  async remove(id: string, ip?: string, mac?: string) {
+  async remove(id: string, ip?: string, mac?: string, username?: string) {
     const idRol = this.utils.validateUUID(id);
 
     const existe = await this.repositorioRoles.findOne({
@@ -184,7 +184,7 @@ export class RolesService {
 
     await this.repositorioRoles.delete(idRol);
 
-    await this.emitEvent('DELETE', { id: idRol, nombre: existe.nombre }, undefined, undefined, ip, mac);
+    await this.emitEvent('DELETE', { id: idRol, nombre: existe.nombre }, username, undefined, ip, mac);
 
     return { message: 'Rol eliminado correctamente' };
   }

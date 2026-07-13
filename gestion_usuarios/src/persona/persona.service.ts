@@ -80,6 +80,11 @@ export class PersonaService {
     return `${baseUsername}${maxNumber + 1}`;
 }
 
+  private async findUsernameByPersonId(personId: string): Promise<string | undefined> {
+    const user = await this.userRepository.findOne({ where: { id: personId } });
+    return user?.username;
+  }
+
   async cambioDeEstado(id: string, ip?: string, mac?: string){
     const idPerson = this.utils.validateUUID(id);
 
@@ -103,7 +108,8 @@ export class PersonaService {
     person.active = !person.active;
     await this.personRepository.update(idPerson,person);
 
-    await this.emitEvent('UPDATE', person, `${person.firstName} ${person.lastName}`, undefined, ip, mac);
+    const username = await this.findUsernameByPersonId(idPerson);
+    await this.emitEvent('UPDATE', person, username, undefined, ip, mac);
 
     return this.personRepository.findOne({where:{id:idPerson}});
   }
@@ -170,7 +176,7 @@ export class PersonaService {
       username:username
     };
 
-    await this.emitEvent('CREATE', result, undefined, undefined, ip, mac);
+    await this.emitEvent('CREATE', result, username, undefined, ip, mac);
 
     return result;
   }
@@ -276,7 +282,8 @@ export class PersonaService {
             where: { id: savedPerson.id },
           });
 
-          await this.emitEvent('UPDATE', updated, undefined, undefined, ip, mac);
+          const username = await this.findUsernameByPersonId(savedPerson.id);
+          await this.emitEvent('UPDATE', updated, username, undefined, ip, mac);
 
           return updated;
         }
@@ -307,7 +314,8 @@ export class PersonaService {
 
     await this.personRepository.remove(person);
 
-    await this.emitEvent('DELETE', { id: idPerson, dni: person.dni }, undefined, undefined, ip, mac);
+    const username = await this.findUsernameByPersonId(idPerson);
+    await this.emitEvent('DELETE', { id: idPerson, dni: person.dni }, username, undefined, ip, mac);
 
     return {
       message: 'Persona eliminada'

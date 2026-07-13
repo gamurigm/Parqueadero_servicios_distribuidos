@@ -10,6 +10,7 @@ import { OpaModule } from './opa/opa.module';
 import { TrazabilidadClientModule } from './infrastructure/clients/trazabilidad-client.module';
 import { InfrastructureServicesModule } from './infrastructure/services/infrastructure-services.module';
 import { TicketEntity } from './infrastructure/persistence/ticket.entity';
+import { SseModule } from './sse/sse.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { TicketEntity } from './infrastructure/persistence/ticket.entity';
     OpaModule,
     TrazabilidadClientModule,
     InfrastructureServicesModule,
+    SseModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
