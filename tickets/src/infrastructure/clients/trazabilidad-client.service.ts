@@ -16,11 +16,11 @@ export class TrazabilidadClientService implements ITrazabilidadClient {
     this.trazabilidadUrl = this.configService.get<string>('TRAZABILIDAD_SERVICE_URL', 'http://trazabilidad:3002');
   }
 
-  async registrarEvento(dto: RegistrarEventoDto): Promise<void> {
+  async registrarEvento(dto: RegistrarEventoDto, authHeader?: string): Promise<void> {
     try {
       const url = `${this.trazabilidadUrl}/trazabilidad/registrar`;
-      // Enviar de forma asíncrona ("fire and forget" en este caso, o esperar si falla logged)
-      await firstValueFrom(this.httpService.post(url, dto));
+      const headers = authHeader ? { Authorization: authHeader } : undefined;
+      await firstValueFrom(this.httpService.post(url, dto, { headers }));
     } catch (error) {
       this.logger.error(`Error enviando evento de trazabilidad a ${this.trazabilidadUrl}: ${error.message}`);
     }

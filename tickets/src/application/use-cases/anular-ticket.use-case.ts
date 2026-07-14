@@ -83,7 +83,7 @@ export class AnularTicketUseCase {
       usuarioEjecutor: input.idEmpleado,
       payloadAnterior: { estado: 'ACTIVO' },
       payloadNuevo: { estado: 'ANULADO', motivo: input.motivo },
-    });
+    }, input.authHeader);
 
     const auditEvent: AuditEvent = {
       servicio: 'ms-tickets',

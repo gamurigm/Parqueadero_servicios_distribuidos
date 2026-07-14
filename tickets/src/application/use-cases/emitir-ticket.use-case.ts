@@ -140,7 +140,7 @@ export class EmitirTicketUseCase {
       entidadId: saved.id,
       usuarioEjecutor: idEmpleado,
       payloadNuevo: { id: saved.id, codigoTicket: saved.codigoTicket, placa: saved.placa, idEspacio },
-    });
+    }, authHeader);
 
     const auditEvent: AuditEvent = {
       servicio: 'ms-tickets',

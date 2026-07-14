@@ -116,7 +116,7 @@ export class PagarTicketUseCase {
       usuarioEjecutor: input.idEmpleado,
       payloadAnterior: { estado: 'ACTIVO' },
       payloadNuevo: { estado: 'PAGADO', valorRecaudado: valor, fechaSalida },
-    });
+    }, input.authHeader);
 
     const auditEvent: AuditEvent = {
       servicio: 'ms-tickets',

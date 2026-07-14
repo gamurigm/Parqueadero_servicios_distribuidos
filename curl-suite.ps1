@@ -219,10 +219,10 @@ Wait-For -Name 'zonas' -Url "$ZonasBase/api/v1/zonas/"
 Wait-For -Name 'espacios' -Url "$ZonasBase/api/v1/espacios/"
 
 Write-Host "Logging in seed users..." -ForegroundColor Cyan
-$admin = Login-User -BaseUrl $UsuariosBase -Username 'testadmin' -Password 'Admin123!' -Name 'Admin login'
+$admin = Login-User -BaseUrl $UsuariosBase -Username 'admin1' -Password 'Admin123!' -Name 'Admin login'
 $owner = Login-User -BaseUrl $UsuariosBase -Username 'jpropiet' -Password 'Prop123!' -Name 'Owner login'
-$zoneManager = Login-User -BaseUrl $UsuariosBase -Username 'ezona1' -Password 'Zona123!' -Name 'Zone manager login'
-$superUser = Login-User -BaseUrl $UsuariosBase -Username 'superusr' -Password 'Super123!' -Name 'Super user login'
+$zoneManager = Login-User -BaseUrl $UsuariosBase -Username 'emple1' -Password 'Admin123!' -Name 'Zone manager login'
+$superUser = Login-User -BaseUrl $UsuariosBase -Username 'super1' -Password 'Super123!' -Name 'Super user login'
 
 $adminHeaders = @{ Authorization = "Bearer $($admin.access_token)" }
 $ownerHeaders = @{ Authorization = "Bearer $($owner.access_token)" }

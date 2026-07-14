@@ -48,10 +48,15 @@ allow if {
     has_role("encargado_zona")
 }
 
-# spaces.change-status: encargado_zona
+# spaces.change-status: encargado_zona o empleado
 allow if {
     input.resource == "spaces.change-status"
     has_role("encargado_zona")
+}
+
+allow if {
+    input.resource == "spaces.change-status"
+    has_role("empleado")
 }
 
 # spaces.activate: encargado_zona
