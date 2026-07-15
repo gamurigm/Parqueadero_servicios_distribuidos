@@ -22,14 +22,12 @@ const lastUpdateSpan = document.getElementById('lastUpdate');
 const indicator = document.getElementById('indicator');
 const statusText = document.getElementById('statusText');
 
-// --- Helper: Headers con token ---
 const authHeaders = () => {
     const h = { 'Content-Type': 'application/json' };
     if (authToken) h['Authorization'] = `Bearer ${authToken}`;
     return h;
 };
 
-// --- Auth ---
 const showDashboard = () => {
     loginPanel.classList.add('hidden');
     dashboardPanel.classList.remove('hidden');
@@ -86,7 +84,6 @@ logoutBtn.addEventListener('click', () => {
     showLogin();
 });
 
-// --- Dashboard ---
 const formatDate = (date) => {
     const d = new Date(date);
     return d.toLocaleString('es-ES', { hour12: false });
@@ -159,7 +156,6 @@ const cargarEspacios = async () => {
     }
 };
 
-// SSE
 let eventSourceInstance = null;
 
 const conectarSSE = () => {

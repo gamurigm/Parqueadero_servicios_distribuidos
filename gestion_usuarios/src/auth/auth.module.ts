@@ -12,6 +12,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { User } from '../usuario/entities/usuario.entity';
 import { RolesUsuarios } from '../roles_usuario/entities/roles_usuario.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { ActiveToken } from './entities/active-token.entity';
 import { Person } from '../persona/entities/persona.entity';
 import { Role } from '../roles/entities/role.entity';
 import { UsuarioModule } from '../usuario/usuario.module';
@@ -22,7 +23,7 @@ import { EventPublisher } from '../event-publisher.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RefreshToken, User, Person, RolesUsuarios, Role]),
+    TypeOrmModule.forFeature([RefreshToken, ActiveToken, User, Person, RolesUsuarios, Role]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

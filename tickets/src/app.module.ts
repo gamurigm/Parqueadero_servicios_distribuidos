@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -11,6 +11,7 @@ import { TrazabilidadClientModule } from './infrastructure/clients/trazabilidad-
 import { InfrastructureServicesModule } from './infrastructure/services/infrastructure-services.module';
 import { TicketEntity } from './infrastructure/persistence/ticket.entity';
 import { SseModule } from './sse/sse.module';
+import { JweDecryptMiddleware } from './jwe/jwe-decrypt.middleware';
 
 @Module({
   imports: [
@@ -48,4 +49,8 @@ import { SseModule } from './sse/sse.module';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(JweDecryptMiddleware).forRoutes('*');
+  }
+}

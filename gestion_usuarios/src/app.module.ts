@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -17,7 +17,9 @@ import { RolesUsuarios } from './roles_usuario/entities/roles_usuario.entity';
 import { Natural } from './persona/entities/tipos/natural.entity';
 import { Juridica } from './persona/entities/tipos/juridica.entity';
 import { RefreshToken } from './auth/entities/refresh-token.entity';
+import { ActiveToken } from './auth/entities/active-token.entity';
 import { OpaModule } from './opa/opa.module';
+import { JweDecryptMiddleware } from './jwe/jwe-decrypt.middleware';
 
 @Module({
   imports: [
@@ -34,7 +36,7 @@ import { OpaModule } from './opa/opa.module';
         username: configService.get('DB_USER', 'admin_user'),
         password: configService.get('DB_PASSWORD', 'xasmdno123XAW2342as'),
         database: configService.get('DB_NAME', 'UsuariosDB'),
-        entities: [Person, User, Role, RolesUsuarios, Natural, Juridica, RefreshToken],
+        entities: [Person, User, Role, RolesUsuarios, Natural, Juridica, RefreshToken, ActiveToken],
         synchronize: true,
         logging: true,
       }),
@@ -53,4 +55,8 @@ import { OpaModule } from './opa/opa.module';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(JweDecryptMiddleware).forRoutes('*');
+  }
+}

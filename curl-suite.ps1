@@ -219,14 +219,12 @@ Wait-For -Name 'zonas' -Url "$ZonasBase/api/v1/zonas/"
 Wait-For -Name 'espacios' -Url "$ZonasBase/api/v1/espacios/"
 
 Write-Host "Logging in seed users..." -ForegroundColor Cyan
-$admin = Login-User -BaseUrl $UsuariosBase -Username 'admin1' -Password 'Admin123!' -Name 'Admin login'
-$auditor = Login-User -BaseUrl $UsuariosBase -Username 'amtorres1' -Password 'Audit123!' -Name 'Auditor login'
-$owner = Login-User -BaseUrl $UsuariosBase -Username 'jcperez2' -Password 'pass1234' -Name 'Owner login'
-$zoneManager = Login-User -BaseUrl $UsuariosBase -Username 'emple1' -Password 'Admin123!' -Name 'Zone manager login'
-$superUser = Login-User -BaseUrl $UsuariosBase -Username 'jcperez3' -Password 'pass1234' -Name 'Super user login'
+$admin = Login-User -BaseUrl $UsuariosBase -Username 'testadmin' -Password 'Admin123!' -Name 'Admin login'
+$owner = Login-User -BaseUrl $UsuariosBase -Username 'jpropiet' -Password 'Prop123!' -Name 'Owner login'
+$zoneManager = Login-User -BaseUrl $UsuariosBase -Username 'ezona1' -Password 'Zona123!' -Name 'Zone manager login'
+$superUser = Login-User -BaseUrl $UsuariosBase -Username 'superusr' -Password 'Super123!' -Name 'Super user login'
 
 $adminHeaders = @{ Authorization = "Bearer $($admin.access_token)" }
-$auditorHeaders = @{ Authorization = "Bearer $($auditor.access_token)" }
 $ownerHeaders = @{ Authorization = "Bearer $($owner.access_token)" }
 $zoneHeaders = @{ Authorization = "Bearer $($zoneManager.access_token)" }
 $superHeaders = @{ Authorization = "Bearer $($superUser.access_token)" }
@@ -312,9 +310,14 @@ $refreshResp = Test-Request -Name 'POST auth/refresh employee' -Method POST -Url
   refreshToken = $employee.refresh_token
 }
 $refreshData = Parse-Json $refreshResp.Body
+$employeeHeaders = @{ Authorization = "Bearer $($refreshData.access_token)" }
+$employee = $refreshData
 Test-Request -Name 'POST auth/logout employee' -Method POST -Url "$UsuariosBase/auth/logout" -ExpectedStatus @(200) -Headers $employeeHeaders -Body @{
   refreshToken = $refreshData.refresh_token
 } | Out-Null
+
+$employee = Login-User -BaseUrl $UsuariosBase -Username $employeeRegister.username -Password $employeePassword -Name 'Employee re-login after logout'
+$employeeHeaders = @{ Authorization = "Bearer $($employee.access_token)" }
 
 Write-Host "Running roles and roles_usuario checks..." -ForegroundColor Cyan
 Test-Request -Name 'GET roles admin' -Method GET -Url "$UsuariosBase/roles" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
@@ -550,7 +553,6 @@ Test-Request -Name 'PUT asignacion denied for owner restore' -Method PUT -Url "$
 Write-Host "Running tickets checks..." -ForegroundColor Cyan
 $ticketResp1 = Test-Request -Name 'POST ticket emitir employee' -Method POST -Url "$TicketsBase/emitir" -ExpectedStatus @(201) -Headers $employeeHeaders -Body @{
   idEspacio = $space1.id
-  cedula = $propietarioCedula
   placa = $vehicle.placa
 }
 $ticket1 = Parse-Json $ticketResp1.Body
@@ -563,7 +565,6 @@ Test-Request -Name 'POST ticket pagar employee' -Method POST -Url "$TicketsBase/
 
 $ticketResp2 = Test-Request -Name 'POST ticket emitir employee second' -Method POST -Url "$TicketsBase/emitir" -ExpectedStatus @(201) -Headers $employeeHeaders -Body @{
   idEspacio = $space2.id
-  cedula = $propietarioCedula
   placa = $vehicle.placa
 }
 $ticket2 = Parse-Json $ticketResp2.Body
@@ -573,7 +574,6 @@ Test-Request -Name 'POST ticket anular employee' -Method POST -Url "$TicketsBase
 } | Out-Null
 Test-Request -Name 'POST ticket denied for owner' -Method POST -Url "$TicketsBase/emitir" -ExpectedStatus @(403) -Headers $ownerHeaders -Body @{
   idEspacio = $space1.id
-  cedula = $propietarioCedula
   placa = $vehicle.placa
 } | Out-Null
 
@@ -600,6 +600,22 @@ Test-Request -Name 'DELETE role temp B super' -Method DELETE -Url "$UsuariosBase
 Test-Request -Name 'DELETE space 1 super' -Method DELETE -Url "$ZonasBase/api/v1/espacios/$($space1.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
 Test-Request -Name 'DELETE space 2 super' -Method DELETE -Url "$ZonasBase/api/v1/espacios/$($space2.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
 Test-Request -Name 'DELETE zone super' -Method DELETE -Url "$ZonasBase/api/v1/zonas/$($zone.idZona)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
+
+Write-Host "Cleaning up employee..." -ForegroundColor Cyan
+Test-Request -Name 'DELETE roles-Usuario employee clear' -Method DELETE -Url "$UsuariosBase/roles-Usuario" -ExpectedStatus @(200) -Headers $superHeaders -Body @{
+  id_user = $employeeRegister.id
+  id_rol = $empleadoRole.id
+  id_nuevo_rol = $empleadoRole.id
+} | Out-Null
+$empDelResp = Invoke-CurlJson -Method DELETE -Url "$UsuariosBase/usuario/$($employeeRegister.id)" -Headers $superHeaders
+if ($empDelResp.StatusCode -ne 200) {
+  Write-Host "  [INFO] User hard-delete blocked by refresh_tokens FK, deactivating instead" -ForegroundColor DarkYellow
+  Invoke-CurlJson -Method PATCH -Url "$UsuariosBase/usuario/$($employeeRegister.id)/activar-desactivar" -Headers $superHeaders | Out-Null
+}
+$empPersonaResp = Invoke-CurlJson -Method DELETE -Url "$UsuariosBase/persona/$($employeeRegister.id)" -Headers $superHeaders
+if ($empPersonaResp.StatusCode -ne 200) {
+  Write-Host "  [INFO] Persona delete blocked (user still linked), left as-is" -ForegroundColor DarkYellow
+}
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan

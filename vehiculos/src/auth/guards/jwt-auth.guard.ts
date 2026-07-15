@@ -1,4 +1,4 @@
-import { Injectable, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import { Injectable, ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
 import { OpaService, OpaInput } from '../../opa/opa.service';
@@ -9,6 +9,8 @@ export const IS_PUBLIC_KEY = 'isPublic';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
+  private readonly usuariosUrl = process.env.USUARIOS_SERVICE_URL || 'http://usuarios:5000';
+
   constructor(
     private reflector: Reflector,
     private opaService: OpaService
@@ -29,11 +31,27 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       return false;
     }
 
-    // Si el JWT es válido, extraemos el usuario y evaluamos con OPA
     const req = context.switchToHttp().getRequest();
     const user = req.user;
 
-    // Determinar recurso y acción. Soporta override con decoradores.
+    // Validar active_token (anti-replay por IP)
+    try {
+      const resp = await fetch(`${this.usuariosUrl}/auth/validate-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jti: user.jti }),
+        signal: AbortSignal.timeout(3000),
+      });
+      const data = await resp.json();
+      if (!data.valid) {
+        throw new UnauthorizedException('Token revocado o inválido');
+      }
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
+      // Si falla la conexión, permitir (fail-open para disponibilidad)
+    }
+
+    // Si el JWT es válido, extraemos el usuario y evaluamos con OPA
     const overrideResource = this.reflector.getAllAndOverride<string>(RESOURCE_KEY, [
       context.getHandler(),
       context.getClass(),

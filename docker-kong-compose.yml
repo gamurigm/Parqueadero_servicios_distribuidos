@@ -21,7 +21,7 @@ services:
       - kong-net
     restart: unless-stopped
 
-  # Inicialización de llaves RSA compartidas
+  # Inicialización de llaves RSA compartidas + JWE secret
   init-keys:
     image: alpine:latest
     container_name: init-keys
@@ -39,6 +39,13 @@ services:
         chmod 644 /keys/*.pem;
       else
         echo 'Las llaves RSA ya existen. Omitiendo generación.';
+      fi &&
+      if [ ! -f /keys/jwe-secret.key ]; then
+        echo 'Generando llave secreta JWE (AES-256)...' &&
+        openssl rand -hex 32 > /keys/jwe-secret.key &&
+        chmod 644 /keys/jwe-secret.key;
+      else
+        echo 'La llave JWE ya existe. Omitiendo generación.';
       fi
       "
 
@@ -336,6 +343,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
       - JWT_ISSUER=gestion-usuarios
       - OPA_URL=http://opa:8181/v1/data
+      - USUARIOS_SERVICE_URL=http://usuarios:5000
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
@@ -467,12 +475,13 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=guest
-      - RABBITMQ_PASS=guest
+      - RABBITMQ_PASSWORD=guest
       - RABBITMQ_QUEUE=audit_queue
       - RABBITMQ_EXCHANGE=audit_exchange
       - RABBITMQ_ROUTING_KEY=audit.event
       - OPA_URL=http://opa:8181/v1/data
       - OPA_SERVICE=audit
+      - USUARIOS_SERVICE_URL=http://usuarios:5000
     ports:
       - "3004:3006"
     networks:

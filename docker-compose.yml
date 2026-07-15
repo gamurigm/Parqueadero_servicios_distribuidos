@@ -22,7 +22,7 @@ services:
     environment:
       POSTGRES_USER: admin_user
       POSTGRES_PASSWORD: xasmdno123XAW2342as
-      POSTGRES_DB: VehiculosDB
+      POSTGRES_DB: VehiculoDB
     ports:
       - "5437:5432"
     volumes:

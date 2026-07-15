@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -10,6 +10,7 @@ import { Auto } from './vehiculos/entities/tipos/auto.entity';
 import { Motocicleta } from './vehiculos/entities/tipos/motocicleta.entity';
 import { Camioneta } from './vehiculos/entities/tipos/camioneta.entity';
 import { OpaModule } from './opa/opa.module';
+import { JweDecryptMiddleware } from './jwe/jwe-decrypt.middleware';
 
 @Module({
   imports: [
@@ -40,4 +41,8 @@ import { OpaModule } from './opa/opa.module';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(JweDecryptMiddleware).forRoutes('*');
+  }
+}

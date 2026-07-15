@@ -43,6 +43,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String userId = claims.getSubject();
             String username = claims.get("username", String.class);
             List<String> roles = claims.get("roles", List.class);
+            String jti = claims.get("jti", String.class);
+
+            if (jti != null && !jwtService.validateActiveToken(jti)) {
+                log.warn("Token revocado (JTI={} no está activo)", jti);
+                SecurityContextHolder.clearContext();
+                chain.doFilter(request, response);
+                return;
+            }
 
             List<SimpleGrantedAuthority> authorities = (roles != null)
                     ? roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())

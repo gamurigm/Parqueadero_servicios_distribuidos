@@ -1,15 +1,18 @@
 import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThanOrEqual } from 'typeorm';
 import { RolesUsuarios } from '../roles_usuario/entities/roles_usuario.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { ActiveToken } from './entities/active-token.entity';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from './dto/login.dto';
 import { RegisterAuthDto } from './dto/register-auth.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { Utils } from '../utils/utils';
 import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import * as jose from 'jose';
 import { PersonaService } from '../persona/persona.service';
 import { UsuarioService } from '../usuario/usuario.service';
 import { RolesUsuarioService } from '../roles_usuario/roles_usuario.service';
@@ -18,10 +21,13 @@ import { AuditEvent, EventPublisher } from '../event-publisher.service';
 @Injectable()
 export class AuthService {
   private utils = new Utils();
+  private jweSecret: Uint8Array;
 
   constructor(
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
+    @InjectRepository(ActiveToken)
+    private readonly activeTokenRepository: Repository<ActiveToken>,
     @InjectRepository(RolesUsuarios)
     private readonly rolesUsuarioRepository: Repository<RolesUsuarios>,
     private readonly personaService: PersonaService,
@@ -30,7 +36,61 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly eventPublisher: EventPublisher,
-  ) { }
+  ) {
+    this.jweSecret = this.loadJweSecret();
+  }
+
+  private loadJweSecret(): Uint8Array {
+    try {
+      const hex = fs.readFileSync('/keys/jwe-secret.key', 'utf8').trim();
+      return Uint8Array.from(Buffer.from(hex, 'hex'));
+    } catch {
+      console.warn('No se pudo leer /keys/jwe-secret.key. JWE no funcionará.');
+      return new Uint8Array(32);
+    }
+  }
+
+  private async encryptJwe(jwtString: string): Promise<string> {
+    return new jose.CompactEncrypt(new TextEncoder().encode(jwtString))
+      .setProtectedHeader({ alg: 'dir', enc: 'A256GCM', cty: 'JWT' })
+      .encrypt(this.jweSecret);
+  }
+
+  async validateToken(jti: string): Promise<boolean> {
+    const active = await this.activeTokenRepository.findOne({ where: { jti } });
+    if (!active) return false;
+    if (active.expiresAt < new Date()) {
+      await this.activeTokenRepository.delete({ jti });
+      return false;
+    }
+    return true;
+  }
+
+  private async cleanupExpiredTokens() {
+    await this.activeTokenRepository.delete({
+      expiresAt: LessThanOrEqual(new Date()),
+    });
+  }
+
+  private async manageActiveToken(jti: string, userId: string, ip: string, expiresAt: Date) {
+    await this.cleanupExpiredTokens();
+
+    const existing = await this.activeTokenRepository.findOne({
+      where: { userId, ipAddress: ip },
+    });
+
+    if (existing && existing.jti !== jti) {
+      await this.activeTokenRepository.delete({ jti: existing.jti });
+    }
+
+    await this.activeTokenRepository.save(
+      this.activeTokenRepository.create({ jti, userId, ipAddress: ip, expiresAt }),
+    );
+  }
+
+  private async removeActiveToken(jti: string) {
+    await this.activeTokenRepository.delete({ jti });
+  }
 
   private async emitAudit(accion: string, username: string, rol?: string, ip?: string, mac?: string, datos?: Record<string, any>) {
     const event: AuditEvent = {
@@ -128,6 +188,11 @@ export class AuthService {
       roles: roleNames,
     };
     const access_token = this.jwtService.sign(payload);
+    const encrypted_token = await this.encryptJwe(access_token);
+
+    const jweExpiresAt = new Date();
+    jweExpiresAt.setMinutes(jweExpiresAt.getMinutes() + 15);
+    await this.manageActiveToken(payload.jti, user.id, ip || '0.0.0.0', jweExpiresAt);
 
     const tokenString = crypto.randomBytes(40).toString('hex');
     const expiresAt = new Date();
@@ -150,7 +215,7 @@ export class AuthService {
     }).catch(() => {});
 
     return {
-      access_token,
+      access_token: encrypted_token,
       refresh_token: tokenString,
       user: {
         id: user.id,
@@ -168,7 +233,7 @@ export class AuthService {
     };
   }
 
-  async refresh(refreshDto: RefreshDto) {
+  async refresh(refreshDto: RefreshDto, ip?: string) {
     const { refreshToken: token } = refreshDto;
 
     const refreshToken = await this.refreshTokenRepository.findOne({
@@ -196,6 +261,11 @@ export class AuthService {
       roles: roleNames,
     };
     const access_token = this.jwtService.sign(payload);
+    const encrypted_token = await this.encryptJwe(access_token);
+
+    const jweExpiresAt = new Date();
+    jweExpiresAt.setMinutes(jweExpiresAt.getMinutes() + 15);
+    await this.manageActiveToken(payload.jti, user.id, ip || '0.0.0.0', jweExpiresAt);
 
     const tokenString = crypto.randomBytes(40).toString('hex');
     const expiresAt = new Date();
@@ -210,17 +280,21 @@ export class AuthService {
     await this.refreshTokenRepository.save(newRefreshToken);
 
     return {
-      access_token,
+      access_token: encrypted_token,
       refresh_token: tokenString,
     };
   }
 
-  async logout(refreshDto: RefreshDto, username?: string, ip?: string, mac?: string) {
+  async logout(refreshDto: RefreshDto, username?: string, ip?: string, mac?: string, jti?: string) {
     const { refreshToken: token } = refreshDto;
     const refreshToken = await this.refreshTokenRepository.findOne({ where: { token } });
     if (refreshToken) {
       refreshToken.revoked = true;
       await this.refreshTokenRepository.save(refreshToken);
+    }
+
+    if (jti) {
+      await this.removeActiveToken(jti);
     }
 
     // Emitir evento de auditoría LOGOUT

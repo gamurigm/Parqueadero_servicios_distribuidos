@@ -43,8 +43,9 @@ export class AuthController {
   @ApiBody({ type: RefreshDto })
   @ApiResponse({ status: 200, description: 'Token refrescado exitosamente' })
   @ApiResponse({ status: 401, description: 'Refresh token inválido o expirado' })
-  refresh(@Body() refreshDto: RefreshDto) {
-    return this.authService.refresh(refreshDto);
+  refresh(@Body() refreshDto: RefreshDto, @Req() req: any) {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
+    return this.authService.refresh(refreshDto, ip);
   }
 
   @Post('logout')
@@ -56,7 +57,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Sesión cerrada exitosamente' })
   logout(@Body() refreshDto: RefreshDto, @Req() req: any, @Headers('x-mac-address') mac?: string) {
     const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
-    return this.authService.logout(refreshDto, req.user?.username, ip, mac);
+    return this.authService.logout(refreshDto, req.user?.username, ip, mac, req.user?.jti);
   }
 
   @Get('profile')
@@ -67,5 +68,15 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'No autorizado' })
   getProfile(@Req() req: any) {
     return this.authService.getProfile(req.user.id);
+  }
+
+  @Public()
+  @Post('validate-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Validar si un JTI está activo (para servicios internos)' })
+  @ApiResponse({ status: 200, description: 'Resultado de validación' })
+  async validateToken(@Body() body: { jti: string }) {
+    const valid = await this.authService.validateToken(body.jti);
+    return { valid };
   }
 }
