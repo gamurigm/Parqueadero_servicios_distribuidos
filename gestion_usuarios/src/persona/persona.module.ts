@@ -8,6 +8,7 @@ import { UsuarioModule } from '../usuario/usuario.module';
 import { Natural } from './entities/tipos/natural.entity';
 import { Juridica } from './entities/tipos/juridica.entity';
 import { OpaModule } from '../opa/opa.module';
+import { EventPublisher } from '../event-publisher.service';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { OpaModule } from '../opa/opa.module';
     OpaModule
   ],
   controllers: [PersonaController],
-  providers: [PersonaService],
+  providers: [PersonaService, EventPublisher],
   exports: [PersonaService],
 })
 export class PersonaModule {}

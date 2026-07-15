@@ -1,0 +1,1 @@
+{"input":{"resource":"asignaciones.update","user":{"id":"test-user","roles":["propietario"]},"method":"PUT","path":"/asignaciones/test/test"}}

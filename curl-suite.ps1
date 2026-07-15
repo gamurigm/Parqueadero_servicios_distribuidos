@@ -219,12 +219,14 @@ Wait-For -Name 'zonas' -Url "$ZonasBase/api/v1/zonas/"
 Wait-For -Name 'espacios' -Url "$ZonasBase/api/v1/espacios/"
 
 Write-Host "Logging in seed users..." -ForegroundColor Cyan
-$admin = Login-User -BaseUrl $UsuariosBase -Username 'testadmin' -Password 'Admin123!' -Name 'Admin login'
-$owner = Login-User -BaseUrl $UsuariosBase -Username 'jpropiet' -Password 'Prop123!' -Name 'Owner login'
-$zoneManager = Login-User -BaseUrl $UsuariosBase -Username 'ezona1' -Password 'Zona123!' -Name 'Zone manager login'
-$superUser = Login-User -BaseUrl $UsuariosBase -Username 'superusr' -Password 'Super123!' -Name 'Super user login'
+$admin = Login-User -BaseUrl $UsuariosBase -Username 'admin1' -Password 'Admin123!' -Name 'Admin login'
+$auditor = Login-User -BaseUrl $UsuariosBase -Username 'amtorres1' -Password 'Audit123!' -Name 'Auditor login'
+$owner = Login-User -BaseUrl $UsuariosBase -Username 'jcperez2' -Password 'pass1234' -Name 'Owner login'
+$zoneManager = Login-User -BaseUrl $UsuariosBase -Username 'emple1' -Password 'Admin123!' -Name 'Zone manager login'
+$superUser = Login-User -BaseUrl $UsuariosBase -Username 'jcperez3' -Password 'pass1234' -Name 'Super user login'
 
 $adminHeaders = @{ Authorization = "Bearer $($admin.access_token)" }
+$auditorHeaders = @{ Authorization = "Bearer $($auditor.access_token)" }
 $ownerHeaders = @{ Authorization = "Bearer $($owner.access_token)" }
 $zoneHeaders = @{ Authorization = "Bearer $($zoneManager.access_token)" }
 $superHeaders = @{ Authorization = "Bearer $($superUser.access_token)" }
@@ -364,7 +366,7 @@ Test-Request -Name 'PATCH roles-Usuario reactivate admin' -Method PATCH -Url "$U
   id_user = $tempUser.id
   id_rol = $tempRoleB.id
 } | Out-Null
-Test-Request -Name 'DELETE roles-Usuario admin clear' -Method DELETE -Url "$UsuariosBase/roles-Usuario" -ExpectedStatus @(200) -Headers $adminHeaders -Body @{
+Test-Request -Name 'DELETE roles-Usuario super clear' -Method DELETE -Url "$UsuariosBase/roles-Usuario" -ExpectedStatus @(200) -Headers $superHeaders -Body @{
   id_user = $tempUser.id
   id_rol = $tempRoleB.id
   id_nuevo_rol = $tempRoleB.id
@@ -495,6 +497,7 @@ Test-Request -Name 'PUT espacio manager' -Method PUT -Url "$ZonasBase/api/v1/esp
   tipoEspacio = 'AUTO'
 } | Out-Null
   Test-Request -Name 'PATCH espacio toggle manager' -Method PATCH -Url "$ZonasBase/api/v1/espacios/$($space1.id)/activar-desactivar" -ExpectedStatus @(200) -Headers $zoneHeaders | Out-Null
+  Test-Request -Name 'PATCH espacio toggle restore manager' -Method PATCH -Url "$ZonasBase/api/v1/espacios/$($space1.id)/activar-desactivar" -ExpectedStatus @(200) -Headers $zoneHeaders | Out-Null
   Test-Request -Name 'PATCH espacio estado manager' -Method PATCH -Url "$ZonasBase/api/v1/espacios/$($space1.id)/estado?estado=MANTENIMIENTO" -ExpectedStatus @(200) -Headers $zoneHeaders | Out-Null
 
 Write-Host "Running asignaciones and trazabilidad checks..." -ForegroundColor Cyan
@@ -535,11 +538,11 @@ Test-Request -Name 'POST trazabilidad registrar denied for owner' -Method POST -
   tipoAccion = 'CREACION'
   descripcion = 'Debe fallar'
 } | Out-Null
-Test-Request -Name 'PUT asignacion owner' -Method PUT -Url "$TrazabilidadBase/asignaciones/$($propietario.id)/$($vehicle.id)" -ExpectedStatus @(200) -Headers $ownerHeaders -Body @{
+Test-Request -Name 'PUT asignacion denied for owner' -Method PUT -Url "$TrazabilidadBase/asignaciones/$($propietario.id)/$($vehicle.id)" -ExpectedStatus @(403) -Headers $ownerHeaders -Body @{
   estado = 0
   descripcion = 'Asignacion pausada'
 } | Out-Null
-Test-Request -Name 'PUT asignacion restore owner' -Method PUT -Url "$TrazabilidadBase/asignaciones/$($propietario.id)/$($vehicle.id)" -ExpectedStatus @(200) -Headers $ownerHeaders -Body @{
+Test-Request -Name 'PUT asignacion denied for owner restore' -Method PUT -Url "$TrazabilidadBase/asignaciones/$($propietario.id)/$($vehicle.id)" -ExpectedStatus @(403) -Headers $ownerHeaders -Body @{
   estado = 1
   descripcion = 'Asignacion activa'
 } | Out-Null
@@ -576,27 +579,27 @@ Test-Request -Name 'POST ticket denied for owner' -Method POST -Url "$TicketsBas
 
   Test-Request -Name 'PATCH zona manager' -Method PATCH -Url "$ZonasBase/api/v1/zonas/$($zone.idZona)/activar-desactivar?forzar=true" -ExpectedStatus @(200) -Headers $zoneHeaders | Out-Null
 
-Write-Host "Running cleanup and admin deletes..." -ForegroundColor Cyan
-Test-Request -Name 'DELETE asignacion admin' -Method DELETE -Url "$TrazabilidadBase/asignaciones/$($propietario.id)/$($vehicle.id)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
-Test-Request -Name 'DELETE ticket read by code after admin cleanup still readable if exists' -Method GET -Url "$TicketsBase/codigo/$($ticket1.codigoTicket)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
-Test-Request -Name 'DELETE vehiculo admin' -Method DELETE -Url "$VehiculosBase/vehiculos/$($vehicle.id)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
-  Test-Request -Name 'DELETE roles-Usuario admin clear propietario' -Method DELETE -Url "$UsuariosBase/roles-Usuario" -ExpectedStatus @(200) -Headers $adminHeaders -Body @{
+Write-Host "Running cleanup and super deletes..." -ForegroundColor Cyan
+Test-Request -Name 'DELETE asignacion super' -Method DELETE -Url "$TrazabilidadBase/asignaciones/$($propietario.id)/$($vehicle.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
+Test-Request -Name 'DELETE ticket read by code after cleanup still readable if exists' -Method GET -Url "$TicketsBase/codigo/$($ticket1.codigoTicket)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
+Test-Request -Name 'DELETE vehiculo super' -Method DELETE -Url "$VehiculosBase/vehiculos/$($vehicle.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
+  Test-Request -Name 'DELETE roles-Usuario super clear propietario' -Method DELETE -Url "$UsuariosBase/roles-Usuario" -ExpectedStatus @(200) -Headers $superHeaders -Body @{
     id_user = $propietario.id
     id_rol = $propietarioRole.id
     id_nuevo_rol = $propietarioRole.id
   } | Out-Null
-  Test-Request -Name 'DELETE usuario propietario admin' -Method DELETE -Url "$UsuariosBase/usuario/$($propietario.id)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
-  Test-Request -Name 'DELETE persona propietario admin' -Method DELETE -Url "$UsuariosBase/persona/$($propietario.id)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
+  Test-Request -Name 'DELETE usuario propietario super' -Method DELETE -Url "$UsuariosBase/usuario/$($propietario.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
+  Test-Request -Name 'DELETE persona propietario super' -Method DELETE -Url "$UsuariosBase/persona/$($propietario.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
 
-Test-Request -Name 'DELETE usuario admin' -Method DELETE -Url "$UsuariosBase/usuario/$($tempUser.id)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
-Test-Request -Name 'DELETE persona admin' -Method DELETE -Url "$UsuariosBase/persona/$($tempPerson.id)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
-Test-Request -Name 'DELETE role temp A admin' -Method DELETE -Url "$UsuariosBase/roles/$($tempRoleA.id)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
-Test-Request -Name 'DELETE role temp B admin' -Method DELETE -Url "$UsuariosBase/roles/$($tempRoleB.id)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
-  Test-Request -Name 'DELETE role propietario admin' -Method DELETE -Url "$UsuariosBase/roles/$($propietarioRole.id)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
+Test-Request -Name 'DELETE usuario temp super' -Method DELETE -Url "$UsuariosBase/usuario/$($tempUser.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
+Test-Request -Name 'DELETE persona super' -Method DELETE -Url "$UsuariosBase/persona/$($tempPerson.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
+Test-Request -Name 'DELETE role temp A super' -Method DELETE -Url "$UsuariosBase/roles/$($tempRoleA.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
+Test-Request -Name 'DELETE role temp B super' -Method DELETE -Url "$UsuariosBase/roles/$($tempRoleB.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
+  Test-Request -Name 'DELETE role propietario super' -Method DELETE -Url "$UsuariosBase/roles/$($propietarioRole.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
 
-Test-Request -Name 'DELETE space 1 admin' -Method DELETE -Url "$ZonasBase/api/v1/espacios/$($space1.id)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
-Test-Request -Name 'DELETE space 2 admin' -Method DELETE -Url "$ZonasBase/api/v1/espacios/$($space2.id)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
-Test-Request -Name 'DELETE zone admin' -Method DELETE -Url "$ZonasBase/api/v1/zonas/$($zone.idZona)" -ExpectedStatus @(200) -Headers $adminHeaders | Out-Null
+Test-Request -Name 'DELETE space 1 super' -Method DELETE -Url "$ZonasBase/api/v1/espacios/$($space1.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
+Test-Request -Name 'DELETE space 2 super' -Method DELETE -Url "$ZonasBase/api/v1/espacios/$($space2.id)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
+Test-Request -Name 'DELETE zone super' -Method DELETE -Url "$ZonasBase/api/v1/zonas/$($zone.idZona)" -ExpectedStatus @(200) -Headers $superHeaders | Out-Null
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan

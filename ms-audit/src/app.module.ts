@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { AuditModule } from './audit/audit.module';
-import { AuthModule } from './auth/auth.module';
-import { EventoAuditoria } from './audit/entities/evento-auditoria.entity';
+import { AuditModule } from './audit/audit.module.js';
+import { EventoAuditoria } from './audit/entities/evento-auditoria.entity.js';
+import { AuthModule } from './auth/auth.module.js';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard.js';
+import { OpaModule } from './opa/opa.module.js';
 
 @Module({
   imports: [
@@ -36,8 +39,12 @@ import { EventoAuditoria } from './audit/entities/evento-auditoria.entity';
       }),
       inject: [ConfigService],
     }),
-    AuditModule,
     AuthModule,
+    OpaModule,
+    AuditModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
 export class AppModule { }

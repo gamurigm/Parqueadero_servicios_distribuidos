@@ -7,13 +7,29 @@ import data.authz.has_role
 
 default allow = false
 
-# Admin universal
+# Super user: acceso total
 allow if {
     global_allow
 }
 
-# Cualquier usuario autenticado puede consultar auditoria
+# Admin puede leer logs de auditoria (incluye logs de login)
 allow if {
     input.resource == "audit.read"
-    input.user.id != ""
+    has_role("admin")
+}
+
+allow if {
+    input.resource == "audit.detail"
+    has_role("admin")
+}
+
+# Auditor puede leer logs de auditoria
+allow if {
+    input.resource == "audit.read"
+    has_role("auditor")
+}
+
+allow if {
+    input.resource == "audit.detail"
+    has_role("auditor")
 }

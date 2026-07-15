@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 
 import ec.edu.espe.zonas.Servicios.ZonaServicio;
@@ -57,8 +58,11 @@ public class ZonaControlador {
     public ResponseEntity<ZonaResponseDTO> crearZona(
             @Valid @RequestBody
             @Schema(description = "Datos de la zona a crear", required = true)
-            ZonaRequestDTO request) {
-        ZonaResponseDTO response = zonaServicio.crearZona(request);
+            ZonaRequestDTO request,
+            HttpServletRequest httpRequest,
+            @RequestHeader(value = "x-mac-address", required = false) String mac) {
+        String ip = httpRequest.getRemoteAddr();
+        ZonaResponseDTO response = zonaServicio.crearZona(request, ip, mac);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -78,8 +82,11 @@ public class ZonaControlador {
             @PathVariable UUID idZona,
             @Valid @RequestBody
             @Schema(description = "Datos actualizados de la zona", required = true)
-            ZonaRequestDTO request) {
-        ZonaResponseDTO response = zonaServicio.actualizarZona(idZona, request);
+            ZonaRequestDTO request,
+            HttpServletRequest httpRequest,
+            @RequestHeader(value = "x-mac-address", required = false) String mac) {
+        String ip = httpRequest.getRemoteAddr();
+        ZonaResponseDTO response = zonaServicio.actualizarZona(idZona, request, ip, mac);
         return ResponseEntity.ok(response);
     }
 
@@ -99,8 +106,11 @@ public class ZonaControlador {
             @PathVariable UUID idZona,
             @Parameter(description = "Forzar desactivación incluso si tiene espacios",
                     example = "false")
-            @RequestParam(defaultValue = "false") boolean forzar) {
-        String mensaje = zonaServicio.activarDesactivar(idZona, forzar);
+            @RequestParam(defaultValue = "false") boolean forzar,
+            HttpServletRequest httpRequest,
+            @RequestHeader(value = "x-mac-address", required = false) String mac) {
+        String ip = httpRequest.getRemoteAddr();
+        String mensaje = zonaServicio.activarDesactivar(idZona, forzar, ip, mac);
         return ResponseEntity.ok(mensaje);
     }
 
@@ -117,8 +127,11 @@ public class ZonaControlador {
             @Parameter(description = "ID de la zona a eliminar",
                     example = "123e4567-e89b-12d3-a456-426614174000",
                     required = true)
-            @PathVariable UUID idZona) {
-        String mensaje = zonaServicio.eliminarZona(idZona);
+            @PathVariable UUID idZona,
+            HttpServletRequest httpRequest,
+            @RequestHeader(value = "x-mac-address", required = false) String mac) {
+        String ip = httpRequest.getRemoteAddr();
+        String mensaje = zonaServicio.eliminarZona(idZona, ip, mac);
         return ResponseEntity.ok(mensaje);
     }
 }

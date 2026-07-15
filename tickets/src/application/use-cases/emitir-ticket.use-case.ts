@@ -23,13 +23,18 @@ import {
 } from '../ports/trazabilidad-client.interface';
 import { Ticket } from '../../domain/ticket.entity';
 import { BusinessError } from '../../domain/errors/business-error';
+import { AuditEvent, EventPublisher } from '../../event-publisher.service';
+import { SseService } from 'src/sse/sse.service';
 
 export interface EmitirTicketInput {
   idEspacio: string;
   cedula?: string;
   placa?: string;
   idEmpleado: string;
+  username?: string;
   authHeader?: string;
+  ip?: string;
+  mac?: string;
 }
 
 export interface EmitirTicketOutput {
@@ -60,10 +65,12 @@ export class EmitirTicketUseCase {
     private readonly codeGenerator: ITicketCodeGenerator,
     @Inject(TRAZABILIDAD_CLIENT)
     private readonly trazabilidadClient: ITrazabilidadClient,
+    private readonly eventPublisher: EventPublisher,
+    private readonly sseService: SseService
   ) {}
 
   async execute(input: EmitirTicketInput): Promise<EmitirTicketOutput> {
-    const { idEspacio, cedula, placa, idEmpleado, authHeader } = input;
+    const { idEspacio, cedula, placa, idEmpleado, username, authHeader, ip, mac } = input;
 
     const resolved = await this.resolverClaveCompuesta(cedula, placa, authHeader);
 
@@ -133,8 +140,24 @@ export class EmitirTicketUseCase {
       entidadId: saved.id,
       usuarioEjecutor: idEmpleado,
       payloadNuevo: { id: saved.id, codigoTicket: saved.codigoTicket, placa: saved.placa, idEspacio },
-    });
+    }, authHeader);
 
+    const auditEvent: AuditEvent = {
+      servicio: 'ms-tickets',
+      accion: 'CREATE',
+      entidad: 'TICKET',
+      usuario: username || 'system',
+      ip,
+      mac,
+      datos: { id: saved.id, codigoTicket: saved.codigoTicket, placa: saved.placa, idEspacio, estado: saved.estado },
+    };
+    await this.eventPublisher.publish(auditEvent);
+
+    await this.sseService.emitEvent('espacio-actualizado', {
+      id: saved.idEspacio,
+      estado: saved.estado,
+    });
+    
     return {
       id: saved.id,
       codigoTicket: saved.codigoTicket,

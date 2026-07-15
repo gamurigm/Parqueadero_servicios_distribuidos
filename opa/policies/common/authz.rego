@@ -4,14 +4,15 @@ import rego.v1
 
 default allow = false
 
-# Admin universal: un admin tiene acceso a todo EXCEPTO borrado físico
-allow if {
-    has_role("admin")
-}
-
 # Super user: acceso total incluyendo borrado físico
 allow if {
     has_role("super_user")
+}
+
+# Admin universal EXCEPTO borrado (logical y physical delete)
+allow if {
+    has_role("admin")
+    not contains(input.resource, "delete")
 }
 
 has_role(role_name) if {

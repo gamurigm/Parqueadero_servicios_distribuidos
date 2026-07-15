@@ -193,6 +193,48 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  # RabbitMQ (Message Broker)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-audit
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - kong-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 30s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  # Base de datos Audit
+  audit-database:
+    image: postgres:16-alpine
+    container_name: audit-database
+    environment:
+      POSTGRES_DB: audit_db
+      POSTGRES_USER: audit_user
+      POSTGRES_PASSWORD: xasmdno123XAW2342asasd
+    ports:
+      - "5450:5432"
+    networks:
+      - kong-net
+    volumes:
+      - audit_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U audit_user -d audit_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
   # Servicio Vehiculos (NestJS - Puerto 3000)
   vehiculos:
     image: vehiculos:latest 
@@ -211,6 +253,14 @@ services:
       - OPA_URL=http://opa:8181/v1/data
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
       - JWT_ISSUER=gestion-usuarios
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_EXCHANGE=audit_exchange
+      - RABBITMQ_ROUTING_KEY=audit.event
+      - TICKETS_SERVICE_URL=http://tickets:3003
+      - TRAZABILIDAD_SERVICE_URL=http://trazabilidad:3002
     ports:
       - "3001:3000"  
     networks:
@@ -219,6 +269,8 @@ services:
       - jwt_keys_data:/keys:ro
     depends_on:
       vehiculos-database:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       init-keys:
         condition: service_completed_successfully
@@ -242,6 +294,12 @@ services:
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
       - JWT_AUDIENCE=parqueadero-api
       - OPA_URL=http://opa:8181/v1/data
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_EXCHANGE=audit_exchange
+      - RABBITMQ_ROUTING_KEY=audit.event
     ports:
       - "5000:5000"
     networks:
@@ -251,10 +309,13 @@ services:
     depends_on:
       usuarios-database:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      opa:
+        condition: service_started
       init-keys:
         condition: service_completed_successfully
     restart: unless-stopped
-
   # Servicio Zonas (Spring Boot - Puerto 8080)
   zonas:
     image: zonas:latest
@@ -275,6 +336,12 @@ services:
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
       - JWT_ISSUER=gestion-usuarios
       - OPA_URL=http://opa:8181/v1/data
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_EXCHANGE=audit_exchange
+      - RABBITMQ_ROUTING_KEY=audit.event
     ports:
       - "8081:8080"
     networks:
@@ -283,6 +350,8 @@ services:
       - jwt_keys_data:/keys:ro
     depends_on:
       zonas-database:  
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       init-keys:
         condition: service_completed_successfully
@@ -303,11 +372,17 @@ services:
       - DB_USUARIO=admin_user
       - DB_CONTRASENA=xasmdno123XAW2342as
       - DB_NOMBRE=TrazabilidadDB
-      - VEHICULOS_SERVICE_URL=http://vehiculos:3000
-      - USUARIOS_SERVICE_URL=http://usuarios:5000
+      - VEHICULOS_SERVICE_URL=http://kong:8000/vehiculos
+      - USUARIOS_SERVICE_URL=http://kong:8000/usuarios
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
       - JWT_ISSUER=gestion-usuarios
       - OPA_URL=http://opa:8181/v1/data
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_EXCHANGE=audit_exchange
+      - RABBITMQ_ROUTING_KEY=audit.event
     ports:
       - "3002:3002"
     networks:
@@ -316,6 +391,8 @@ services:
       - jwt_keys_data:/keys:ro
     depends_on:
       trazabilidad-database:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       vehiculos:
         condition: service_started
@@ -338,9 +415,10 @@ services:
       - DB_USUARIO=admin_user
       - DB_CONTRASENA=t1ck3tsP4ssX2342as
       - DB_NOMBRE=TicketsDB
-      - USUARIOS_SERVICE_URL=http://usuarios:5000
-      - VEHICULOS_SERVICE_URL=http://vehiculos:3000
-      - ZONAS_SERVICE_URL=http://zonas:8080
+      - USUARIOS_SERVICE_URL=http://kong:8000/usuarios
+      - VEHICULOS_SERVICE_URL=http://kong:8000/vehiculos
+      - ZONAS_SERVICE_URL=http://kong:8000/zonas
+      - TRAZABILIDAD_SERVICE_URL=http://kong:8000/trazabilidad
       - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
       - JWT_ISSUER=gestion-usuarios
       - OPA_URL=http://opa:8181/v1/data
@@ -350,6 +428,12 @@ services:
       - TARIFA_MOTO_RESERVADO=3.00
       - TARIFA_CAMIONETA_REGULAR=3.50
       - TARIFA_CAMIONETA_RESERVADO=6.00
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - RABBITMQ_EXCHANGE=audit_exchange
+      - RABBITMQ_ROUTING_KEY=audit.event
     ports:
       - "3003:3003"
     networks:
@@ -358,6 +442,8 @@ services:
       - jwt_keys_data:/keys:ro
     depends_on:
       tickets-database:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
       init-keys:
         condition: service_completed_successfully
@@ -398,11 +484,12 @@ services:
         condition: service_healthy
       audit-database:
         condition: service_healthy
-      opa:
-        condition: service_started
       init-keys:
         condition: service_completed_successfully
+      opa:
+        condition: service_started
     restart: unless-stopped
+
   #Unificacion de swaggers
   swagger-ui:
     image: swaggerapi/swagger-ui:latest
@@ -533,6 +620,18 @@ services:
           --data strip_path=true \
           --data preserve_host=false
         
+        # Servicio de Audit
+        curl -s -X POST http://kong:8001/services \
+          --data name=audit-service \
+          --data url=http://ms-audit:3006
+        
+        # Ruta para Audit
+        curl -s -X POST http://kong:8001/services/audit-service/routes \
+          --data "paths[]=/audit" \
+          --data name=audit-route \
+          --data strip_path=true \
+          --data preserve_host=false
+        
         echo "Configurando plugins..."
         
         # CORS
@@ -564,6 +663,11 @@ services:
           --data "config.origins=http://localhost:8081" \
           --data "config.origins=http://127.0.0.1:8081" \
           --data "config.origins=http://host.docker.internal:8081" \
+          --data "config.origins=http://localhost:3004" \
+          --data "config.origins=http://127.0.0.1:3004" \
+          --data "config.origins=http://host.docker.internal:3004" \
+          --data "config.origins=http://localhost:5500" \
+          --data "config.origins=http://127.0.0.1:5500" \
           --data "config.methods=GET" \
           --data "config.methods=POST" \
           --data "config.methods=PUT" \
@@ -605,4 +709,5 @@ volumes:
   postgres_data:
   trazabilidad_postgres_data:
   tickets_postgres_data:
+  audit_postgres_data:
   jwt_keys_data:

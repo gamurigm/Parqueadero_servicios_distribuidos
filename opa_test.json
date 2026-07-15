@@ -1,0 +1,1 @@
+{"input":{"resource":"spaces.change-status","user":{"id":"test-user","roles":["empleado"]},"method":"PATCH","path":"/zonas/test/spaces/test"}}

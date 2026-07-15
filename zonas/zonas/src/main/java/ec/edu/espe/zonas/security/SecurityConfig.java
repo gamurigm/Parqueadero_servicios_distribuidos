@@ -57,7 +57,8 @@ public class SecurityConfig {
             "http://localhost:3002", "http://127.0.0.1:3002", "http://host.docker.internal:3002",
             "http://localhost:3003", "http://127.0.0.1:3003", "http://host.docker.internal:3003",
             "http://localhost:8080", "http://127.0.0.1:8080", "http://host.docker.internal:8080",
-            "http://localhost:8081", "http://127.0.0.1:8081", "http://host.docker.internal:8081"
+            "http://localhost:8081", "http://127.0.0.1:8081", "http://host.docker.internal:8081",
+            "http://localhost:5500", "http://127.0.0.1:5500"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));

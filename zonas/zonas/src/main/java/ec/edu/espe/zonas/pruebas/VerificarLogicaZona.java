@@ -115,8 +115,8 @@ public class VerificarLogicaZona {
 
         // --- 3. SERVICIOS ---
         UtilsMappers mapper = new UtilsMappers();
-        EspacioServicioImpl espacioServicio = new EspacioServicioImpl(mockEspacioRepo, mockZonaRepo, mapper);
-        ZonaServicioImpl zonaServicio = new ZonaServicioImpl(mockZonaRepo, espacioServicio);
+        EspacioServicioImpl espacioServicio = new EspacioServicioImpl(mockEspacioRepo, mockZonaRepo, mapper, null);
+        ZonaServicioImpl zonaServicio = new ZonaServicioImpl(mockZonaRepo, espacioServicio, null);
 
         // --- 4. MENÚ INTERACTIVO ---
         Scanner scanner = new Scanner(System.in);
@@ -161,21 +161,21 @@ public class VerificarLogicaZona {
                         zReq.setCapacidad(cap);
                         zReq.setTipoZona(TipoZona.valueOf(tipo.toUpperCase()));
 
-                        ZonaResponseDTO nuevaZona = zonaServicio.crearZona(zReq);
+                        ZonaResponseDTO nuevaZona = zonaServicio.crearZona(zReq, null, null);
                         System.out.println("✅ Zona Creada con éxito. Código: " + nuevaZona.getCodigo());
                         break;
 
                     case "3":
                         System.out.print("ID de la Zona a eliminar: ");
                         UUID idDel = UUID.fromString(scanner.nextLine());
-                        String msgDelZona = zonaServicio.eliminarZona(idDel);
+                        String msgDelZona = zonaServicio.eliminarZona(idDel, null, null);
                         System.out.println("✅ " + msgDelZona);
                         break;
 
                     case "4":
                         System.out.print("ID de la Zona a activar/desactivar: ");
                         UUID idAct = UUID.fromString(scanner.nextLine());
-                        String estadoNuevo = zonaServicio.activarDesactivar(idAct, false);
+                        String estadoNuevo = zonaServicio.activarDesactivar(idAct, false, null, null);
                         System.out.println("✅ " + estadoNuevo);
                         break;
 
@@ -199,7 +199,7 @@ public class VerificarLogicaZona {
                         eReq.setDescripcion(descEsp);
                         eReq.setTipoEspacio(TipoEspacio.valueOf(tipoEsp.toUpperCase()));
                         
-                        EspacioResponseDTO nuevoEsp = espacioServicio.crearEspacio(eReq);
+                        EspacioResponseDTO nuevoEsp = espacioServicio.crearEspacio(eReq, null, null);
                         System.out.println("✅ Espacio Creado con éxito. Código autogenerado: " + nuevoEsp.getCodigo());
                         break;
 
@@ -208,14 +208,14 @@ public class VerificarLogicaZona {
                         UUID idEspEst = UUID.fromString(scanner.nextLine());
                         System.out.print("Nuevo estado (DISPONIBLE, OCUPADO, RESERVADO, MANTENIMIENTO): ");
                         String estadoStr = scanner.nextLine();
-                        espacioServicio.cambiarEstado(idEspEst, EstadoEspacio.valueOf(estadoStr.toUpperCase()));
+                        espacioServicio.cambiarEstado(idEspEst, EstadoEspacio.valueOf(estadoStr.toUpperCase()), null, null);
                         System.out.println("✅ Estado del espacio actualizado con éxito.");
                         break;
 
                     case "8":
                         System.out.print("ID del Espacio a eliminar: ");
                         UUID idEspDel = UUID.fromString(scanner.nextLine());
-                        String msgDelEsp = espacioServicio.eliminarEspacio(idEspDel);
+                        String msgDelEsp = espacioServicio.eliminarEspacio(idEspDel, null, null);
                         System.out.println("✅ " + msgDelEsp);
                         break;
 

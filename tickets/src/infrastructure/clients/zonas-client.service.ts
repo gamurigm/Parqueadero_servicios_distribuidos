@@ -34,7 +34,7 @@ export class ZonasClientService implements IZonasClient {
 
       return this.mapEspacio(data, idEspacio);
     } catch (error) {
-      this.logger.error(`Error al consultar espacio ${idEspacio}: ${error.message}`);
+      this.logger.error(`Error al consultar espacio ${idEspacio}: ${error}`);
       return null;
     }
   }

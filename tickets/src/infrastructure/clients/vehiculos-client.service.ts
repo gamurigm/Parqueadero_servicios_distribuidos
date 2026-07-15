@@ -25,7 +25,7 @@ export class VehiculosClientService implements IVehiculosClient {
       this.logger.log(`Buscando vehiculo por placa: ${url}`);
       const res = await firstValueFrom(this.httpService.get(url, { headers }));
       return this.mapVehiculo(res.data, placaNormalizada);
-    } catch (error) {
+    } catch (error: any) {
       if (error.response?.status !== 404) {
         this.logger.warn(`Busqueda directa por placa no disponible: ${error.message}`);
       }

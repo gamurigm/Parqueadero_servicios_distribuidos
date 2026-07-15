@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { OpaService } from './opa.service';
+import { OpaService } from './opa.service.js';
 
 @Module({
   providers: [OpaService],

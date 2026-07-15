@@ -15,6 +15,7 @@ import { TipoAccion } from '../trazabilidad/entities/trazabilidad.entity';
 import { VehiculosClientService, VehiculoDetalle } from '../vehiculos-client/vehiculos-client.service';
 import { UsuariosClientService } from '../usuarios-client/usuarios-client.service';
 import { Utils } from '../utils/utils';
+import { AuditEvent, EventPublisher } from '../event-publisher.service';
 
 @Injectable()
 export class AsignacionService {
@@ -26,11 +27,33 @@ export class AsignacionService {
         private readonly trazabilidadService: TrazabilidadService,
         private readonly vehiculosClientService: VehiculosClientService,
         private readonly usuariosClientService: UsuariosClientService,
+        private readonly eventPublisher: EventPublisher,
     ) {
         this.utils = new Utils();
     }
 
-    async crear(dto: CreateAsignacionDto, authHeader?: string): Promise<any> {
+    private async emitEvent(
+        accion: string,
+        datos: any,
+        usuario?: string,
+        rol?: string,
+        ip?: string,
+        mac?: string,
+    ) {
+        const event: AuditEvent = {
+            servicio: 'ms-trazabilidad',
+            accion,
+            entidad: 'ASIGNACION',
+            usuario,
+            rol,
+            ip,
+            mac,
+            datos,
+        };
+        await this.eventPublisher.publish(event);
+    }
+
+    async crear(dto: CreateAsignacionDto, authHeader?: string, ip?: string, mac?: string, username?: string): Promise<any> {
         const userId = this.utils.validateUUID(dto.userId);
         const vehicleId = this.utils.validateUUID(dto.vehicleId);
 
@@ -67,6 +90,8 @@ export class AsignacionService {
 
         const asignacion = FactoryAsignacion.crear({ ...dto, userId, vehicleId });
         const saved = await this.asignacionRepo.save(asignacion);
+
+        await this.emitEvent('CREATE', saved, username, undefined, ip, mac);
 
         const propietarioNombre = this.obtenerNombrePropietario(propietario);
         const vehiculoInfo = this.obtenerEtiquetaVehiculo(vehicleId, vehiculoDetalle);
@@ -109,7 +134,7 @@ export class AsignacionService {
         return this.enriquecerAsignacion(asignacion, authHeader);
     }
 
-    async actualizar(userId: string, vehicleId: string, dto: UpdateAsignacionDto, authHeader?: string): Promise<any> {
+    async actualizar(userId: string, vehicleId: string, dto: UpdateAsignacionDto, authHeader?: string, ip?: string, mac?: string, username?: string): Promise<any> {
         const uid = this.utils.validateUUID(userId);
         const vid = this.utils.validateUUID(vehicleId);
 
@@ -149,6 +174,8 @@ export class AsignacionService {
 
         const saved = await this.asignacionRepo.save(asignacion);
 
+        await this.emitEvent('UPDATE', saved, username, undefined, ip, mac);
+
         const propietario = await this.usuariosClientService.obtenerUsuario(saved.userId, authHeader);
         const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(saved.vehicleId, authHeader);
         const propietarioNombre = this.obtenerNombrePropietario(propietario);
@@ -168,7 +195,7 @@ export class AsignacionService {
         return this.enriquecerAsignacion(saved, authHeader, propietario, vehiculoDetalle);
     }
 
-    async eliminar(userId: string, vehicleId: string, authHeader?: string): Promise<{ message: string }> {
+    async eliminar(userId: string, vehicleId: string, authHeader?: string, ip?: string, mac?: string, username?: string): Promise<{ message: string }> {
         const uid = this.utils.validateUUID(userId);
         const vid = this.utils.validateUUID(vehicleId);
 
@@ -189,6 +216,8 @@ export class AsignacionService {
         const vehiculoInfo = this.obtenerEtiquetaVehiculo(asignacion.vehicleId, vehiculoDetalle);
 
         await this.asignacionRepo.remove(asignacion);
+
+        await this.emitEvent('DELETE', { userId: uid, vehicleId: vid }, username, undefined, ip, mac);
 
         await this.trazabilidadService.registrar(
             TipoAccion.ELIMINACION,

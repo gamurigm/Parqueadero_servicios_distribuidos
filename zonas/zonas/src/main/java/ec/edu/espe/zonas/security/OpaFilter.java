@@ -11,7 +11,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import ec.edu.espe.zonas.security.OpaService;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,7 +29,6 @@ public class OpaFilter extends OncePerRequestFilter {
             
         String path = request.getRequestURI();
         
-        // Skip OPA checks for Swagger and public endpoints
         if (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs")) {
             filterChain.doFilter(request, response);
             return;
@@ -38,7 +36,6 @@ public class OpaFilter extends OncePerRequestFilter {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        // If not authenticated, let Spring Security handle it (will throw 401/403 if required)
         if (authentication == null || !authentication.isAuthenticated()) {
             filterChain.doFilter(request, response);
             return;
@@ -64,6 +61,7 @@ public class OpaFilter extends OncePerRequestFilter {
         );
 
         if (!isAllowed) {
+            log.warn("OPA denied {} {} for user={}", request.getMethod(), path, username);
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
             response.getWriter().write("{\"error\": \"Access denied by OPA\"}");

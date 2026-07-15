@@ -36,10 +36,10 @@ allow if {
     has_role("propietario")
 }
 
-# vehiculos.delete: admin
+# vehiculos.delete: Solo super_user (admin no puede eliminar)
 allow if {
     input.resource == "vehiculos.delete"
-    has_role("admin")
+    has_role("super_user")
 }
 
 # vehiculos.physical_delete: Solo super_user

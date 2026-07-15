@@ -8,6 +8,7 @@ import * as crypto from 'crypto';
 import { Utils } from '../utils/utils';
 import { Person } from '../persona/entities/persona.entity';
 import { RolesUsuarios } from '../roles_usuario/entities/roles_usuario.entity';
+import { AuditEvent, EventPublisher } from '../event-publisher.service';
 
 @Injectable()
 export class UsuarioService {
@@ -26,6 +27,7 @@ export class UsuarioService {
     private readonly personRepository: Repository<Person>,
     @InjectRepository(RolesUsuarios)
     private readonly rolesUsuarioRepository: Repository<RolesUsuarios>,
+    private readonly eventPublisher: EventPublisher,
   ) {
     this.utils = new Utils();
   }
@@ -80,7 +82,28 @@ export class UsuarioService {
     };
   }
 
-  async create(createUsuarioDto: CreateUsuarioDto) {
+  private async emitEvent(
+    accion: string,
+    datos: any,
+    usuario?: string,
+    rol?: string,
+    ip?: string,
+    mac?: string,
+  ) {
+    const event: AuditEvent = {
+      servicio: 'ms-usuarios',
+      accion,
+      entidad: 'USUARIO',
+      usuario,
+      rol,
+      ip,
+      mac,
+      datos,
+    };
+    await this.eventPublisher.publish(event);
+  }
+
+  async create(createUsuarioDto: CreateUsuarioDto, ip?: string, mac?: string) {
     const idSnt = this.utils.sanitizeString('id', createUsuarioDto.id);
     const existPerson = await this.personRepository.findOne({
       where: {
@@ -122,6 +145,9 @@ export class UsuarioService {
 
     const savedUser = await this.userRepository.save(user);
     delete (savedUser as any).passwordHash;
+
+    await this.emitEvent('CREATE', savedUser, savedUser.username, undefined, ip, mac);
+
     return savedUser;
   }
 
@@ -149,7 +175,7 @@ export class UsuarioService {
     return this.toUserResponse(user);
   }
 
-  async update(id: string, updateUsuarioDto: UpdateUsuarioDto) {
+  async update(id: string, updateUsuarioDto: UpdateUsuarioDto, ip?: string, mac?: string) {
     const idUser = this.utils.validateUUID(id);
     const user = await this.userRepository.findOne({ where: { id: idUser } });
 
@@ -170,7 +196,10 @@ export class UsuarioService {
 
     user.username = username;
 
-    await this.userRepository.save(user);
+    const saved = await this.userRepository.save(user);
+
+    await this.emitEvent('UPDATE', saved, saved.username, undefined, ip, mac);
+
     return this.findOne(idUser);
   }
 
@@ -213,7 +242,7 @@ export class UsuarioService {
     return { message: 'Contrasena actualizada' };
   }
 
-  async activarDesactivar(id: string) {
+  async activarDesactivar(id: string, ip?: string, mac?: string) {
     const idUser = this.utils.validateUUID(id);
 
     const user = await this.userRepository.findOne({
@@ -235,13 +264,16 @@ export class UsuarioService {
       if (rolesAsigned) throw new ConflictException('El usuario tiene roles activos asignados no se puede desactivar');
     }
 
+    const previousActive = user.active;
     user.active = !user.active;
     await this.userRepository.update(idUser, user);
+
+    await this.emitEvent('UPDATE', user, user.username, undefined, ip, mac);
 
     return this.findOne(idUser);
   }
 
-  async remove(id: string) {
+  async remove(id: string, ip?: string, mac?: string) {
     const idUser = this.utils.validateUUID(id);
 
     const userExist = await this.userRepository.findOne({
@@ -262,6 +294,8 @@ export class UsuarioService {
     if (rolesAsigned) throw new ConflictException('El usuario tiene roles activos asignados no se puede eliminar');
 
     await this.userRepository.delete(idUser);
+
+    await this.emitEvent('DELETE', { id: idUser, username: userExist.username }, userExist.username, undefined, ip, mac);
 
     return { message: 'usuario eliminado' };
   }

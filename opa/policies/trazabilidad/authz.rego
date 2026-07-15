@@ -36,16 +36,10 @@ allow if {
     input.user.id != ""
 }
 
-# asignaciones.update: propietario
-allow if {
-    input.resource == "asignaciones.update"
-    has_role("propietario")
-}
-
-# asignaciones.delete: admin
+# asignaciones.delete: Solo super_user (admin no puede eliminar)
 allow if {
     input.resource == "asignaciones.delete"
-    has_role("admin")
+    has_role("super_user")
 }
 
 # asignaciones.physical_delete: Solo super_user

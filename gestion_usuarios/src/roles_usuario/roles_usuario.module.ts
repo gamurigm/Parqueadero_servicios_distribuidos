@@ -6,6 +6,7 @@ import { RolesUsuarios } from './entities/roles_usuario.entity';
 import { User } from '../usuario/entities/usuario.entity';
 import { Role } from '../roles/entities/role.entity';
 import { OpaModule } from '../opa/opa.module';
+import { EventPublisher } from '../event-publisher.service';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { OpaModule } from '../opa/opa.module';
     OpaModule
   ],
   controllers: [RolesUsuarioController],
-  providers: [RolesUsuarioService],
+  providers: [RolesUsuarioService, EventPublisher],
   exports: [RolesUsuarioService]
 })
 export class RolesUsuarioModule {}

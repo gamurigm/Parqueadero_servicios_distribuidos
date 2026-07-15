@@ -9,33 +9,30 @@
   ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
-import { AuditService } from './audit.service';
-import { CreateAuditEventDto } from './dto/create-audit.dto';
-import { Resource } from '../opa/decorators/resource.decorator';
-import { Action } from '../opa/decorators/action.decorator';
+import { AuditService } from './audit.service.js';
+import { CreateAuditEventDto } from './dto/create-audit.dto.js';
+import { Public } from '../auth/decorators/public.decorator.js';
+import { Resource } from '../opa/decorators/resource.decorator.js';
 
 @Controller('audit')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
+  @Public()
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Resource('audit.create')
-  @Action('create')
   create(@Body() dto: CreateAuditEventDto) {
     return this.auditService.create(dto);
   }
 
   @Get()
   @Resource('audit.read')
-  @Action('read')
   findAll() {
     return this.auditService.findAll();
   }
 
   @Get(':id')
-  @Resource('audit.read')
-  @Action('read')
+  @Resource('audit.detail')
   async findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     const event = await this.auditService.findOne(id);
 

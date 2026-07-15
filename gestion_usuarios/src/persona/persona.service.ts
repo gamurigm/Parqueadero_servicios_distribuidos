@@ -9,6 +9,7 @@ import { UsuarioService } from '../usuario/usuario.service';
 import { Utils } from '../utils/utils';
 import { FactoryPersonas } from './factory/factory-persona';
 import { UUID } from 'typeorm/driver/mongodb/bson.typings.js';
+import { AuditEvent, EventPublisher } from '../event-publisher.service';
 
 @Injectable()
 export class PersonaService {
@@ -19,8 +20,30 @@ export class PersonaService {
 
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly eventPublisher: EventPublisher,
   ){
     this.utils = new Utils();
+  }
+
+  private async emitEvent(
+    accion: string,
+    datos: any,
+    usuario?: string,
+    rol?: string,
+    ip?: string,
+    mac?: string,
+  ) {
+    const event: AuditEvent = {
+      servicio: 'ms-usuarios',
+      accion,
+      entidad: 'PERSONA',
+      usuario,
+      rol,
+      ip,
+      mac,
+      datos,
+    };
+    await this.eventPublisher.publish(event);
   }
 
   private async generateUsername(
@@ -57,7 +80,12 @@ export class PersonaService {
     return `${baseUsername}${maxNumber + 1}`;
 }
 
-  async cambioDeEstado(id: string){
+  private async findUsernameByPersonId(personId: string): Promise<string | undefined> {
+    const user = await this.userRepository.findOne({ where: { id: personId } });
+    return user?.username;
+  }
+
+  async cambioDeEstado(id: string, ip?: string, mac?: string){
     const idPerson = this.utils.validateUUID(id);
 
     const person = await this.personRepository.findOne({
@@ -76,12 +104,17 @@ export class PersonaService {
 
     if(!afiliatedUser) throw new ConflictException("La persona tiene un usuario activo afiliado")
 
+    const previousActive = person.active;
     person.active = !person.active;
     await this.personRepository.update(idPerson,person);
+
+    const username = await this.findUsernameByPersonId(idPerson);
+    await this.emitEvent('UPDATE', person, username, undefined, ip, mac);
+
     return this.personRepository.findOne({where:{id:idPerson}});
   }
 
-  async create(createPersonaDto: CreatePersonaDto) {
+  async create(createPersonaDto: CreatePersonaDto, ip?: string, mac?: string) {
 
     const dniSnt = this.utils.sanitizeString("cedula",createPersonaDto.dni);
     
@@ -136,11 +169,16 @@ export class PersonaService {
 
     const person= FactoryPersonas.crear(datos);
     
-    await this.personRepository.save(person)
-    return {
+    await this.personRepository.save(person);
+
+    const result = {
       ...person,
       username:username
     };
+
+    await this.emitEvent('CREATE', result, username, undefined, ip, mac);
+
+    return result;
   }
 
   async findAll() {
@@ -168,7 +206,7 @@ export class PersonaService {
     return person;
   }
 
-  async update(id: string, updatePersonaDto: UpdatePersonaDto) {
+  async update(id: string, updatePersonaDto: UpdatePersonaDto, ip?: string, mac?: string) {
       const idPerson = this.utils.validateUUID(id);
       
       const person = await this.personRepository.findOne({
@@ -240,9 +278,14 @@ export class PersonaService {
 
           const savedPerson = await this.personRepository.save(newPerson);
           
-          return await this.personRepository.findOne({
+          const updated = await this.personRepository.findOne({
             where: { id: savedPerson.id },
           });
+
+          const username = await this.findUsernameByPersonId(savedPerson.id);
+          await this.emitEvent('UPDATE', updated, username, undefined, ip, mac);
+
+          return updated;
         }
 
       
@@ -251,7 +294,7 @@ export class PersonaService {
     
   }
 
-  async remove(id: string) {
+  async remove(id: string, ip?: string, mac?: string) {
     const idPerson = this.utils.validateUUID(id);
 
     const userExist = await this.userRepository.findOne({
@@ -270,6 +313,9 @@ export class PersonaService {
     if(!person)throw new NotFoundException('Persona no encontrada');
 
     await this.personRepository.remove(person);
+
+    const username = await this.findUsernameByPersonId(idPerson);
+    await this.emitEvent('DELETE', { id: idPerson, dni: person.dni }, username, undefined, ip, mac);
 
     return {
       message: 'Persona eliminada'

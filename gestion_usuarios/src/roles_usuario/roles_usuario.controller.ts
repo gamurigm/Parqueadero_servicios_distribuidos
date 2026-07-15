@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Put, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Put, UseGuards, Req, Headers } from '@nestjs/common';
 import { RolesUsuarioService } from './roles_usuario.service';
 import { CreateRolesUsuarioDto } from './dto/create-roles_usuario.dto';
 import { UpdateRolesUsuarioDto } from './dto/update-roles_usuario.dto';
@@ -19,8 +19,9 @@ export class RolesUsuarioController {
   @ApiOperation({ summary: 'Asignar un rol a un usuario' })
   @ApiResponse({ status: 201, description: 'Rol asignado exitosamente' })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  create(@Body() createRolesUsuarioDto: CreateRolesUsuarioDto) {
-    return this.rolesUsuarioService.create(createRolesUsuarioDto);
+  create(@Body() createRolesUsuarioDto: CreateRolesUsuarioDto, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
+    return this.rolesUsuarioService.create(createRolesUsuarioDto, ip, mac);
   }
 
   @Get()
@@ -78,8 +79,8 @@ export class RolesUsuarioController {
   @ApiOperation({ summary: 'Activar o desactivar una asignación de rol' })
   @ApiResponse({ status: 200, description: 'Estado de la asignación actualizado' })
   @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
-  active_deactive(@Body() activeDeactiveRolesUsuarioDTO: ActiveDeactiveRolesUsuarioDto) {
-    return this.rolesUsuarioService.activarDesactivar(activeDeactiveRolesUsuarioDTO);
+  active_deactive(@Body() activeDeactiveRolesUsuarioDTO: ActiveDeactiveRolesUsuarioDto, @Req() req: any, @Headers('x-mac-address') mac?: string) {
+    return this.rolesUsuarioService.activarDesactivar(activeDeactiveRolesUsuarioDTO, req?.ip, mac);
   }
 
   @Delete()

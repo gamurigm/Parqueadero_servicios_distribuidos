@@ -58,8 +58,6 @@ export class OpaService {
 
       if (!allow) {
         this.logger.warn(`Acceso denegado por OPA: ${JSON.stringify(input)}`);
-      } else {
-        this.logger.debug(`Acceso permitido por OPA: ${JSON.stringify(input)}`);
       }
 
       return allow;

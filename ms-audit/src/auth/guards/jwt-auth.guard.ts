@@ -1,9 +1,9 @@
 import { Injectable, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
-import { OpaService, OpaInput } from '../../opa/opa.service';
-import { RESOURCE_KEY } from '../../opa/decorators/resource.decorator';
-import { ACTION_KEY } from '../../opa/decorators/action.decorator';
+import { OpaService, OpaInput } from '../../opa/opa.service.js';
+import { RESOURCE_KEY } from '../../opa/decorators/resource.decorator.js';
+import { ACTION_KEY } from '../../opa/decorators/action.decorator.js';
 
 export const IS_PUBLIC_KEY = 'isPublic';
 
@@ -11,7 +11,7 @@ export const IS_PUBLIC_KEY = 'isPublic';
 export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(
     private reflector: Reflector,
-    private opaService: OpaService
+    private opaService: OpaService,
   ) {
     super();
   }

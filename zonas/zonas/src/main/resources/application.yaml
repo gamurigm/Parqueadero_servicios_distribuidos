@@ -23,6 +23,20 @@ spring:
       pageable:
         max-page-size: 50
         default-page-size: 10
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+app:
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    exchange: ${RABBITMQ_EXCHANGE:audit_exchange}
+    routing-key: ${RABBITMQ_ROUTING_KEY:audit.event}
 
 springdoc:
   api-docs:

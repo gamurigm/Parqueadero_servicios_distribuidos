@@ -13,5 +13,5 @@ export interface RegistrarEventoDto {
 export const TRAZABILIDAD_CLIENT = 'TRAZABILIDAD_CLIENT';
 
 export interface ITrazabilidadClient {
-  registrarEvento(dto: RegistrarEventoDto): Promise<void>;
+  registrarEvento(dto: RegistrarEventoDto, authHeader?: string): Promise<void>;
 }

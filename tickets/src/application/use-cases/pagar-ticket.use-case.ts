@@ -17,12 +17,17 @@ import {
   TRAZABILIDAD_CLIENT,
 } from '../ports/trazabilidad-client.interface';
 import { BusinessError } from '../../domain/errors/business-error';
+import { AuditEvent, EventPublisher } from '../../event-publisher.service';
+import { SseService } from '../../sse/sse.service';
 
 export interface PagarTicketInput {
   idTicket?: string;
   codigoTicket?: string;
   idEmpleado: string;
+  username?: string;
   authHeader?: string;
+  ip?: string;
+  mac?: string;
 }
 
 export interface PagarTicketOutput {
@@ -51,6 +56,8 @@ export class PagarTicketUseCase {
     private readonly vehiculosClient: IVehiculosClient,
     @Inject(TRAZABILIDAD_CLIENT)
     private readonly trazabilidadClient: ITrazabilidadClient,
+    private readonly eventPublisher: EventPublisher,
+    private readonly sseService: SseService,
   ) {}
 
   async execute(input: PagarTicketInput): Promise<PagarTicketOutput> {
@@ -109,6 +116,22 @@ export class PagarTicketUseCase {
       usuarioEjecutor: input.idEmpleado,
       payloadAnterior: { estado: 'ACTIVO' },
       payloadNuevo: { estado: 'PAGADO', valorRecaudado: valor, fechaSalida },
+    }, input.authHeader);
+
+    const auditEvent: AuditEvent = {
+      servicio: 'ms-tickets',
+      accion: 'UPDATE',
+      entidad: 'TICKET',
+      usuario: input.username || 'system',
+      ip: input.ip,
+      mac: input.mac,
+      datos: { id: updated.id, codigoTicket: updated.codigoTicket, estado: 'PAGADO', valorRecaudado: valor, horasCobradas, tarifaPorHora },
+    };
+    await this.eventPublisher.publish(auditEvent);
+
+    await this.sseService.emitEvent('espacio-actualizado', {
+      id: ticket.idEspacio,
+      estado: 'DISPONIBLE',
     });
 
     return {

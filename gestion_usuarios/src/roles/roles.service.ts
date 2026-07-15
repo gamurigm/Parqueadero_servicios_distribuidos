@@ -6,6 +6,7 @@ import { Role } from './entities/role.entity';
 import { Not, Repository } from 'typeorm';
 import { RolesUsuarios } from '../roles_usuario/entities/roles_usuario.entity';
 import { Utils } from '../utils/utils';
+import { AuditEvent, EventPublisher } from '../event-publisher.service';
 
 @Injectable()
 export class RolesService {
@@ -14,11 +15,33 @@ export class RolesService {
     @InjectRepository(Role)
     private repositorioRoles: Repository<Role>,
     @InjectRepository(RolesUsuarios)
-    private repositorioRolesUsuario: Repository<RolesUsuarios>) {
+    private repositorioRolesUsuario: Repository<RolesUsuarios>,
+    private readonly eventPublisher: EventPublisher) {
       this.utils = new Utils();
     }
 
-  async create(createRoleDto: CreateRoleDto) {
+  private async emitEvent(
+    accion: string,
+    datos: any,
+    usuario?: string,
+    rol?: string,
+    ip?: string,
+    mac?: string,
+  ) {
+    const event: AuditEvent = {
+      servicio: 'ms-usuarios',
+      accion,
+      entidad: 'ROL',
+      usuario,
+      rol,
+      ip,
+      mac,
+      datos,
+    };
+    await this.eventPublisher.publish(event);
+  }
+
+  async create(createRoleDto: CreateRoleDto, ip?: string, mac?: string, username?: string) {
     const nombre = this.utils.sanitizeString("nombre rol",createRoleDto.nombre);
     
     const existe = await this.repositorioRoles.findOne({
@@ -36,7 +59,11 @@ export class RolesService {
     nuevaAsignacion.nombre = nombre;
     nuevaAsignacion.descripcion = descripcion;
     
-    return this.repositorioRoles.save(nuevaAsignacion);
+    const saved = await this.repositorioRoles.save(nuevaAsignacion);
+
+    await this.emitEvent('CREATE', saved, username, undefined, ip, mac);
+
+    return saved;
   }
 
   async findAll() {
@@ -58,7 +85,7 @@ export class RolesService {
     return existe;
   }
 
-  async update(id: string, updateRoleDto: UpdateRoleDto) {
+  async update(id: string, updateRoleDto: UpdateRoleDto, ip?: string, mac?: string, username?: string) {
     const idRol = this.utils.validateUUID(id);
 
     const existe = await this.repositorioRoles.findOne({
@@ -96,10 +123,14 @@ export class RolesService {
     
     await this.repositorioRoles.update(idRol, datosActualizar);
 
-    return this.findOne(idRol);
+    const updated = await this.findOne(idRol);
+
+    await this.emitEvent('UPDATE', updated, username, undefined, ip, mac);
+
+    return updated;
   }
 
-  async activarDesactivar(id: string) {
+  async activarDesactivar(id: string, ip?: string, mac?: string, username?: string) {
     const idRol = this.utils.validateUUID(id);
 
     const rol = await this.repositorioRoles.findOne({
@@ -125,10 +156,14 @@ export class RolesService {
       updatedAt: new Date() 
     });
 
-    return this.findOne(id);
+    const updated = await this.findOne(id);
+
+    await this.emitEvent('UPDATE', updated, username, undefined, ip, mac);
+
+    return updated;
   }
 
-  async remove(id: string) {
+  async remove(id: string, ip?: string, mac?: string, username?: string) {
     const idRol = this.utils.validateUUID(id);
 
     const existe = await this.repositorioRoles.findOne({
@@ -148,6 +183,9 @@ export class RolesService {
       }
 
     await this.repositorioRoles.delete(idRol);
+
+    await this.emitEvent('DELETE', { id: idRol, nombre: existe.nombre }, username, undefined, ip, mac);
+
     return { message: 'Rol eliminado correctamente' };
   }
 }
