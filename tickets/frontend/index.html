@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Espacios de estacionamiento</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body class="bg-gray-100 p-6 font-sans antialiased">
+  <main class="max-w-7xl mx-auto">
+    <header class="flex flex-wrap items-center justify-between gap-4 mb-8">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-wide text-emerald-600">Parqueadero</p>
+        <h1 class="text-3xl font-bold text-gray-800">Espacios disponibles</h1>
+      </div>
+      <div class="flex items-center gap-4 text-sm text-gray-600">
+        <span id="indicator" class="w-3 h-3 bg-gray-400 rounded-full inline-block"></span>
+        <span id="statusText">Conectando...</span>
+        <span id="totalEspacios" class="font-semibold text-gray-800">0 espacios</span>
+      </div>
+    </header>
+
+    <section id="espaciosContainer" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-live="polite"></section>
+    <p id="emptyState" class="hidden py-16 text-center text-gray-500">No hay espacios registrados.</p>
+    <p id="errorState" class="hidden mt-6 rounded-lg bg-red-50 p-4 text-red-700"></p>
+    <p class="mt-6 text-xs text-gray-500">Ultima actualizacion: <span id="lastUpdate">--</span></p>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

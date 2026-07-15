@@ -41,7 +41,7 @@ echo -e "\e[32m[PASS]\e[0m Login exitoso"
 # 2. Baseline audit count
 echo ""
 echo "--- 2. Baseline audit ---"
-BASELINE=$(curl -s "$AUDIT/api/v1/audit" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('Count', len(d.get('value',[]))))" 2>/dev/null || echo "0")
+BASELINE=$(curl -s "$AUDIT/api/v1/audit" -H "Authorization: Bearer $TOKEN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d) if isinstance(d, list) else d.get('Count', len(d.get('value',[]))))" 2>/dev/null || echo "0")
 echo "  Audit events actuales: $BASELINE"
 
 # 3. Crear vehiculo (CREATE -> RabbitMQ)
@@ -63,7 +63,7 @@ echo "  Vehiculo ID: $VEHICLE_ID"
 echo ""
 echo "--- 4. Verificar CREATE en audit ---"
 sleep 2
-AFTER_CREATE=$(curl -s "$AUDIT/api/v1/audit" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('Count', len(d.get('value',[]))))" 2>/dev/null || echo "0")
+AFTER_CREATE=$(curl -s "$AUDIT/api/v1/audit" -H "Authorization: Bearer $TOKEN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d) if isinstance(d, list) else d.get('Count', len(d.get('value',[]))))" 2>/dev/null || echo "0")
 NEW=$((AFTER_CREATE - BASELINE))
 echo "  Audit events: $AFTER_CREATE (+$NEW)"
 if [ "$NEW" -ge 1 ]; then
@@ -88,7 +88,7 @@ check "PUT vehiculos" "200" "$HTTP_CODE"
 echo ""
 echo "--- 6. Verificar UPDATE en audit ---"
 sleep 2
-AFTER_UPDATE=$(curl -s "$AUDIT/api/v1/audit" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('Count', len(d.get('value',[]))))" 2>/dev/null || echo "0")
+AFTER_UPDATE=$(curl -s "$AUDIT/api/v1/audit" -H "Authorization: Bearer $TOKEN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d) if isinstance(d, list) else d.get('Count', len(d.get('value',[]))))" 2>/dev/null || echo "0")
 NEW_UPD=$((AFTER_UPDATE - AFTER_CREATE))
 echo "  Audit events: $AFTER_UPDATE (+$NEW_UPD)"
 if [ "$NEW_UPD" -ge 1 ]; then
@@ -111,7 +111,7 @@ check "DELETE vehiculos" "200" "$HTTP_CODE"
 echo ""
 echo "--- 8. Verificar DELETE en audit ---"
 sleep 2
-AFTER_DELETE=$(curl -s "$AUDIT/api/v1/audit" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('Count', len(d.get('value',[]))))" 2>/dev/null || echo "0")
+AFTER_DELETE=$(curl -s "$AUDIT/api/v1/audit" -H "Authorization: Bearer $TOKEN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d) if isinstance(d, list) else d.get('Count', len(d.get('value',[]))))" 2>/dev/null || echo "0")
 NEW_DEL=$((AFTER_DELETE - AFTER_UPDATE))
 echo "  Audit events: $AFTER_DELETE (+$NEW_DEL)"
 if [ "$NEW_DEL" -ge 1 ]; then
@@ -158,8 +158,7 @@ check "GET /api/v1/audit con auth" "200" "$HTTP_CODE"
 # 12. Ver contenido del audit
 echo ""
 echo "--- 12. Contenido audit (ultimos 3 eventos) ---"
-curl -s "$AUDIT/api/v1/audit" \
-  -H "Authorization: Bearer $TOKEN" | python3 -c "
+  curl -s "$AUDIT/api/v1/audit" -H "Authorization: Bearer $TOKEN" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
 events = d.get('value', d) if isinstance(d, dict) else d
