@@ -1,10 +1,10 @@
-import { Module, Sse } from '@nestjs/common';
-import { SseService } from './sse.service';
+import { Module } from '@nestjs/common';
 import { SseController } from './sse.controller';
+import { SseService } from './sse.service';
 
 @Module({
-  providers: [SseService],
   controllers: [SseController],
+  providers: [SseService],
   exports: [SseService],
 })
 export class SseModule {}

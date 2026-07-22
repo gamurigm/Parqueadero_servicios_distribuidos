@@ -212,6 +212,8 @@ services:
       - "15672:15672"
     networks:
       - kong-net
+    volumes:
+      - rabbitmq_audit_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 10s
@@ -705,3 +707,4 @@ volumes:
   tickets_postgres_data:
   audit_postgres_data:
   jwt_keys_data:
+  rabbitmq_audit_data:

@@ -59,9 +59,8 @@ export class CreateAuditEventDto {
     @IsOptional()
     @MinLength(3)
     @MaxLength(15)
-    @Transform(({ value }) => (typeof value === 'string' ? value.toUpperCase() : value))
-    @Matches(/^[A-Z_-]+$/, {
-        message: 'El campo solo debe contener letras mayúsculas, guiones bajos y guiones medios.',
+    @Matches(/^[a-zA-Z_-]+$/, {
+        message: 'El campo solo debe contener letras, guiones bajos y guiones medios.',
     })
     rol?: string;
 
