@@ -44,6 +44,18 @@ const routes = [
     meta: { title: 'Vehículos', roles: ['super_user', 'admin', 'propietario'] },
   },
   {
+    path: '/asignaciones-roles',
+    name: 'AsignacionesRoles',
+    component: () => import('@/views/AsignacionesRolesView.vue'),
+    meta: { title: 'Asignaciones Roles', roles: ['super_user', 'admin'] },
+  },
+  {
+    path: '/asignaciones-vehiculos',
+    name: 'AsignacionesVehiculos',
+    component: () => import('@/views/AsignacionesVehiculosView.vue'),
+    meta: { title: 'Asignaciones Vehículos', roles: ['super_user', 'admin', 'empleado'] },
+  },
+  {
     path: '/auditoria',
     name: 'Auditoria',
     component: () => import('@/views/AuditoriaView.vue'),

@@ -7,9 +7,18 @@
       <span class="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
         {{ auth.username }}
       </span>
-      <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-        {{ rolesLabels }}
-      </span>
+      <select
+        v-if="auth.allRoles.length > 0"
+        v-model="rolLocal"
+        @change="cambiarRol"
+        class="text-xs border border-gray-300 rounded-full px-3 py-1 bg-blue-50 text-blue-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer"
+      >
+        <option
+          v-for="r in auth.allRoles"
+          :key="r"
+          :value="r"
+        >{{ ROLE_LABELS[r] || r }}</option>
+      </select>
       <button
         @click="auth.logout()"
         class="text-sm bg-red-50 text-red-600 px-3 py-1 rounded-full hover:bg-red-100 transition"
@@ -21,16 +30,22 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ROLE_LABELS } from '@/utils/constants'
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 
-const titulo = computed(() => route.meta?.title || 'Dashboard Roles')
-const rolesLabels = computed(() =>
-  auth.roles.map(r => ROLE_LABELS[r] || r).join(', ')
-)
+const rolLocal = ref(auth.activeRole)
+watch(() => auth.activeRole, (val) => { rolLocal.value = val })
+
+function cambiarRol() {
+  auth.setActiveRole(rolLocal.value)
+  if (route.meta?.roles && !auth.hasAnyRole(route.meta.roles)) {
+    router.push('/')
+  }
+}
 </script>

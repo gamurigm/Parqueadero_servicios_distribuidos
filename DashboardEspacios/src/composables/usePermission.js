@@ -16,5 +16,9 @@ export function usePermission() {
     return auth.hasRole('super_user')
   }
 
-  return { can, isAdmin, isSuperUser }
+  function canChangeStatus() {
+    return auth.hasAnyRole(['super_user', 'admin', 'encargado_zona'])
+  }
+
+  return { can, isAdmin, isSuperUser, canChangeStatus }
 }

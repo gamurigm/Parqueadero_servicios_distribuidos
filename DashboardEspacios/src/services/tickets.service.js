@@ -8,17 +8,17 @@ export const ticketsService = {
   },
 
   async emitir(payload) {
-    const { data } = await api.post(`${ENDPOINTS.TICKETS}/emitir`, payload)
+    const { data } = await api.post(`${ENDPOINTS.TICKETS}/emitir`, { idEspacio: payload.id_espacio, placa: payload.placa })
     return data
   },
 
   async pagar(id) {
-    const { data } = await api.post(`${ENDPOINTS.TICKETS}/${id}/pagar`)
+    const { data } = await api.post(`${ENDPOINTS.TICKETS}/pagar`, { idTicket: id })
     return data
   },
 
-  async anular(id) {
-    const { data } = await api.post(`${ENDPOINTS.TICKETS}/${id}/anular`)
+  async anular(id, motivo) {
+    const { data } = await api.post(`${ENDPOINTS.TICKETS}/anular`, { idTicket: id, motivo })
     return data
   },
 

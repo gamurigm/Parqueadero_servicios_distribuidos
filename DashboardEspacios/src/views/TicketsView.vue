@@ -11,61 +11,87 @@
     </div>
 
     <DataTable
-      :items="tickets"
-      :columns="columnsTickets"
+      :items="filteredList"
+      :columns="columns"
       :loading="loading"
       empty-text="No hay tickets registrados"
     >
+      <template #filters>
+        <div class="flex flex-wrap gap-3 mb-4">
+          <input
+            v-model="filtroPlaca"
+            type="text"
+            placeholder="Filtrar por placa..."
+            class="border border-gray-300 rounded px-3 py-1.5 text-sm w-40"
+          />
+          <input
+            v-model="filtroCedula"
+            type="text"
+            placeholder="Filtrar por cédula..."
+            class="border border-gray-300 rounded px-3 py-1.5 text-sm w-40"
+          />
+          <select v-model="filtroEstado" class="border border-gray-300 rounded px-3 py-1.5 text-sm">
+            <option value="">Todos los estados</option>
+            <option value="ACTIVO">Activo</option>
+            <option value="PAGADO">Pagado</option>
+            <option value="ANULADO">Anulado</option>
+          </select>
+          <input
+            v-model="filtroFechaInicio"
+            type="date"
+            class="border border-gray-300 rounded px-3 py-1.5 text-sm"
+          />
+          <span class="text-sm text-gray-500 self-center">→</span>
+          <input
+            v-model="filtroFechaFin"
+            type="date"
+            class="border border-gray-300 rounded px-3 py-1.5 text-sm"
+          />
+          <button @click="limpiarFiltros" class="text-gray-500 hover:text-gray-700 text-sm px-2">
+            Limpiar
+          </button>
+        </div>
+      </template>
+
       <template #cell-estado="{ item }">
         <StatusBadge :estado="item.estado" />
       </template>
-<<<<<<< HEAD
 
-      <template #cell-valorRecaudado="{ value }">
-        <span class="font-mono font-medium">${{ (value || 0).toFixed(2) }}</span>
+      <template #cell-valorRecaudado="{ item }">
+        <span class="font-mono font-medium">${{ (item.valorRecaudado || 0).toFixed(2) }}</span>
       </template>
 
-      <template #cell-created_at="{ value }">
-        <span class="text-xs text-gray-500">{{ formatDate(value) }}</span>
+      <template #cell-fechaIngreso="{ item }">
+        <span class="text-xs text-gray-500">{{ formatFecha(item.fechaIngreso) }}</span>
       </template>
 
-=======
->>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
+      <template #cell-fechaSalida="{ item }">
+        <span class="text-xs text-gray-500">{{ item.fechaSalida ? formatFecha(item.fechaSalida) : '—' }}</span>
+      </template>
+
       <template #actions="{ item }">
         <div class="flex justify-end gap-2">
           <button
-<<<<<<< HEAD
             v-if="item.estado === 'ACTIVO'"
-            @click="solicitarPagar(item)"
+            @click="confirmPagar.item = item; confirmPagar.visible = true"
             class="text-xs px-2.5 py-1 rounded bg-green-50 text-green-700 hover:bg-green-100 font-medium"
           >
             Pagar
           </button>
           <button
             v-if="item.estado === 'ACTIVO'"
-            @click="solicitarAnular(item)"
+            @click="abrirModalAnular(item)"
             class="text-xs px-2.5 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 font-medium"
           >
             Anular
           </button>
           <button
             v-if="perm.isSuperUser()"
-            @click="solicitarEliminar(item)"
+            @click="confirmEliminar.item = item; confirmEliminar.visible = true"
             class="text-xs px-2.5 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 font-medium"
           >
             Eliminar
           </button>
-=======
-            v-if="item.estado === 'PENDIENTE'"
-            @click="pagar(item.id)"
-            class="text-green-600 hover:text-green-800 text-sm"
-          >Pagar</button>
-          <button
-            v-if="item.estado === 'PENDIENTE'"
-            @click="anular(item.id)"
-            class="text-red-600 hover:text-red-800 text-sm"
-          >Anular</button>
->>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
         </div>
       </template>
     </DataTable>
@@ -87,111 +113,139 @@
           </div>
         </form>
       </div>
-<<<<<<< HEAD
-    </Teleport>
+    </div>
 
-    <!-- Modal Motivo Anulación -->
-    <Teleport to="body">
-      <div v-if="mostrarModalMotivo" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
-          <h3 class="text-lg font-semibold text-gray-800 mb-2">Anular Ticket</h3>
-          <p class="text-sm text-gray-600 mb-4">
-            Motivo de anulación para el ticket <strong>{{ itemAnular?.codigo || itemAnular?.placa }}</strong>:
-          </p>
-          <textarea
-            v-model="motivoAnulacion"
-            rows="3"
-            placeholder="Ingrese el motivo (mínimo 5 caracteres)"
-            class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 border-gray-300"
-          ></textarea>
-          <p v-if="motivoError" class="text-xs text-red-600 mt-1">{{ motivoError }}</p>
-          <div class="flex justify-end gap-3 mt-4">
-            <button
-              @click="mostrarModalMotivo = false"
-              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-            >
-              Cancelar
-            </button>
-            <button
-              @click="confirmarAnulacion"
-              class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700"
-            >
-              Anular
-            </button>
-          </div>
+    <div v-if="mostrarModalMotivo" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
+        <h3 class="text-lg font-semibold text-gray-800 mb-2">Anular Ticket</h3>
+        <p class="text-sm text-gray-600 mb-4">
+          Motivo de anulación para el ticket <strong>{{ itemAnular?.codigoTicket || itemAnular?.placa }}</strong>:
+        </p>
+        <textarea
+          v-model="motivoAnulacion"
+          rows="3"
+          placeholder="Ingrese el motivo (mínimo 5 caracteres)"
+          class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 border-gray-300"
+        ></textarea>
+        <p v-if="motivoError" class="text-xs text-red-600 mt-1">{{ motivoError }}</p>
+        <div class="flex justify-end gap-3 mt-4">
+          <button @click="cerrarModalAnular" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+            Cancelar
+          </button>
+          <button @click="confirmarAnulacion" class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700">
+            Anular
+          </button>
         </div>
       </div>
-    </Teleport>
+    </div>
 
-    <!-- ConfirmDialog Pagar -->
     <ConfirmDialog
       :visible="confirmPagar.visible"
       titulo="Pagar Ticket"
-      :mensaje="`¿Estás seguro de pagar el ticket '${confirmPagar.item?.codigo || confirmPagar.item?.placa}'?`"
+      :mensaje="`¿Estás seguro de pagar el ticket '${confirmPagar.item?.codigoTicket || confirmPagar.item?.placa}'?`"
       confirmText="Pagar"
       :danger="false"
       @confirm="ejecutarPagar"
       @cancel="confirmPagar.visible = false"
     />
 
-    <!-- ConfirmDialog Eliminar -->
     <ConfirmDialog
       :visible="confirmEliminar.visible"
       titulo="Eliminar Ticket"
-      :mensaje="`¿Estás seguro de eliminar el ticket '${confirmEliminar.item?.codigo || confirmEliminar.item?.placa}'? Esta acción no se puede deshacer.`"
+      :mensaje="`¿Estás seguro de eliminar el ticket '${confirmEliminar.item?.codigoTicket || confirmEliminar.item?.placa}'? Esta acción no se puede deshacer.`"
       confirmText="Eliminar"
       :danger="true"
       @confirm="ejecutarEliminar"
       @cancel="confirmEliminar.visible = false"
     />
-=======
-    </div>
->>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ticketsService } from '@/services/tickets.service'
 import { zonasService } from '@/services/zonas.service'
 import DataTable from '@/components/common/DataTable.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const tickets = ref([])
 const espacios = ref([])
-<<<<<<< HEAD
 const loading = ref(true)
-const guardando = ref(false)
-const mostrarModal = ref(false)
+const saving = ref(false)
+const showForm = ref(false)
 const mostrarModalMotivo = ref(false)
 const motivoAnulacion = ref('')
 const motivoError = ref('')
 const itemAnular = ref(null)
 
-const form = ref({ placa: '', espacio_id: '', monto: 2.00 })
+const ticketForm = ref({ placa: '', id_espacio: '' })
+
+const filtroPlaca = ref('')
+const filtroCedula = ref('')
+const filtroEstado = ref('')
+const filtroFechaInicio = ref('')
+const filtroFechaFin = ref('')
 
 const confirmPagar = ref({ visible: false, item: null })
 const confirmEliminar = ref({ visible: false, item: null })
 
 const columns = [
-  { key: 'codigo', label: 'Código' },
+  { key: 'codigoTicket', label: 'Código' },
   { key: 'placa', label: 'Vehículo' },
-  { key: 'espacio_codigo', label: 'Espacio' },
+  { key: 'idEspacio', label: 'Espacio' },
+  { key: 'cedula', label: 'Cédula' },
   { key: 'valorRecaudado', label: 'Monto' },
-=======
-const loading = ref(false)
-const showForm = ref(false)
-const saving = ref(false)
-const ticketForm = ref({ placa: '', id_espacio: '' })
-
-const columnsTickets = [
-  { key: 'id', label: 'ID' },
-  { key: 'placa', label: 'Placa' },
-  { key: 'id_espacio', label: 'Espacio' },
-  { key: 'fecha_ingreso', label: 'Ingreso' },
->>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
   { key: 'estado', label: 'Estado' },
+  { key: 'fechaIngreso', label: 'Ingreso' },
+  { key: 'fechaSalida', label: 'Salida' },
 ]
+
+const filteredList = computed(() => {
+  let list = tickets.value
+  if (filtroPlaca.value) {
+    const q = filtroPlaca.value.toLowerCase()
+    list = list.filter((t) => (t.placa || '').toLowerCase().includes(q))
+  }
+  if (filtroCedula.value) {
+    const q = filtroCedula.value.toLowerCase()
+    list = list.filter((t) => (t.cedula || '').toLowerCase().includes(q))
+  }
+  if (filtroEstado.value) {
+    list = list.filter((t) => t.estado === filtroEstado.value)
+  }
+  if (filtroFechaInicio.value) {
+    const inicio = new Date(filtroFechaInicio.value)
+    list = list.filter((t) => t.fechaIngreso && new Date(t.fechaIngreso) >= inicio)
+  }
+  if (filtroFechaFin.value) {
+    const fin = new Date(filtroFechaFin.value + 'T23:59:59')
+    list = list.filter((t) => t.fechaIngreso && new Date(t.fechaIngreso) <= fin)
+  }
+  return list
+})
+
+function formatFecha(dateStr) {
+  if (!dateStr) return '—'
+  return new Date(dateStr).toLocaleDateString('es-EC', {
+    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function limpiarFiltros() {
+  filtroPlaca.value = ''
+  filtroCedula.value = ''
+  filtroEstado.value = ''
+  filtroFechaInicio.value = ''
+  filtroFechaFin.value = ''
+}
+
+const perm = {
+  isSuperUser: () => auth.roles.includes('super_user'),
+}
 
 onMounted(() => {
   cargar()
@@ -227,34 +281,16 @@ async function emitir() {
   }
 }
 
-<<<<<<< HEAD
-function solicitarPagar(item) {
-  confirmPagar.value = { visible: true, item }
-}
-
-function solicitarAnular(item) {
+function abrirModalAnular(item) {
   itemAnular.value = item
   motivoAnulacion.value = ''
   motivoError.value = ''
   mostrarModalMotivo.value = true
 }
 
-function solicitarEliminar(item) {
-  confirmEliminar.value = { visible: true, item }
-}
-
-async function ejecutarPagar() {
-  const item = confirmPagar.value.item
-  confirmPagar.value.visible = false
-  if (!item) return
-
-  try {
-    await ticketsService.pagar(item.id, item.codigoTicket)
-    toast.success(`Ticket ${item.codigo || item.placa} pagado`)
-    await cargar()
-  } catch (err) {
-    console.error(err)
-  }
+function cerrarModalAnular() {
+  mostrarModalMotivo.value = false
+  itemAnular.value = null
 }
 
 function confirmarAnulacion() {
@@ -267,16 +303,33 @@ function confirmarAnulacion() {
   ejecutarAnulacion()
 }
 
-async function ejecutarAnulacion() {
-  const item = itemAnular.value
+async function ejecutarPagar() {
+  const item = confirmPagar.value.item
+  confirmPagar.value.visible = false
   if (!item) return
-
+  saving.value = true
   try {
-    await ticketsService.anular(item.id, item.codigoTicket, motivoAnulacion.value.trim())
-    toast.success(`Ticket ${item.codigo || item.placa} anulado`)
+    await ticketsService.pagar(item.id)
     await cargar()
   } catch (err) {
     console.error(err)
+  } finally {
+    saving.value = false
+  }
+}
+
+async function ejecutarAnulacion() {
+  const item = itemAnular.value
+  if (!item) return
+  saving.value = true
+  try {
+    await ticketsService.anular(item.id, motivoAnulacion.value.trim())
+    itemAnular.value = null
+    await cargar()
+  } catch (err) {
+    console.error(err)
+  } finally {
+    saving.value = false
   }
 }
 
@@ -284,27 +337,14 @@ async function ejecutarEliminar() {
   const item = confirmEliminar.value.item
   confirmEliminar.value.visible = false
   if (!item) return
-
+  saving.value = true
   try {
     await ticketsService.eliminar(item.id)
-    toast.success(`Ticket ${item.codigo || item.placa} eliminado`)
-=======
-async function pagar(id) {
-  try {
-    await ticketsService.pagar(id)
->>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
     await cargar()
-  } catch (e) {
-    console.error(e)
-  }
-}
-
-async function anular(id) {
-  try {
-    await ticketsService.anular(id)
-    await cargar()
-  } catch (e) {
-    console.error(e)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    saving.value = false
   }
 }
 </script>

@@ -1,4 +1,4 @@
-export const API_BASE = 'http://localhost:8000'
+export const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
 
 export const ENDPOINTS = {
   LOGIN: '/usuarios/auth/login',
@@ -10,10 +10,11 @@ export const ENDPOINTS = {
   ROLES_USUARIO: '/usuarios/roles-Usuario',
   REGISTER: '/usuarios/auth/register',
   ZONAS: '/zonas/api/v1/zonas/',
-  TICKETS: '/tickets/api/v1/tickets',
-  VEHICULOS: '/vehiculos/api/v1/vehiculos',
-  AUDITORIA: '/audit/api/v1/audit/eventos',
+  TICKETS: '/tickets',
+  VEHICULOS: '/vehiculos/vehiculos',
+  AUDITORIA: '/audit/api/v1/audit',
   SSE_ESPACIOS: '/tickets/sse/espacios',
+  ASIGNACIONES: '/trazabilidad/asignaciones',
 }
 
 export const ROLES = {
@@ -41,6 +42,8 @@ export const MENU_ITEMS = [
   { label: 'Zonas', icon: 'map', route: '/zonas', roles: ['super_user', 'admin', 'encargado_zona'] },
   { label: 'Tickets', icon: 'ticket', route: '/tickets', roles: ['super_user', 'admin', 'empleado'] },
   { label: 'Vehículos', icon: 'truck', route: '/vehiculos', roles: ['super_user', 'admin', 'propietario'] },
+  { label: 'Asign. Roles', icon: 'shield', route: '/asignaciones-roles', roles: ['super_user', 'admin'] },
+  { label: 'Asign. Vehículos', icon: 'truck', route: '/asignaciones-vehiculos', roles: ['super_user', 'admin', 'empleado'] },
   { label: 'Auditoría', icon: 'clipboard', route: '/auditoria', roles: ['super_user', 'admin', 'auditor'] },
   { label: 'Perfil', icon: 'user', route: '/perfil', roles: null },
 ]
