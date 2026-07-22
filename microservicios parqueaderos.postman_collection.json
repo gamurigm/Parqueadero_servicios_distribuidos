@@ -1,0 +1,1080 @@
+{
+  "info": {
+    "_postman_id": "mcroservicios-parqueaderos-collection",
+    "name": "Microservicios Parqueaderos",
+    "description": "Colección exportada desde Insomnia - Microservicios de Parqueaderos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "baseDirect",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "baseKong",
+      "value": "http://localhost:9001"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin1\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login Auditor",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"amtorres1\",\n  \"password\": \"Audit123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login Empleado",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"emple1\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"TU_REFRESH_TOKEN_AQUI\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"TU_REFRESH_TOKEN_AQUI\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios (via Kong)",
+      "item": [
+        {
+          "name": "Get Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "roles"]
+            }
+          }
+        },
+        {
+          "name": "Crear Rol",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"ADMINISTRADOR\",\n  \"descripcion\": \"Acceso solo a usuarios\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/roles",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "roles"]
+            }
+          }
+        },
+        {
+          "name": "Get All Usuarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/usuario/",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "usuario", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Usuario By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/usuario/{{usuarioId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "usuario", "{{usuarioId}}"]
+            }
+          }
+        },
+        {
+          "name": "Crear Usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"0651160202\",\n  \"firstName\": \"Juan\",\n  \"middleName\": \"Carlos\",\n  \"lastName\": \"Pérez\",\n  \"email\": \"juan.persup@test.com\",\n  \"nationality\": \"Ecuatoriana\",\n  \"phone\": \"09127376612\",\n  \"address\": \"Calle Principal 123\",\n  \"rolId\": \"804355c4-ebda-4596-a2c9-e58cc75615d4\",\n  \"password\": \"pass1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/usuario/",
+              "host": ["{{baseUrl}}"],
+              "path": ["usuarios", "usuario", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios (Directo)",
+      "item": [
+        {
+          "name": "Get All Usuarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseDirect}}/usuario/",
+              "host": ["{{baseDirect}}"],
+              "path": ["usuario", ""]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"nuevo_username\"\n}"
+            },
+            "url": {
+              "raw": "{{baseDirect}}/usuario/{{usuarioId}}",
+              "host": ["{{baseDirect}}"],
+              "path": ["usuario", "{{usuarioId}}"]
+            }
+          }
+        },
+        {
+          "name": "Activar/Desactivar Usuario",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseDirect}}/usuario/{{usuarioId}}/activar-desactivar",
+              "host": ["{{baseDirect}}"],
+              "path": ["usuario", "{{usuarioId}}", "activar-desactivar"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Contraseña",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newpassword\": \"nuevaContraseña123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseDirect}}/usuario/{{usuarioId}}",
+              "host": ["{{baseDirect}}"],
+              "path": ["usuario", "{{usuarioId}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Usuario",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseDirect}}/usuario/{{usuarioId}}",
+              "host": ["{{baseDirect}}"],
+              "path": ["usuario", "{{usuarioId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles (Directo)",
+      "item": [
+        {
+          "name": "Get Rol By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseDirect}}/roles/{{rolId}}",
+              "host": ["{{baseDirect}}"],
+              "path": ["roles", "{{rolId}}"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Rol",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Super Administrador\",\n  \"descripcion\": \"Acceso total al sistema y configuraciones\",\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseDirect}}/roles/{{rolId}}",
+              "host": ["{{baseDirect}}"],
+              "path": ["roles", "{{rolId}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Rol",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseDirect}}/roles/{{rolId}}",
+              "host": ["{{baseDirect}}"],
+              "path": ["roles", "{{rolId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles-Usuario",
+      "item": [
+        {
+          "name": "Get All Asignaciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseDirect}}/roles-usuario",
+              "host": ["{{baseDirect}}"],
+              "path": ["roles-usuario"]
+            }
+          }
+        },
+        {
+          "name": "Get Roles de Usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseDirect}}/roles-usuario/usuarios/{{usuarioId}}",
+              "host": ["{{baseDirect}}"],
+              "path": ["roles-usuario", "usuarios", "{{usuarioId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Usuarios con el Rol",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseDirect}}/roles-usuario/roles/{{rolId}}",
+              "host": ["{{baseDirect}}"],
+              "path": ["roles-usuario", "roles", "{{rolId}}"]
+            }
+          }
+        },
+        {
+          "name": "Asignar Rol a Usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_user\": \"{{usuarioId}}\",\n  \"id_rol\": \"{{rolId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseDirect}}/roles-usuario",
+              "host": ["{{baseDirect}}"],
+              "path": ["roles-usuario"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Asignación",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_rol\": \"{{rolId}}\",\n  \"id_user\": \"{{usuarioId}}\",\n  \"id_nuevo_rol\": \"{{nuevoRolId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseDirect}}/roles-usuario",
+              "host": ["{{baseDirect}}"],
+              "path": ["roles-usuario"]
+            }
+          }
+        },
+        {
+          "name": "Activar/Desactivar Asignación",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_rol\": \"{{rolId}}\",\n  \"id_user\": \"{{usuarioId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseDirect}}/roles-usuario/activar-desactivar",
+              "host": ["{{baseDirect}}"],
+              "path": ["roles-usuario", "activar-desactivar"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Rol Asignado",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseDirect}}/roles-usuario/roles/{{rolId}}",
+              "host": ["{{baseDirect}}"],
+              "path": ["roles-usuario", "roles", "{{rolId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Personas",
+      "item": [
+        {
+          "name": "Get All Personas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseDirect}}/persona/",
+              "host": ["{{baseDirect}}"],
+              "path": ["persona", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Persona By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseDirect}}/persona/{{personaId}}",
+              "host": ["{{baseDirect}}"],
+              "path": ["persona", "{{personaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Crear Persona",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Juan\",\n  \"middleName\": \"Carlos\",\n  \"lastName\": \"Gomez\",\n  \"dni\": \"0657704582\",\n  \"email\": \"juan.panchez@email.com\",\n  \"address\": \"Calle Principal 123\",\n  \"nationality\": \"Ecuatoriana\",\n  \"phone\": \"0996212891\",\n  \"tipo\": \"natural\"\n}"
+            },
+            "url": {
+              "raw": "{{baseDirect}}/persona/",
+              "host": ["{{baseDirect}}"],
+              "path": ["persona", ""]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Persona",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Juan\",\n  \"middleName\": \"Carlos\",\n  \"lastName\": \"Gomez\",\n  \"dni\": \"0657704582\",\n  \"email\": \"juan.panza1@email.com\",\n  \"address\": \"Calle Principal 123\",\n  \"nationality\": \"Ecuatoriana\",\n  \"phone\": \"0996212891\",\n  \"tipo\": \"natural\"\n}"
+            },
+            "url": {
+              "raw": "{{baseDirect}}/persona/{{personaId}}",
+              "host": ["{{baseDirect}}"],
+              "path": ["persona", "{{personaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Activar/Desactivar Persona",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseDirect}}/persona/{{personaId}}/cambio-de-estado",
+              "host": ["{{baseDirect}}"],
+              "path": ["persona", "{{personaId}}", "cambio-de-estado"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Persona",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseDirect}}/persona/{{personaId}}",
+              "host": ["{{baseDirect}}"],
+              "path": ["persona", "{{personaId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tickets",
+      "item": [
+        {
+          "name": "Emitir Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idEspacio\": \"{{espacioId}}\",\n  \"cedula\": \"1000000003\",\n  \"placa\": \"PBC-5678\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tickets/emitir",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "emitir"]
+            }
+          }
+        },
+        {
+          "name": "Pagar Ticket por ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idTicket\": \"{{ticketId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tickets/pagar",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "pagar"]
+            }
+          }
+        },
+        {
+          "name": "Pagar Ticket por Codigo",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigoTicket\": \"{{codigoTicket}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tickets/pagar",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "pagar"]
+            }
+          }
+        },
+        {
+          "name": "Anular Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigoTicket\": \"{{codigoTicket}}\",\n  \"motivo\": \"No uso el espacio por contratiempo\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/tickets/anular",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "anular"]
+            }
+          }
+        },
+        {
+          "name": "Get Ticket por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tickets/codigo/{{ticketId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets", "codigo", "{{ticketId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get All Tickets",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["tickets"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehiculos",
+      "item": [
+        {
+          "name": "Get All Vehiculos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/vehiculos",
+              "host": ["{{baseUrl}}"],
+              "path": ["vehiculos", "vehiculos"]
+            }
+          }
+        },
+        {
+          "name": "Get Vehiculo By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/vehiculos/{{vehiculoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["vehiculos", "vehiculos", "{{vehiculoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Registrar Vehiculo",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-mac-address", "value": "2C:9C:58:E5:FA:8D" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"auto\",\n  \"datos\": {\n    \"placa\": \"CBV-1629\",\n    \"marca\": \"Mazda\",\n    \"modelo\": \"Marte\",\n    \"color\": \"Rojo\",\n    \"anio\": 2025,\n    \"clasificacion\": \"Hibrido\",\n    \"numeroPuertas\": 5,\n    \"capacidadMaletero\": 600\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/vehiculos",
+              "host": ["{{baseUrl}}"],
+              "path": ["vehiculos", "vehiculos"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Vehiculo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"auto\",\n  \"datos\": {\n    \"placa\": \"XYZ-9999\",\n    \"marca\": \"Toyota\",\n    \"modelo\": \"Camry\",\n    \"color\": \"Verde\",\n    \"anio\": 2024,\n    \"clasificacion\": \"Gasolina\",\n    \"numeroPuertas\": 4,\n    \"capacidadMaletero\": 500\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/vehiculos/{{vehiculoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["vehiculos", "vehiculos", "{{vehiculoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Vehiculo",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/vehiculos/{{vehiculoId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["vehiculos", "vehiculos", "{{vehiculoId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Zonas",
+      "item": [
+        {
+          "name": "Get All Zonas",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/zonas/api/v1/zonas/",
+              "host": ["{{baseUrl}}"],
+              "path": ["zonas", "api", "v1", "zonas", ""]
+            }
+          }
+        },
+        {
+          "name": "Crear Zona",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Zona VIP Centro 4\",\n  \"descripcion\": \"\",\n  \"tipoZona\": \"VIP\",\n  \"capacidad\": 15\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/parking/api/v1/zonas/",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "api", "v1", "zonas", ""]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Zona",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Zona VIP Centro 8\",\n  \"descripcion\": \"nuevo coso\",\n  \"tipoZona\": \"VIP\",\n  \"capacidad\": 2\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/zonas/{{zonaId}}",
+              "host": ["http://localhost:8080"],
+              "path": ["api", "v1", "zonas", "{{zonaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Activar/Desactivar Zona",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/zonas/{{zonaId}}/activar-desactivar",
+              "host": ["http://localhost:8080"],
+              "path": ["api", "v1", "zonas", "{{zonaId}}", "activar-desactivar"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Zona",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/zonas/{{zonaId}}",
+              "host": ["http://localhost:8080"],
+              "path": ["api", "v1", "zonas", "{{zonaId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Espacios",
+      "item": [
+        {
+          "name": "Get All Espacios",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/zonas/api/v1/espacios/",
+              "host": ["{{baseUrl}}"],
+              "path": ["zonas", "api", "v1", "espacios", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Espacios por Zona",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/parking/api/v1/espacios/zona/{{zonaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "api", "v1", "espacios", "zona", "{{zonaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Crear Espacio",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idZona\": \"{{zonaId}}\",\n  \"descripcion\": \"Espacio parqueaderos 3\",\n  \"tipoEspacio\": \"BUSETA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/parking/api/v1/espacios/",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "api", "v1", "espacios", ""]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Espacio",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idZona\": \"{{zonaId}}\",\n  \"descripcion\": \"Espacio parqueaderos 2\",\n  \"tipoEspacio\": \"BUSETA\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/espacios/{{espacioId}}",
+              "host": ["http://localhost:8080"],
+              "path": ["api", "v1", "espacios", "{{espacioId}}"]
+            }
+          }
+        },
+        {
+          "name": "Cambiar Estado Espacio",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/espacios/{{espacioId}}/estado?estado=OCUPADO",
+              "host": ["http://localhost:8080"],
+              "path": ["api", "v1", "espacios", "{{espacioId}}", "estado"],
+              "query": [{ "key": "estado", "value": "OCUPADO" }]
+            }
+          }
+        },
+        {
+          "name": "Activar/Desactivar Espacio",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/espacios/{{espacioId}}/activar-desactivar",
+              "host": ["http://localhost:8080"],
+              "path": ["api", "v1", "espacios", "{{espacioId}}", "activar-desactivar"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Espacio",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/espacios/{{espacioId}}",
+              "host": ["http://localhost:8080"],
+              "path": ["api", "v1", "espacios", "{{espacioId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Trazabilidad",
+      "item": [
+        {
+          "name": "Get Todas las Asignaciones",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trazabilidad/asignaciones",
+              "host": ["{{baseUrl}}"],
+              "path": ["trazabilidad", "asignaciones"]
+            }
+          }
+        },
+        {
+          "name": "Get Asignacion Especifica",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trazabilidad/asignaciones/{{userId}}/{{vehicleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["trazabilidad", "asignaciones", "{{userId}}", "{{vehicleId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Asignaciones por Propietario",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/trazabilidad/asignaciones/propietario/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["trazabilidad", "asignaciones", "propietario", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Crear Asignacion",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"vehicleId\": \"{{vehicleId}}\",\n  \"descripcion\": \"Vehiculo principal sabados\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trazabilidad/asignaciones",
+              "host": ["{{baseUrl}}"],
+              "path": ["trazabilidad", "asignaciones"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Asignacion",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": 1,\n  \"descripcion\": \"Asignacion revertida\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/trazabilidad/asignaciones/{{userId}}/{{vehicleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["trazabilidad", "asignaciones", "{{userId}}", "{{vehicleId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit",
+      "item": [
+        {
+          "name": "Get Logs de Auditoria",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/audit/api/v1/audit/",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit", "api", "v1", "audit", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Log Especifico",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/audit/api/v1/audit/{{auditId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["audit", "api", "v1", "audit", "{{auditId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Kong Admin",
+      "item": [
+        {
+          "name": "Kong Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseKong}}/status",
+              "host": ["{{baseKong}}"],
+              "path": ["status"]
+            }
+          }
+        },
+        {
+          "name": "Get Services",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseKong}}/services",
+              "host": ["{{baseKong}}"],
+              "path": ["services"]
+            }
+          }
+        },
+        {
+          "name": "Get Routes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseKong}}/routes",
+              "host": ["{{baseKong}}"],
+              "path": ["routes"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -27,6 +27,7 @@ import { AnularTicketRequestDto } from '../dto/request/anular-ticket-request.dto
 import { TicketResponseDto } from '../dto/response/ticket-response.dto';
 import { PagoResponseDto } from '../dto/response/pago-response.dto';
 import { Resource } from '../../opa/decorators/resource.decorator';
+import { SseService } from '../../sse/sse.service';
 
 @ApiTags('Tickets')
 @ApiBearerAuth()
@@ -38,6 +39,7 @@ export class TicketsController {
     private readonly anularUseCase: AnularTicketUseCase,
     @Inject(TICKET_REPOSITORY)
     private readonly ticketRepo: ITicketRepository,
+    private readonly sseService: SseService,
   ) {}
 
   @Post('emitir')
@@ -58,6 +60,7 @@ export class TicketsController {
       ip,
       mac: mac || '',
     });
+    this.sseService.emitEvent('ticket.emitido', result);
     return result as TicketResponseDto;
   }
 
@@ -70,7 +73,7 @@ export class TicketsController {
   @ApiResponse({ status: 404, description: 'Ticket no encontrado' })
   async pagar(@Body() dto: PagarTicketRequestDto, @Req() req: any, @Headers('x-mac-address') mac?: string): Promise<PagoResponseDto> {
     const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
-    return await this.pagarUseCase.execute({
+    const result = await this.pagarUseCase.execute({
       idTicket: dto.idTicket,
       codigoTicket: dto.codigoTicket,
       idEmpleado: req.user.id,
@@ -79,6 +82,8 @@ export class TicketsController {
       ip,
       mac: mac || '',
     });
+    this.sseService.emitEvent('ticket.pagado', result);
+    return result;
   }
 
   @Post('anular')
@@ -99,6 +104,7 @@ export class TicketsController {
       ip,
       mac: mac || '',
     });
+    this.sseService.emitEvent('ticket.anulado', result);
     return result as TicketResponseDto;
   }
 
