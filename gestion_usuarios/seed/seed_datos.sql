@@ -1,13 +1,15 @@
 -- ============================================================
 -- SEED: Parqueadero - Microservicio Usuarios
 -- UUIDs auto-generados por PostgreSQL (gen_random_uuid)
--- Roles: admin, super_user, propietario, empleado
+-- Roles: admin, super_user, propietario, empleado, auditor
 -- 1 usuario por rol
--- Contraseñas:
---   admin1   -> Admin123!
---   super1   -> Super123!
---   jpropiet -> Prop123!
---   emple1   -> Emple123!
+-- ============================================================
+-- CREDENCIALES (username / password / rol):
+--   admin1    / Admin123!  / admin
+--   super1    / Super123!  / super_user
+--   jpropiet  / Prop123!   / propietario
+--   emple1    / Emple123!  / empleado
+--   auditor1  / Audit123!  / auditor
 -- ============================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -17,7 +19,8 @@ INSERT INTO roles (nombre, descripcion, activo, created_at, updated_at) VALUES
   ('admin',        'Administrador del sistema con acceso total excepto borrado físico', true, NOW(), NOW()),
   ('super_user',   'Super usuario con acceso absoluto incluyendo borrado físico',       true, NOW(), NOW()),
   ('propietario',  'Propietario de vehículo: gestiona sus vehículos y asignaciones',    true, NOW(), NOW()),
-  ('empleado',     'Empleado del parqueadero: gestiona zonas, espacios y tickets',      true, NOW(), NOW())
+  ('empleado',     'Empleado del parqueadero: gestiona zonas, espacios y tickets',      true, NOW(), NOW()),
+  ('auditor',      'Auditor del sistema: consulta logs de auditoría',                   true, NOW(), NOW())
 ON CONFLICT (nombre) DO NOTHING;
 
 -- ── 2. PERSONAS + USUARIOS ──────────────────────────────────
@@ -27,7 +30,8 @@ WITH inserted_personas AS (
     (true, 'Admin',   'Principal',   '1000000001', 'admin@parqueadero.ec',    '0999000001', 'Av. Principal 100', 'ecuatoriana', 'natural', NOW(), NOW()),
     (true, 'Super',   'Usuario',     '1000000002', 'super@parqueadero.ec',    '0999000002', 'Av. Principal 200', 'ecuatoriana', 'natural', NOW(), NOW()),
     (true, 'Jorge',   'Propietario', '1000000003', 'jpropiet@parqueadero.ec', '0999000003', 'Av. Principal 300', 'ecuatoriana', 'natural', NOW(), NOW()),
-    (true, 'Luis',    'Empleado',    '1000000004', 'lempleado@parqueadero.ec', '0999000004', 'Av. Principal 400', 'ecuatoriana', 'natural', NOW(), NOW())
+    (true, 'Luis',    'Empleado',    '1000000004', 'lempleado@parqueadero.ec', '0999000004', 'Av. Principal 400', 'ecuatoriana', 'natural', NOW(), NOW()),
+    (true, 'Auditor', 'Sistema',     '1000000005', 'auditor@parqueadero.ec',   '0999000005', 'Av. Principal 500', 'ecuatoriana', 'natural', NOW(), NOW())
   ON CONFLICT (dni) DO NOTHING
   RETURNING id, first_name, last_name
 )
@@ -39,12 +43,14 @@ SELECT
     WHEN 'Super' THEN 'super1'
     WHEN 'Jorge' THEN 'jpropiet'
     WHEN 'Luis'  THEN 'emple1'
+    WHEN 'Auditor' THEN 'auditor1'
   END,
   CASE ip.first_name
     WHEN 'Admin' THEN 'd7c1de1fc30976ec3af4e00a112af7db:facafca2ddb942745a27a1984d24f3829c529cab4e8cd207d09b78e658099f4f1af8598ae442ceafddd9c68a87853049d019f463af83dafaa3ddb1238da09497'
     WHEN 'Super' THEN 'e7a89b300ee9870d0ce88471ed06045e:281ade89764530c06c17fc5be3aa547e5d8d4c3c912d300b568981543f226455985c894ba155cc4484bfad9a29eaf1e856456d64d19432c4f51a5ad4423f2039'
     WHEN 'Jorge' THEN '2978899a20250920e778ffa1683a7cf1:35a4b470661470e94212ca2d916033a8c62ea054932e4f259af2631421f28e8e0e38a90a8bd93a433f1730e8dbb0c9ed390522c9e18ca9ee6c61518387df2bbf'
     WHEN 'Luis'  THEN 'e4016ea5973ae2620338d9fde2baffe5:84c01520f55b80563bee9d254b42e8f299c9f66d0d4defadf5cc0c6678f0f721d2b18436867ce748db2a3ef8572a11d806ee130c6239011b4695ee4f58075844'
+    WHEN 'Auditor' THEN 'c1b86815d885d611f92a2ba39931047d:543e71bac3711fdfedeb2f86f98229b26793749fe5a1523a8098ad7c6bf3711570461da2432263b08303fd7fa2ac480c82b7d9716cac000373ea7cb96f93b95e'
   END,
   true, NOW(), NOW()
 FROM inserted_personas ip
@@ -57,7 +63,7 @@ WITH roles_cte AS (
 ),
 usuarios_cte AS (
   SELECT id, username FROM usuarios
-  WHERE username IN ('admin1', 'super1', 'jpropiet', 'emple1')
+  WHERE username IN ('admin1', 'super1', 'jpropiet', 'emple1', 'auditor1')
 )
 INSERT INTO roles_usuario (id_rol, id_usuario, activo, assigned_at, updated_at)
 SELECT r.id, u.id, true, NOW(), NOW()
@@ -66,7 +72,8 @@ JOIN usuarios_cte u ON
   (r.nombre = 'admin'       AND u.username = 'admin1')   OR
   (r.nombre = 'super_user'  AND u.username = 'super1')   OR
   (r.nombre = 'propietario' AND u.username = 'jpropiet') OR
-  (r.nombre = 'empleado'    AND u.username = 'emple1')
+  (r.nombre = 'empleado'    AND u.username = 'emple1') OR
+  (r.nombre = 'auditor'     AND u.username = 'auditor1')
 ON CONFLICT DO NOTHING;
 
 -- ── 4. VERIFICACIÓN ─────────────────────────────────────────

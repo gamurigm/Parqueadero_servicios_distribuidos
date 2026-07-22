@@ -140,7 +140,7 @@ services:
 
   # Migraciones de Kong
   kong-migrations:
-    image: kong:latest
+    image: kong:3.9
     container_name: kong-migrations
     environment:
       KONG_DATABASE: postgres
@@ -516,7 +516,7 @@ services:
 
   # KONG GATEWAY
   kong:
-    image: kong:latest
+    image: kong:3.9
     container_name: kong-gateway
     environment:
       KONG_DATABASE: postgres
