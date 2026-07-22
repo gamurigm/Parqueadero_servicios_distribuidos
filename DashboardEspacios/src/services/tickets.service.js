@@ -12,13 +12,13 @@ export const ticketsService = {
     return data
   },
 
-  async pagar(idTicket, codigoTicket) {
-    const { data } = await api.post(`${ENDPOINTS.TICKETS}/pagar`, { idTicket, codigoTicket })
+  async pagar(id) {
+    const { data } = await api.post(`${ENDPOINTS.TICKETS}/${id}/pagar`)
     return data
   },
 
-  async anular(idTicket, codigoTicket, motivo) {
-    const { data } = await api.post(`${ENDPOINTS.TICKETS}/anular`, { idTicket, codigoTicket, motivo })
+  async anular(id) {
+    const { data } = await api.post(`${ENDPOINTS.TICKETS}/${id}/anular`)
     return data
   },
 }

@@ -8,10 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('dashboard_user') || 'null'))
 
   const isAuthenticated = computed(() => !!token.value && !!user.value)
-  const roles = computed(() => {
-    const raw = user.value?.roles || []
-    return raw.map(r => typeof r === 'string' ? r : (r.nombre || r.name || ''))
-  })
+  const roles = computed(() => user.value?.roles || [])
   const username = computed(() => user.value?.username || '')
   const userId = computed(() => user.value?.id || user.value?.sub || '')
 

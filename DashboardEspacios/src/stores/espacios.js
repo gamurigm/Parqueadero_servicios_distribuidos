@@ -1,19 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/services/api'
-import { ENDPOINTS } from '@/utils/constants'
-import { useSSE } from '@/composables/useSSE'
+import { ENDPOINTS, API_BASE } from '@/utils/constants'
 
 export const useEspaciosStore = defineStore('espacios', () => {
   const espacios = ref([])
   const loading = ref(false)
   const error = ref(null)
+  const connected = ref(false)
   const lastUpdate = ref(null)
-  let pollInterval = null
 
-  const sse = useSSE(() => {
-    fetchEspacios()
-  })
+  let eventSource = null
+  let pollInterval = null
 
   async function fetchEspacios() {
     loading.value = true
@@ -21,20 +19,41 @@ export const useEspaciosStore = defineStore('espacios', () => {
       const { data } = await api.get(ENDPOINTS.ESPACIOS)
       espacios.value = Array.isArray(data) ? data : []
       lastUpdate.value = new Date()
+      connected.value = true
       error.value = null
     } catch (err) {
       error.value = err.message
+      connected.value = false
     } finally {
       loading.value = false
     }
   }
 
   function conectarSSE() {
-    sse.conectar()
+    desconectarSSE()
+
+    eventSource = new EventSource(`${API_BASE}${ENDPOINTS.SSE_ESPACIOS}`)
+
+    eventSource.onopen = () => {
+      connected.value = true
+    }
+
+    eventSource.onmessage = () => {
+      fetchEspacios()
+    }
+
+    eventSource.onerror = () => {
+      connected.value = false
+      eventSource?.close()
+      setTimeout(conectarSSE, 5000)
+    }
   }
 
   function desconectarSSE() {
-    sse.desconectar()
+    if (eventSource) {
+      eventSource.close()
+      eventSource = null
+    }
   }
 
   function iniciarPolling() {
@@ -61,15 +80,7 @@ export const useEspaciosStore = defineStore('espacios', () => {
   }
 
   return {
-    espacios,
-    loading,
-    error,
-    connected: sse.connected,
-    lastUpdate,
-    fetchEspacios,
-    conectarSSE,
-    desconectarSSE,
-    iniciar,
-    detener,
+    espacios, loading, error, connected, lastUpdate,
+    fetchEspacios, conectarSSE, iniciar, detener,
   }
 })

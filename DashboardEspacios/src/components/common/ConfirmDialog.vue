@@ -26,12 +26,18 @@
 </template>
 
 <script setup>
-defineProps({
+const props = withDefaults(defineProps({
   visible: { type: Boolean, default: false },
   titulo: { type: String, default: 'Confirmar' },
   mensaje: { type: String, default: '¿Estás seguro?' },
   confirmText: { type: String, default: 'Confirmar' },
   danger: { type: Boolean, default: false },
+}), {
+  visible: false,
+  titulo: 'Confirmar',
+  mensaje: '¿Estás seguro?',
+  confirmText: 'Confirmar',
+  danger: false,
 })
 
 const emit = defineEmits(['confirm', 'cancel'])

@@ -1,4 +1,6 @@
 # --- General ---
+node_modules/
+/*.md
 .DS_Store
 Thumbs.db
 *.rar
@@ -8,24 +10,42 @@ Thumbs.db
 *.tmp
 *.temp
 
-# --- Node.js & Dependencies ---
-**/node_modules/
-**/dist/
-**/build/
-**/coverage/
-.nyc_output/
-*.log
+# --- Node.js (vehiculos) ---
+vehiculos/node_modules/
+vehiculos/dist/
+vehiculos/build/
+vehiculos/coverage/
+vehiculos/.nyc_output/
+vehiculos/npm-debug.log*
+vehiculos/yarn-debug.log*
+vehiculos/pnpm-debug.log*
+vehiculos/lerna-debug.log*
+vehiculos/report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+vehiculos/*.pid
+vehiculos/*.seed
+vehiculos/*.pid.lock
 
-# --- Java / Maven ---
-**/target/
-.mvn/wrapper/maven-wrapper.jar
+# --- Java / Maven (zonas) ---
+zonas/zonas/target/
+zonas/zonas/build/
+zonas/zonas/.mvn/wrapper/maven-wrapper.jar
+!zonas/zonas/**/src/main/**/target/
+!zonas/zonas/**/src/test/**/target/
+!zonas/zonas/**/src/main/**/build/
+!zonas/zonas/**/src/test/**/build/
 
 # --- IDEs and Editors ---
+
+## VS Code
 .vscode/
+
+## IntelliJ IDEA
 .idea/
 *.iws
 *.iml
 *.ipr
+
+## Eclipse / STS
 .apt_generated
 .classpath
 .factorypath
@@ -33,15 +53,24 @@ Thumbs.db
 .settings/
 .springBeans
 .sts4-cache
+
+## NetBeans
 nbproject/private/
 nbbuild/
 nbdist/
 .nb-gradle/
 
-# --- Environment & Logs ---
+# --- Environment Variables ---
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.env
+
+# --- Logs ---
 *.log
 logs/
+
 .opencode
 opencode.jsonc
