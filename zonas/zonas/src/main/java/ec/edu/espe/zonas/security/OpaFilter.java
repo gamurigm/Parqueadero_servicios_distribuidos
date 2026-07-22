@@ -52,6 +52,31 @@ public class OpaFilter extends OncePerRequestFilter {
                 .map(role -> role.replace("ROLE_", ""))
                 .collect(Collectors.toList());
 
+        if (roles.isEmpty() && userId != null && !userId.isEmpty()) {
+            try {
+                String rolesUrl = "http://gestion-usuarios:3000/roles-Usuario/usuarios/" + userId;
+                org.springframework.web.client.RestTemplate rt = new org.springframework.web.client.RestTemplate();
+                List<?> userRoleObjs = rt.getForObject(rolesUrl, List.class);
+                if (userRoleObjs != null) {
+                    roles = userRoleObjs.stream()
+                        .map(obj -> {
+                            if (obj instanceof java.util.Map map) {
+                                Object r = map.get("rol");
+                                if (r instanceof java.util.Map rMap) {
+                                    return (String) rMap.get("nombreRol");
+                                }
+                            }
+                            return null;
+                        })
+                        .filter(java.util.Objects::nonNull)
+                        .map(r -> r.replace("ROLE_", ""))
+                        .collect(Collectors.toList());
+                }
+            } catch (Exception e) {
+                log.warn("Could not fetch dynamic roles for user {}: {}", userId, e.getMessage());
+            }
+        }
+
         boolean isAllowed = opaService.checkPermission(
                 userId,
                 username,

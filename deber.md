@@ -1,0 +1,1 @@
+db con credenciales de postgress wsl docker, crear una clase con una clase main (dentro de un paquete (dir) pruebas), crear una instancia de ZonaSErvicioImpl que llame a la operacion (generarCpdigoZona),  NO crear controladores, y extra crear zonas (opcional para ver los errores que salen)
