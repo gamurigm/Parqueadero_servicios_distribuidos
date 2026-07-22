@@ -1,0 +1,6 @@
+# Agrupa a los servicios, son el orden
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: app-parqueadero

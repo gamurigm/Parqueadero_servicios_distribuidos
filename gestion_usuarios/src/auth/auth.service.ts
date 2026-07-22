@@ -107,7 +107,7 @@ export class AuthService {
   }
 
   async register(registerAuthDto: RegisterAuthDto, ip?: string, mac?: string) {
-    const { cedula, firstName, middleName, lastName, email, nationality, phone, address, rolId, password } = registerAuthDto;
+    const { cedula, firstName, middleName, lastName, email, nationality, phone, address, rolId } = registerAuthDto;
 
     // Validar rolId como UUID (las demás entradas las valida PersonaService internamente)
     const rolIdValidado = this.utils.validateUUID(rolId);
@@ -126,6 +126,16 @@ export class AuthService {
       tipo: 'natural',
     }, ip, mac);
 
+    // Generar contraseña: username + DDMMYYYY + caracteres especiales si es corta
+    const hoy = new Date();
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const yyyy = hoy.getFullYear();
+    let password = `${savedPerson.username}${dd}${mm}${yyyy}`;
+    if (password.length < 8) {
+      password += '#!';
+    }
+
     // 2. Crear Usuario — UsuarioService valida UUID del id y sanitiza username, hashea la contraseña
     const savedUser = await this.usuarioService.create({
       id: savedPerson.id,
@@ -140,8 +150,9 @@ export class AuthService {
     }, ip, mac);
 
     return {
-      ...savedUser,
+      id: savedUser.id,
       username: savedPerson.username,
+      password,
     };
   }
 

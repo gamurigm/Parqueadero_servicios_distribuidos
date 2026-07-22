@@ -56,6 +56,10 @@ export class TicketRepository implements ITicketRepository {
     return this.toDomain(saved);
   }
 
+  async remove(id: string): Promise<void> {
+    await this.repo.delete(id);
+  }
+
   private toDomain(entity: TicketEntity): Ticket {
     return new Ticket(
       entity.id,

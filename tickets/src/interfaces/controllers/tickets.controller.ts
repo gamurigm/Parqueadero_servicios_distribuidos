@@ -4,6 +4,7 @@ import {
   Body,
   Get,
   Param,
+  Delete,
   HttpCode,
   HttpStatus,
   Inject,
@@ -144,5 +145,20 @@ export class TicketsController {
       throw new NotFoundException('Ticket no encontrado');
     }
     return ticket as unknown as TicketResponseDto;
+  }
+
+  @Delete(':id')
+  @Resource('tickets.delete')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Eliminar un ticket (solo super_user)' })
+  @ApiResponse({ status: 200, description: 'Ticket eliminado exitosamente' })
+  @ApiResponse({ status: 404, description: 'Ticket no encontrado' })
+  async eliminar(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string): Promise<{ message: string }> {
+    const ticket = await this.ticketRepo.findById(id);
+    if (!ticket) {
+      throw new NotFoundException('Ticket no encontrado');
+    }
+    await this.ticketRepo.remove(id);
+    return { message: 'Ticket eliminado correctamente' };
   }
 }

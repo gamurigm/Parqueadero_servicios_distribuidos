@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-keys
+  namespace: app-parqueadero
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init-keys
+          image: alpine:latest
+          command:
+            - sh
+            - -c
+            - |
+              apk add --no-cache openssl
+              if [ ! -f /keys/private.pem ]; then
+                echo "Generando llaves RSA (RS256)..."
+                openssl genpkey -algorithm RSA -out /keys/private.pem -pkeyopt rsa_keygen_bits:2048
+                openssl rsa -pubout -in /keys/private.pem -out /keys/public.pem
+                chmod 644 /keys/*.pem
+              else
+                echo "Las llaves RSA ya existen. Omitiendo."
+              fi
+              if [ ! -f /keys/jwe-secret.key ]; then
+                echo "Generando llave secreta JWE (AES-256)..."
+                openssl rand -hex 32 > /keys/jwe-secret.key
+                chmod 644 /keys/jwe-secret.key
+              else
+                echo "La llave JWE ya existe. Omitiendo."
+              fi
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: /keys
+      volumes:
+        - name: jwt-keys
+          persistentVolumeClaim:
+            claimName: jwt-keys-pvc

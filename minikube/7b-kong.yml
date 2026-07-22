@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong-proxy
+  namespace: app-parqueadero
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kong-proxy
+  template:
+    metadata:
+      labels:
+        app: kong-proxy
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z kong-db 5432; do
+                echo "Esperando a kong-db..."
+                sleep 2
+              done
+              echo "kong-db listo"
+      containers:
+        - name: kong
+          image: kong:3.9
+          ports:
+            - containerPort: 8000
+              name: proxy
+            - containerPort: 8443
+              name: proxy-ssl
+            - containerPort: 8001
+              name: admin
+          env:
+            - name: KONG_DATABASE
+              value: "postgres"
+            - name: KONG_PG_HOST
+              value: "kong-db"
+            - name: KONG_PG_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kong-db-credentials
+                  key: POSTGRES_USER
+            - name: KONG_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kong-db-credentials
+                  key: POSTGRES_PASSWORD
+            - name: KONG_PG_DATABASE
+              value: "kong"
+            - name: KONG_PROXY_ACCESS_LOG
+              value: "/dev/stdout"
+            - name: KONG_ADMIN_ACCESS_LOG
+              value: "/dev/stdout"
+            - name: KONG_PROXY_ERROR_LOG
+              value: "/dev/stderr"
+            - name: KONG_ADMIN_ERROR_LOG
+              value: "/dev/stderr"
+            - name: KONG_ADMIN_LISTEN
+              value: "0.0.0.0:8001"
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-proxy
+  namespace: app-parqueadero
+spec:
+  selector:
+    app: kong-proxy
+  ports:
+    - name: proxy
+      port: 8000
+      targetPort: 8000
+    - name: proxy-ssl
+      port: 8443
+      targetPort: 8443
+    - name: admin
+      port: 8001
+      targetPort: 8001

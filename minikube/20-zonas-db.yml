@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zonas-db
+  namespace: app-parqueadero
+spec:
+  serviceName: zonas-db-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zonas-db
+  template:
+    metadata:
+      labels:
+        app: zonas-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: "ZonasDB"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: zonas-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: zonas-password
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "admin_user", "-d", "ZonasDB"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - name: zonas-db-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: zonas-db-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zonas-db
+  namespace: app-parqueadero
+spec:
+  selector:
+    app: zonas-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zonas-db-headless
+  namespace: app-parqueadero
+spec:
+  clusterIP: None
+  selector:
+    app: zonas-db
+  ports:
+    - port: 5432
+      targetPort: 5432

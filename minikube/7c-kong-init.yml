@@ -1,0 +1,109 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kong-init
+  namespace: app-parqueadero
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: kong-init
+          image: curlimages/curl:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Esperando a que Kong este listo..."
+              until curl -s http://kong-proxy:8001/status; do
+                sleep 5
+              done
+              sleep 10
+
+              echo "Configurando servicios en Kong..."
+
+              # Servicio de Usuarios
+              curl -s -X POST http://kong-proxy:8001/services \
+                --data name=usuarios-service \
+                --data url=http://usuarios:5000
+
+              # Servicio de Vehiculos
+              curl -s -X POST http://kong-proxy:8001/services \
+                --data name=vehiculos-service \
+                --data url=http://vehiculos:3000
+
+              # Servicio de Zonas
+              curl -s -X POST http://kong-proxy:8001/services \
+                --data name=zonas-service \
+                --data url=http://zonas:8080
+
+              # Servicio de Trazabilidad
+              curl -s -X POST http://kong-proxy:8001/services \
+                --data name=trazabilidad-service \
+                --data url=http://trazabilidad:3002
+
+              # Servicio de Tickets
+              curl -s -X POST http://kong-proxy:8001/services \
+                --data name=tickets-service \
+                --data url=http://tickets:3003
+
+              # Servicio de Audit
+              curl -s -X POST http://kong-proxy:8001/services \
+                --data name=audit-service \
+                --data url=http://ms-audit:3006
+
+              echo "Configurando rutas en Kong..."
+
+              # Rutas
+              curl -s -X POST http://kong-proxy:8001/services/usuarios-service/routes \
+                --data "paths[]=/usuarios" \
+                --data name=usuarios-route \
+                --data strip_path=true
+
+              curl -s -X POST http://kong-proxy:8001/services/vehiculos-service/routes \
+                --data "paths[]=/vehiculos" \
+                --data name=vehiculos-route \
+                --data strip_path=true
+
+              curl -s -X POST http://kong-proxy:8001/services/zonas-service/routes \
+                --data "paths[]=/zonas" \
+                --data name=zonas-route \
+                --data strip_path=true
+
+              curl -s -X POST http://kong-proxy:8001/services/trazabilidad-service/routes \
+                --data "paths[]=/trazabilidad" \
+                --data name=trazabilidad-route \
+                --data strip_path=true
+
+              curl -s -X POST http://kong-proxy:8001/services/tickets-service/routes \
+                --data "paths[]=/tickets" \
+                --data name=tickets-route \
+                --data strip_path=true
+
+              curl -s -X POST http://kong-proxy:8001/services/audit-service/routes \
+                --data "paths[]=/audit" \
+                --data name=audit-route \
+                --data strip_path=true
+
+              echo "Configurando plugin CORS..."
+
+              curl -s -X POST http://kong-proxy:8001/plugins \
+                --data name=cors \
+                --data "config.origins=*" \
+                --data "config.methods=GET" \
+                --data "config.methods=POST" \
+                --data "config.methods=PUT" \
+                --data "config.methods=DELETE" \
+                --data "config.methods=PATCH" \
+                --data "config.methods=OPTIONS" \
+                --data "config.headers=Accept" \
+                --data "config.headers=Authorization" \
+                --data "config.headers=Content-Type" \
+                --data "config.headers=Content-Length" \
+                --data "config.headers=Date" \
+                --data "config.exposed_headers=X-Auth-Token" \
+                --data "config.credentials=true" \
+                --data "config.max_age=3600"
+
+              echo "Configuracion de Kong completada!"

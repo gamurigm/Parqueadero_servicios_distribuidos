@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opa
+  namespace: app-parqueadero
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opa
+  template:
+    metadata:
+      labels:
+        app: opa
+    spec:
+      containers:
+        - name: opa
+          image: openpolicyagent/opa:latest
+          ports:
+            - containerPort: 8181
+          command:
+            - "run"
+            - "--server"
+            - "--addr=0.0.0.0:8181"
+            - "--log-level=debug"
+            - "/policies"
+          volumeMounts:
+            - name: opa-policies
+              mountPath: /policies
+      volumes:
+        - name: opa-policies
+          hostPath:
+            path: /opa/policies
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: opa
+  namespace: app-parqueadero
+spec:
+  selector:
+    app: opa
+  ports:
+    - port: 8181
+      targetPort: 8181

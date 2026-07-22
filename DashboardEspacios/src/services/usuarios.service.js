@@ -13,7 +13,7 @@ export const usuariosService = {
   },
 
   async crear(payload) {
-    const { data } = await api.post(ENDPOINTS.USUARIOS, payload)
+    const { data } = await api.post(ENDPOINTS.REGISTER, payload)
     return data
   },
 
@@ -37,13 +37,18 @@ export const usuariosService = {
     return data
   },
 
-  async rolesDeUsuario(id) {
-    const { data } = await api.get(`${ENDPOINTS.ROLES_USUARIO}/usuarios/${id}`)
+  async actualizarPersona(id, payload) {
+    const { data } = await api.put(`${ENDPOINTS.PERSONA}/${id}`, payload)
     return data
   },
 
   async asignarRol(usuarioId, rolId) {
-    const { data } = await api.post(ENDPOINTS.ROLES_USUARIO, { id_usuario: usuarioId, id_rol: rolId })
+    const { data } = await api.post(ENDPOINTS.ROLES_USUARIO, { id_user: usuarioId, id_rol: rolId })
+    return data
+  },
+
+  async eliminarRol(usuarioId, rolId) {
+    const { data } = await api.delete(ENDPOINTS.ROLES_USUARIO, { data: { id_user: usuarioId, id_rol: rolId } })
     return data
   },
 }

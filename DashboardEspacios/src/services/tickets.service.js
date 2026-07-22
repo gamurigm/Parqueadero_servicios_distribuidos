@@ -21,4 +21,9 @@ export const ticketsService = {
     const { data } = await api.post(`${ENDPOINTS.TICKETS}/anular`, { idTicket, codigoTicket, motivo })
     return data
   },
+
+  async eliminar(id) {
+    const { data } = await api.delete(`${ENDPOINTS.TICKETS}/${id}`)
+    return data
+  },
 }

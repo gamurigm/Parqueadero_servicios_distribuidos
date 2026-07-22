@@ -2,11 +2,11 @@
 -- SEED: Parqueadero - Microservicio Usuarios
 -- ============================================================
 -- CREDENCIALES (username / password / rol):
---   testadmin  / Admin123!  / admin
+--   admin1  / Admin123!  / admin
 --   superusr   / Super123!  / super_user
 --   jpropiet   / Prop123!   / propietario
 --   mgomez     / Prop123!   / propietario
---   ezona1     / Zona123!   / encargado_zona
+--   emple1    / Zona123!   / encargado_zona
 --   auditor1   / Audit123!  / auditor
 -- ============================================================
 

@@ -22,14 +22,26 @@
         <span class="font-medium text-gray-900">{{ value }}</span>
       </template>
 
+      <template #cell-nombreCompleto="{ value }">
+        <span class="text-gray-700">{{ value || '—' }}</span>
+      </template>
+
+      <template #cell-email="{ item }">
+        <span class="text-gray-700">{{ item.persona?.email || '—' }}</span>
+      </template>
+
+      <template #cell-telefono="{ item }">
+        <span class="text-gray-700">{{ item.persona?.phone || '—' }}</span>
+      </template>
+
       <template #cell-roles="{ item }">
         <div class="flex flex-wrap gap-1">
           <span
             v-for="r in (item.roles || [])"
-            :key="r"
+            :key="r.id || r.nombre"
             class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium"
           >
-            {{ ROLE_LABELS[r] || r }}
+            {{ ROLE_LABELS[r.nombre] || r.nombre }}
           </span>
           <span v-if="!item.roles || item.roles.length === 0" class="text-xs text-gray-400">—</span>
         </div>
@@ -60,116 +72,301 @@
           >
             {{ item.active ? 'Desactivar' : 'Activar' }}
           </button>
+          <button
+            v-if="perm.isSuperUser()"
+            @click="solicitarEliminar(item)"
+            class="text-xs px-2.5 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 font-medium"
+          >
+            Eliminar
+          </button>
         </div>
       </template>
     </DataTable>
 
-    <!-- Modal Form (Crear / Editar Usuario) -->
+    <!-- Modal Crear Usuario -->
     <Teleport to="body">
-      <div v-if="mostrarModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div v-if="mostrarModalCrear" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
         <div class="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full mx-4 overflow-y-auto max-h-[90vh]">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            {{ editandoId ? 'Editar Usuario' : 'Nuevo Usuario' }}
-          </h3>
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">Nuevo Usuario</h3>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-medium text-gray-700 mb-1">Nombre de Usuario</label>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-gray-700 mb-1">Nombre Completo (mínimo 3 nombres)</label>
               <input
-                v-model="form.username"
+                v-model="formCrear.nombreCompleto"
                 type="text"
-                :disabled="!!editandoId"
-                class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-gray-100"
-                :class="val.errors.value.username ? 'border-red-500' : 'border-gray-300'"
-              />
-              <p v-if="val.errors.value.username" class="text-xs text-red-600 mt-1">{{ val.errors.value.username }}</p>
-            </div>
-
-            <div v-if="!editandoId">
-              <label class="block text-xs font-medium text-gray-700 mb-1">Contraseña</label>
-              <input
-                v-model="form.password"
-                type="password"
+                placeholder="Ej: Juan Carlos Pérez"
                 class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                :class="val.errors.value.password ? 'border-red-500' : 'border-gray-300'"
+                :class="val.errors.value.nombreCompleto ? 'border-red-500' : 'border-gray-300'"
               />
-              <p v-if="val.errors.value.password" class="text-xs text-red-600 mt-1">{{ val.errors.value.password }}</p>
+              <p v-if="val.errors.value.nombreCompleto" class="text-xs text-red-600 mt-1">{{ val.errors.value.nombreCompleto }}</p>
             </div>
 
             <div>
-              <label class="block text-xs font-medium text-gray-700 mb-1">Nombre Completo</label>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Cédula</label>
               <input
-                v-model="form.persona_nombre"
+                v-model="formCrear.cedula"
                 type="text"
+                maxlength="10"
+                placeholder="10 dígitos"
                 class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                :class="val.errors.value.persona_nombre ? 'border-red-500' : 'border-gray-300'"
+                :class="val.errors.value.cedula ? 'border-red-500' : 'border-gray-300'"
               />
-              <p v-if="val.errors.value.persona_nombre" class="text-xs text-red-600 mt-1">{{ val.errors.value.persona_nombre }}</p>
+              <p v-if="val.errors.value.cedula" class="text-xs text-red-600 mt-1">{{ val.errors.value.cedula }}</p>
             </div>
 
             <div>
               <label class="block text-xs font-medium text-gray-700 mb-1">Correo Electrónico</label>
               <input
-                v-model="form.persona_email"
+                v-model="formCrear.email"
                 type="email"
                 class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                :class="val.errors.value.persona_email ? 'border-red-500' : 'border-gray-300'"
+                :class="val.errors.value.email ? 'border-red-500' : 'border-gray-300'"
               />
-              <p v-if="val.errors.value.persona_email" class="text-xs text-red-600 mt-1">{{ val.errors.value.persona_email }}</p>
+              <p v-if="val.errors.value.email" class="text-xs text-red-600 mt-1">{{ val.errors.value.email }}</p>
             </div>
-          </div>
 
-          <!-- Selección de Roles -->
-          <div class="mt-4">
-            <label class="block text-xs font-medium text-gray-700 mb-2">Asignar Roles</label>
-            <div class="grid grid-cols-2 gap-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
-              <label v-for="(label, key) in ROLE_LABELS" :key="key" class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  :value="key"
-                  v-model="form.roles"
-                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span>{{ label }}</span>
-              </label>
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Teléfono</label>
+              <input
+                v-model="formCrear.phone"
+                type="text"
+                maxlength="10"
+                placeholder="10 dígitos"
+                class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                :class="val.errors.value.phone ? 'border-red-500' : 'border-gray-300'"
+              />
+              <p v-if="val.errors.value.phone" class="text-xs text-red-600 mt-1">{{ val.errors.value.phone }}</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Nacionalidad</label>
+              <input
+                v-model="formCrear.nationality"
+                type="text"
+                class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                :class="val.errors.value.nationality ? 'border-red-500' : 'border-gray-300'"
+              />
+              <p v-if="val.errors.value.nationality" class="text-xs text-red-600 mt-1">{{ val.errors.value.nationality }}</p>
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-gray-700 mb-1">Dirección</label>
+              <input
+                v-model="formCrear.address"
+                type="text"
+                class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                :class="val.errors.value.address ? 'border-red-500' : 'border-gray-300'"
+              />
+              <p v-if="val.errors.value.address" class="text-xs text-red-600 mt-1">{{ val.errors.value.address }}</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Rol Inicial</label>
+              <select
+                v-model="formCrear.rolId"
+                class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                :class="val.errors.value.rolId ? 'border-red-500' : 'border-gray-300'"
+              >
+                <option value="" disabled>Seleccionar rol</option>
+                <option v-for="rol in rolesDisponibles" :key="rol.id" :value="rol.id">
+                  {{ ROLE_LABELS[rol.nombre] || rol.nombre }}
+                </option>
+              </select>
+              <p v-if="val.errors.value.rolId" class="text-xs text-red-600 mt-1">{{ val.errors.value.rolId }}</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Roles Adicionales</label>
+              <select
+                v-model="formCrear.rolesAdicionales"
+                multiple
+                class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 h-[120px]"
+              >
+                <option v-for="rol in rolesAdicionalesDisponibles" :key="rol.id" :value="rol.id">
+                  {{ ROLE_LABELS[rol.nombre] || rol.nombre }}
+                </option>
+              </select>
+              <p class="text-[10px] text-gray-400 mt-1">Mantén Ctrl/Cmd para seleccionar varios</p>
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-gray-700 mb-1">Contraseña Generada</label>
+              <input
+                :value="passwordPreview"
+                type="text"
+                readonly
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-100 text-gray-600 font-mono"
+              />
+              <p class="text-[10px] text-gray-400 mt-1">Se generará automáticamente con el formato: nombres + fecha (DDMMYYYY)</p>
             </div>
           </div>
 
           <div class="flex justify-end gap-3 mt-6">
             <button
-              @click="cerrarModal"
+              @click="cerrarModalCrear"
               class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
             >
               Cancelar
             </button>
             <button
-              @click="guardar"
+              @click="guardarCrear"
               :disabled="guardando"
               class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              {{ guardando ? 'Guardando...' : 'Guardar' }}
+              {{ guardando ? 'Creando...' : 'Crear Usuario' }}
             </button>
           </div>
         </div>
       </div>
     </Teleport>
 
-    <!-- ConfirmDialog -->
+    <!-- Modal Editar Usuario -->
+    <Teleport to="body">
+      <div v-if="mostrarModalEditar" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full mx-4 overflow-y-auto max-h-[90vh]">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">Editar Usuario</h3>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-gray-700 mb-1">Nombre de Usuario</label>
+              <input
+                :value="formEditar.username"
+                type="text"
+                disabled
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-100 text-gray-500"
+              />
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-gray-700 mb-1">Nombre Completo</label>
+              <input
+                v-model="formEditar.nombreCompleto"
+                type="text"
+                class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                :class="val.errors.value.nombreCompleto ? 'border-red-500' : 'border-gray-300'"
+              />
+              <p v-if="val.errors.value.nombreCompleto" class="text-xs text-red-600 mt-1">{{ val.errors.value.nombreCompleto }}</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Cédula</label>
+              <input
+                v-model="formEditar.dni"
+                type="text"
+                maxlength="10"
+                class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                :class="val.errors.value.dni ? 'border-red-500' : 'border-gray-300'"
+              />
+              <p v-if="val.errors.value.dni" class="text-xs text-red-600 mt-1">{{ val.errors.value.dni }}</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Correo Electrónico</label>
+              <input
+                v-model="formEditar.email"
+                type="email"
+                class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                :class="val.errors.value.email ? 'border-red-500' : 'border-gray-300'"
+              />
+              <p v-if="val.errors.value.email" class="text-xs text-red-600 mt-1">{{ val.errors.value.email }}</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Teléfono</label>
+              <input
+                v-model="formEditar.phone"
+                type="text"
+                maxlength="10"
+                class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                :class="val.errors.value.phone ? 'border-red-500' : 'border-gray-300'"
+              />
+              <p v-if="val.errors.value.phone" class="text-xs text-red-600 mt-1">{{ val.errors.value.phone }}</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1">Nacionalidad</label>
+              <input
+                v-model="formEditar.nationality"
+                type="text"
+                class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                :class="val.errors.value.nationality ? 'border-red-500' : 'border-gray-300'"
+              />
+              <p v-if="val.errors.value.nationality" class="text-xs text-red-600 mt-1">{{ val.errors.value.nationality }}</p>
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-gray-700 mb-1">Dirección</label>
+              <input
+                v-model="formEditar.address"
+                type="text"
+                class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                :class="val.errors.value.address ? 'border-red-500' : 'border-gray-300'"
+              />
+              <p v-if="val.errors.value.address" class="text-xs text-red-600 mt-1">{{ val.errors.value.address }}</p>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 mt-6">
+            <button
+              @click="cerrarModalEditar"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="guardarEditar"
+              :disabled="guardando"
+              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {{ guardando ? 'Guardando...' : 'Guardar Cambios' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Modal Contraseña Generada -->
+    <Teleport to="body">
+      <div v-if="mostrarPasswordGenerada" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4 text-center">
+          <div class="text-green-600 text-4xl mb-3">&#10003;</div>
+          <h3 class="text-lg font-semibold text-gray-800 mb-2">Usuario Creado</h3>
+          <p class="text-sm text-gray-600 mb-4">Contraseña generada para <strong>{{ usernameGenerado }}</strong>:</p>
+          <div class="bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 mb-4">
+            <code class="text-sm font-mono text-gray-800 select-all">{{ passwordGenerada }}</code>
+          </div>
+          <p class="text-xs text-red-600 mb-4">Guarda esta contraseña, no se volverá a mostrar.</p>
+          <button
+            @click="mostrarPasswordGenerada = false"
+            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ConfirmDialog Toggle Activo -->
     <ConfirmDialog
       :visible="confirmState.visible"
-      :titulo="confirmState.action === 'desactivar' ? 'Desactivar Usuario' : 'Activar Usuario'"
-      :mensaje="`¿Estás seguro de que deseas ${confirmState.action} al usuario '${confirmState.item?.username}'?`"
-      :confirmText="confirmState.action === 'desactivar' ? 'Desactivar' : 'Activar'"
-      :danger="confirmState.action === 'desactivar'"
-      @confirm="ejecutarToggleActivo"
+      :titulo="confirmState.action === 'desactivar' ? 'Desactivar Usuario' : confirmState.action === 'activar' ? 'Activar Usuario' : 'Eliminar Usuario'"
+      :mensaje="confirmState.action === 'eliminar'
+        ? `¿Estás seguro de que deseas eliminar al usuario '${confirmState.item?.username}'? Esta acción no se puede deshacer.`
+        : `¿Estás seguro de que deseas ${confirmState.action} al usuario '${confirmState.item?.username}'?`"
+      :confirmText="confirmState.action === 'desactivar' ? 'Desactivar' : confirmState.action === 'activar' ? 'Activar' : 'Eliminar'"
+      :danger="confirmState.action === 'desactivar' || confirmState.action === 'eliminar'"
+      @confirm="ejecutarAccionConfirmada"
       @cancel="confirmState.visible = false"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { usuariosService } from '@/services/usuarios.service'
+import { rolesService } from '@/services/roles.service'
+import { useAuthStore } from '@/stores/auth'
 import { usePermission } from '@/composables/usePermission'
 import { useToastStore } from '@/stores/toast'
 import { useFormValidation } from '@/composables/useFormValidation'
@@ -178,43 +375,111 @@ import DataTable from '@/components/common/DataTable.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
+const auth = useAuthStore()
 const perm = usePermission()
 const toast = useToastStore()
 const val = useFormValidation()
 
 const usuarios = ref([])
+const rolesDisponibles = ref([])
 const loading = ref(true)
 const guardando = ref(false)
-const mostrarModal = ref(false)
-const editandoId = ref(null)
 
-const form = ref({
+const mostrarModalCrear = ref(false)
+const mostrarModalEditar = ref(false)
+const mostrarPasswordGenerada = ref(false)
+const passwordGenerada = ref('')
+const usernameGenerado = ref('')
+
+const formCrear = ref({
+  nombreCompleto: '',
+  cedula: '',
+  email: '',
+  phone: '',
+  nationality: '',
+  address: '',
+  rolId: '',
+  rolesAdicionales: [],
+})
+
+const formEditar = ref({
+  userId: '',
+  personaId: '',
   username: '',
-  password: '',
-  persona_nombre: '',
-  persona_email: '',
-  roles: [],
+  nombreCompleto: '',
+  dni: '',
+  email: '',
+  phone: '',
+  nationality: '',
+  address: '',
 })
 
 const confirmState = ref({ visible: false, item: null, action: '' })
 
 const columns = [
   { key: 'username', label: 'Usuario' },
-  { key: 'persona_nombre', label: 'Nombre' },
-  { key: 'persona_email', label: 'Email' },
+  { key: 'nombreCompleto', label: 'Nombre' },
+  { key: 'email', label: 'Email' },
+  { key: 'telefono', label: 'Teléfono' },
   { key: 'roles', label: 'Roles' },
   { key: 'active', label: 'Estado' },
   { key: 'created_at', label: 'Creado' },
 ]
 
+const rolesAdicionalesDisponibles = computed(() => {
+  return rolesDisponibles.value.filter(r => r.id !== formCrear.value.rolId)
+})
+
 function formatDate(date) {
   return date ? new Date(date).toLocaleDateString('es-ES') : '—'
+}
+
+const passwordPreview = computed(() => {
+  const nc = formCrear.value.nombreCompleto.trim()
+  if (!nc) return ''
+  const parts = nc.split(/\s+/)
+  const firstName = (parts[0] || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const middleName = parts.slice(1, -1).join('').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const lastName = (parts[parts.length - 1] || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const names = (firstName + middleName + lastName).replace(/\s/g, '')
+  if (!names) return ''
+  const hoy = new Date()
+  const dd = String(hoy.getDate()).padStart(2, '0')
+  const mm = String(hoy.getMonth() + 1).padStart(2, '0')
+  const yyyy = hoy.getFullYear()
+  let pw = `${names}${dd}${mm}${yyyy}`
+  if (pw.length < 8) pw += '#!'
+  return pw
+})
+
+function parseNombreCompleto(fullName) {
+  const parts = fullName.trim().split(/\s+/)
+  if (parts.length >= 3) {
+    return {
+      firstName: parts[0],
+      middleName: parts.slice(1, -1).join(' '),
+      lastName: parts[parts.length - 1],
+    }
+  } else if (parts.length === 2) {
+    return {
+      firstName: parts[0],
+      middleName: '',
+      lastName: parts[1],
+    }
+  } else {
+    return {
+      firstName: parts[0] || '',
+      middleName: '',
+      lastName: '',
+    }
+  }
 }
 
 async function cargar() {
   loading.value = true
   try {
-    usuarios.value = await usuariosService.listar()
+    const raw = await usuariosService.listar()
+    usuarios.value = raw.filter(u => u.id !== auth.userId)
   } catch (err) {
     console.error(err)
   } finally {
@@ -222,57 +487,192 @@ async function cargar() {
   }
 }
 
+async function cargarRoles() {
+  try {
+    rolesDisponibles.value = await rolesService.listar()
+  } catch (err) {
+    console.error(err)
+  }
+}
+
 function abrirModalCrear() {
   val.clearErrors()
-  editandoId.value = null
-  form.value = { username: '', password: '', persona_nombre: '', persona_email: '', roles: [] }
-  mostrarModal.value = true
+  formCrear.value = {
+    nombreCompleto: '',
+    cedula: '',
+    email: '',
+    phone: '',
+    nationality: '',
+    address: '',
+    rolId: '',
+    rolesAdicionales: [],
+  }
+  mostrarModalCrear.value = true
+  cargarRoles()
+}
+
+function cerrarModalCrear() {
+  mostrarModalCrear.value = false
 }
 
 function abrirModalEditar(item) {
   val.clearErrors()
-  editandoId.value = item.id
-  form.value = {
+  formEditar.value = {
+    userId: item.id,
+    personaId: item.persona?.id || item.id,
     username: item.username,
-    password: '',
-    persona_nombre: item.persona_nombre || '',
-    persona_email: item.persona_email || '',
-    roles: Array.isArray(item.roles) ? [...item.roles] : [],
+    nombreCompleto: item.nombreCompleto || '',
+    dni: item.persona?.dni || '',
+    email: item.persona?.email || '',
+    phone: item.persona?.phone || '',
+    nationality: item.persona?.nationality || '',
+    address: item.persona?.address || '',
   }
-  mostrarModal.value = true
+  mostrarModalEditar.value = true
 }
 
-function cerrarModal() {
-  mostrarModal.value = false
+function cerrarModalEditar() {
+  mostrarModalEditar.value = false
 }
 
-async function guardar() {
+async function guardarCrear() {
   val.clearErrors()
   let valid = true
 
-  if (!editandoId.value) {
-    if (!val.validateRequired('username', form.value.username, 'Nombre de usuario')) valid = false
-    if (!val.validateMinLength('password', form.value.password, 4, 'La contraseña')) valid = false
+  const nc = formCrear.value.nombreCompleto.trim()
+  const parts = nc.split(/\s+/)
+  if (!nc) {
+    val.setError('nombreCompleto', 'El nombre completo es requerido')
+    valid = false
+  } else if (parts.length < 3) {
+    val.setError('nombreCompleto', 'Debe ingresar al menos 3 nombres separados por espacio')
+    valid = false
   }
-  if (!val.validateRequired('persona_nombre', form.value.persona_nombre, 'Nombre completo')) valid = false
-  if (!val.validateEmail('persona_email', form.value.persona_email)) valid = false
+  if (!formCrear.value.cedula || formCrear.value.cedula.length !== 10) {
+    val.setError('cedula', 'La cédula debe tener 10 dígitos')
+    valid = false
+  }
+  if (!formCrear.value.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formCrear.value.email)) {
+    val.setError('email', 'Ingrese un correo válido')
+    valid = false
+  }
+  if (!formCrear.value.phone || formCrear.value.phone.length !== 10) {
+    val.setError('phone', 'El teléfono debe tener 10 dígitos')
+    valid = false
+  }
+  if (!formCrear.value.nationality) {
+    val.setError('nationality', 'La nacionalidad es requerida')
+    valid = false
+  }
+  if (!formCrear.value.address) {
+    val.setError('address', 'La dirección es requerida')
+    valid = false
+  }
+  if (!formCrear.value.rolId) {
+    val.setError('rolId', 'Seleccione un rol inicial')
+    valid = false
+  }
 
   if (!valid) return
 
   guardando.value = true
   try {
-    if (editandoId.value) {
-      await usuariosService.actualizar(editandoId.value, {
-        persona_nombre: form.value.persona_nombre,
-        persona_email: form.value.persona_email,
-        roles: form.value.roles,
-      })
-      toast.success('Usuario actualizado exitosamente')
-    } else {
-      await usuariosService.crear(form.value)
-      toast.success('Usuario creado exitosamente')
+    const { firstName, middleName, lastName } = parseNombreCompleto(formCrear.value.nombreCompleto)
+
+    const payload = {
+      cedula: formCrear.value.cedula,
+      firstName,
+      middleName,
+      lastName,
+      email: formCrear.value.email,
+      nationality: formCrear.value.nationality,
+      phone: formCrear.value.phone,
+      address: formCrear.value.address,
+      rolId: formCrear.value.rolId,
+      password: passwordPreview.value,
     }
-    cerrarModal()
+
+    const nuevoUsuario = await usuariosService.crear(payload)
+
+    if (formCrear.value.rolesAdicionales.length > 0) {
+      for (const rolId of formCrear.value.rolesAdicionales) {
+        try {
+          await usuariosService.asignarRol(nuevoUsuario.id, rolId)
+        } catch (err) {
+          console.error('Error al asignar rol adicional:', err)
+        }
+      }
+    }
+
+    mostrarModalCrear.value = false
+    toast.success('Usuario creado exitosamente')
+
+    passwordGenerada.value = nuevoUsuario.password
+    usernameGenerado.value = nuevoUsuario.username
+    mostrarPasswordGenerada.value = true
+
+    await cargar()
+  } catch (err) {
+    console.error(err)
+  } finally {
+    guardando.value = false
+  }
+}
+
+async function guardarEditar() {
+  val.clearErrors()
+  let valid = true
+
+  const nc = formEditar.value.nombreCompleto.trim()
+  const parts = nc.split(/\s+/)
+  if (!nc) {
+    val.setError('nombreCompleto', 'El nombre completo es requerido')
+    valid = false
+  } else if (parts.length < 3) {
+    val.setError('nombreCompleto', 'Debe ingresar al menos 3 nombres separados por espacio')
+    valid = false
+  }
+  if (!formEditar.value.dni || formEditar.value.dni.length !== 10) {
+    val.setError('dni', 'La cédula debe tener 10 dígitos')
+    valid = false
+  }
+  if (!formEditar.value.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formEditar.value.email)) {
+    val.setError('email', 'Ingrese un correo válido')
+    valid = false
+  }
+  if (!formEditar.value.phone || formEditar.value.phone.length !== 10) {
+    val.setError('phone', 'El teléfono debe tener 10 dígitos')
+    valid = false
+  }
+  if (!formEditar.value.nationality) {
+    val.setError('nationality', 'La nacionalidad es requerida')
+    valid = false
+  }
+  if (!formEditar.value.address) {
+    val.setError('address', 'La dirección es requerida')
+    valid = false
+  }
+
+  if (!valid) return
+
+  guardando.value = true
+  try {
+    const { firstName, middleName, lastName } = parseNombreCompleto(formEditar.value.nombreCompleto)
+
+    await usuariosService.actualizarPersona(formEditar.value.personaId, {
+      firstName,
+      middleName,
+      lastName,
+      dni: formEditar.value.dni,
+      email: formEditar.value.email,
+      phone: formEditar.value.phone,
+      nationality: formEditar.value.nationality,
+      address: formEditar.value.address,
+      tipo: 'natural',
+    })
+
+    mostrarModalEditar.value = false
+    toast.success('Usuario actualizado exitosamente')
     await cargar()
   } catch (err) {
     console.error(err)
@@ -289,7 +689,15 @@ function solicitarToggleActivo(item) {
   }
 }
 
-async function ejecutarToggleActivo() {
+function solicitarEliminar(item) {
+  confirmState.value = {
+    visible: true,
+    item,
+    action: 'eliminar',
+  }
+}
+
+async function ejecutarAccionConfirmada() {
   const item = confirmState.value.item
   const action = confirmState.value.action
   confirmState.value.visible = false
@@ -299,9 +707,12 @@ async function ejecutarToggleActivo() {
     if (action === 'desactivar') {
       await usuariosService.desactivar(item.id)
       toast.success(`Usuario '${item.username}' desactivado`)
-    } else {
+    } else if (action === 'activar') {
       await usuariosService.activar(item.id)
       toast.success(`Usuario '${item.username}' activado`)
+    } else if (action === 'eliminar') {
+      await usuariosService.eliminar(item.id)
+      toast.success(`Usuario '${item.username}' eliminado`)
     }
     await cargar()
   } catch (err) {

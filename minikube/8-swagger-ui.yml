@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: swagger-ui
+  namespace: app-parqueadero
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: swagger-ui
+  template:
+    metadata:
+      labels:
+        app: swagger-ui
+    spec:
+      containers:
+        - name: swagger-ui
+          image: swaggerapi/swagger-ui:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: URLS_PRIMARY_NAME
+              value: "Usuarios"
+            - name: URLS
+              value: '[{"name":"Vehiculos","url":"http://kong-proxy:8000/vehiculos/api-json"},{"name":"Usuarios","url":"http://kong-proxy:8000/usuarios/docs-json"},{"name":"Zonas","url":"http://kong-proxy:8000/zonas/v3/api-docs"},{"name":"Trazabilidad","url":"http://kong-proxy:8000/trazabilidad/docs-json"},{"name":"Tickets","url":"http://kong-proxy:8000/tickets/docs-json"}]'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: swagger-ui
+  namespace: app-parqueadero
+spec:
+  selector:
+    app: swagger-ui
+  ports:
+    - port: 8080
+      targetPort: 8080

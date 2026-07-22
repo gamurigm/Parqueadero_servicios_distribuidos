@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zonas
+  namespace: app-parqueadero
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zonas
+  template:
+    metadata:
+      labels:
+        app: zonas
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - "until nc -z zonas-db 5432; do echo 'Esperando zonas-db...'; sleep 2; done"
+        - name: wait-for-rabbitmq
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - "until nc -z rabbitmq 5672; do echo 'Esperando rabbitmq...'; sleep 2; done"
+        - name: wait-for-init-keys
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - "until [ -f /keys/private.pem ]; do echo 'Esperando init-keys...'; sleep 2; done"
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: /keys
+      containers:
+        - name: zonas
+          image: zonas:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "docker"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://zonas-db:5432/ZonasDB"
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: zonas-user
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: zonas-password
+            - name: SPRING_DATASOURCE_DRIVER_CLASS_NAME
+              value: "org.postgresql.Driver"
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+            - name: SPRING_JPA_SHOW_SQL
+              value: "true"
+            - name: SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
+              value: "org.hibernate.dialect.PostgreSQLDialect"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: JWT_SECRET
+            - name: JWT_ISSUER
+              value: "gestion-usuarios"
+            - name: OPA_URL
+              value: "http://opa:8181/v1/data"
+            - name: USUARIOS_SERVICE_URL
+              value: "http://usuarios:5000"
+            - name: RABBITMQ_HOST
+              value: "rabbitmq"
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RABBITMQ_DEFAULT_PASS
+            - name: RABBITMQ_EXCHANGE
+              value: "audit_exchange"
+            - name: RABBITMQ_ROUTING_KEY
+              value: "audit.event"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: /keys
+              readOnly: true
+      volumes:
+        - name: jwt-keys
+          persistentVolumeClaim:
+            claimName: jwt-keys-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zonas
+  namespace: app-parqueadero
+spec:
+  selector:
+    app: zonas
+  ports:
+    - port: 8080
+      targetPort: 8080

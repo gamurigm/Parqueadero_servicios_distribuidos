@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kong-db
+  namespace: app-parqueadero
+spec:
+  serviceName: kong-db-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kong-db
+  template:
+    metadata:
+      labels:
+        app: kong-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: "kong"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kong-db-credentials
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kong-db-credentials
+                  key: POSTGRES_PASSWORD
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - kong
+                - -d
+                - kong
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - kong
+                - -d
+                - kong
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - name: kong-db-data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: kong-db-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-db
+  namespace: app-parqueadero
+spec:
+  selector:
+    app: kong-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-db-headless
+  namespace: app-parqueadero
+spec:
+  clusterIP: None
+  selector:
+    app: kong-db
+  ports:
+    - port: 5432
+      targetPort: 5432

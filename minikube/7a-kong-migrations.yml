@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kong-migrations
+  namespace: app-parqueadero
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: kong-migrations
+          image: kong:3.9
+          command:
+            - kong
+            - migrations
+            - bootstrap
+          env:
+            - name: KONG_DATABASE
+              value: "postgres"
+            - name: KONG_PG_HOST
+              value: "kong-db"
+            - name: KONG_PG_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kong-db-credentials
+                  key: POSTGRES_USER
+            - name: KONG_PG_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kong-db-credentials
+                  key: POSTGRES_PASSWORD
+            - name: KONG_PG_DATABASE
+              value: "kong"

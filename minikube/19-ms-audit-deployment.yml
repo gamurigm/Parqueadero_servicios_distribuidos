@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-audit
+  namespace: app-parqueadero
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-audit
+  template:
+    metadata:
+      labels:
+        app: ms-audit
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - "until nc -z audit-db 5432; do echo 'Esperando audit-db...'; sleep 2; done"
+        - name: wait-for-rabbitmq
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - "until nc -z rabbitmq 5672; do echo 'Esperando rabbitmq...'; sleep 2; done"
+        - name: wait-for-init-keys
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - "until [ -f /keys/private.pem ]; do echo 'Esperando init-keys...'; sleep 2; done"
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: /keys
+      containers:
+        - name: ms-audit
+          image: ms-audit:latest
+          ports:
+            - containerPort: 3006
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3006"
+            - name: DB_HOST
+              value: "audit-db"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: audit-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: audit-password
+            - name: DB_NAME
+              value: "audit_db"
+            - name: RABBITMQ_HOST
+              value: "rabbitmq"
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RABBITMQ_DEFAULT_PASS
+            - name: RABBITMQ_QUEUE
+              value: "audit_queue"
+            - name: RABBITMQ_EXCHANGE
+              value: "audit_exchange"
+            - name: RABBITMQ_ROUTING_KEY
+              value: "audit.event"
+            - name: OPA_URL
+              value: "http://opa:8181/v1/data"
+            - name: OPA_SERVICE
+              value: "audit"
+            - name: USUARIOS_SERVICE_URL
+              value: "http://usuarios:5000"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3006
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: jwt-keys
+              mountPath: /keys
+              readOnly: true
+      volumes:
+        - name: jwt-keys
+          persistentVolumeClaim:
+            claimName: jwt-keys-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-audit
+  namespace: app-parqueadero
+spec:
+  selector:
+    app: ms-audit
+  ports:
+    - port: 3006
+      targetPort: 3006

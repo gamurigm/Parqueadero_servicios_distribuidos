@@ -34,3 +34,9 @@ allow if {
     input.resource == "tickets.read"
     has_role("empleado")
 }
+
+# Eliminar tickets: solo super_user
+allow if {
+    input.resource == "tickets.delete"
+    has_role("super_user")
+}
