@@ -184,8 +184,6 @@ export class AuthService {
       sub: user.id,
       aud: this.configService.get<string>('JWT_AUDIENCE', 'parqueadero-api'),
       jti: crypto.randomUUID(),
-      username: user.username,
-      roles: roleNames,
     };
     const access_token = this.jwtService.sign(payload);
     const encrypted_token = await this.encryptJwe(access_token);
@@ -257,8 +255,6 @@ export class AuthService {
       sub: user.id,
       aud: this.configService.get<string>('JWT_AUDIENCE', 'parqueadero-api'),
       jti: crypto.randomUUID(),
-      username: user.username,
-      roles: roleNames,
     };
     const access_token = this.jwtService.sign(payload);
     const encrypted_token = await this.encryptJwe(access_token);

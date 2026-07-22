@@ -69,6 +69,25 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     };
     const defaultAction = methodMap[req.method] || 'read';
 
+    let userRoles = user.roles || [];
+    if (!userRoles || userRoles.length === 0) {
+      try {
+        const rolesUrl = `http://gestion-usuarios:3000/roles-Usuario/usuarios/${user.id}`;
+        const res = await fetch(rolesUrl, {
+          headers: { Authorization: req.headers.authorization },
+          signal: AbortSignal.timeout(1000),
+        });
+        if (res.ok) {
+          const assignments = await res.json();
+          userRoles = assignments
+            .filter((a: any) => a.activo && a.rol?.activo)
+            .map((a: any) => a.rol.nombre);
+        }
+      } catch (err) {
+        // Fallback
+      }
+    }
+
     const input: OpaInput = {
       token: {
         iss: user.iss,
@@ -78,8 +97,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       },
       user: {
         id: user.id,
-        username: user.username,
-        roles: user.roles || [],
+        username: user.username || user.id,
+        roles: userRoles,
       },
       resource: overrideResource || `${defaultResource}.${defaultAction}`,
       action: overrideAction || defaultAction,
