@@ -125,7 +125,6 @@ export class AuthService {
       aud: this.configService.get<string>('JWT_AUDIENCE', 'parqueadero-api'),
       jti: crypto.randomUUID(),
       username: user.username,
-      roles: roleNames,
     };
     const access_token = this.jwtService.sign(payload);
 
@@ -193,7 +192,6 @@ export class AuthService {
       aud: this.configService.get<string>('JWT_AUDIENCE', 'parqueadero-api'),
       jti: crypto.randomUUID(),
       username: user.username,
-      roles: roleNames,
     };
     const access_token = this.jwtService.sign(payload);
 
