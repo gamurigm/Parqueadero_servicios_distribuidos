@@ -1,5 +1,4 @@
 <template>
-  <ToastContainer />
   <RouterView v-if="!auth.isAuthenticated" />
   <div v-else class="flex h-screen bg-gray-50">
     <AppSidebar />
@@ -16,7 +15,6 @@
 import { useAuthStore } from '@/stores/auth'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
-import ToastContainer from '@/components/common/ToastContainer.vue'
 
 const auth = useAuthStore()
 </script>

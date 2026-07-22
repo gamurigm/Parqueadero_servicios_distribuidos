@@ -1,26 +1,26 @@
 <template>
   <div>
     <div class="flex items-center justify-between mb-6">
-      <h3 class="text-lg font-semibold text-gray-800">Usuarios</h3>
+      <h2 class="text-xl font-semibold text-gray-800">Usuarios</h2>
       <button
-        v-if="perm.isAdmin()"
-        @click="abrirModalCrear"
-        class="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+        @click="showForm = true"
+        v-if="can(['super_user', 'admin'])"
+        class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
       >
-        <span>+ Nuevo Usuario</span>
+        + Nuevo Usuario
       </button>
     </div>
 
     <DataTable
       :items="usuarios"
-      :columns="columns"
+      :columns="columnsUsuarios"
       :loading="loading"
       empty-text="No hay usuarios registrados"
-      search-placeholder="Buscar usuario por nombre, email o username..."
     >
-      <template #cell-username="{ value }">
-        <span class="font-medium text-gray-900">{{ value }}</span>
+      <template #cell-activo="{ item }">
+        <StatusBadge :estado="item.activo ? 'Activo' : 'Inactivo'" />
       </template>
+<<<<<<< HEAD
 
       <template #cell-nombreCompleto="{ value }">
         <span class="text-gray-700">{{ value || '—' }}</span>
@@ -34,43 +34,36 @@
         <span class="text-gray-700">{{ item.persona?.phone || '—' }}</span>
       </template>
 
+=======
+>>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
       <template #cell-roles="{ item }">
         <div class="flex flex-wrap gap-1">
           <span
             v-for="r in (item.roles || [])"
+<<<<<<< HEAD
             :key="r.id || r.nombre"
             class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium"
+=======
+            :key="r"
+            class="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700"
+>>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
           >
             {{ ROLE_LABELS[r.nombre] || r.nombre }}
           </span>
-          <span v-if="!item.roles || item.roles.length === 0" class="text-xs text-gray-400">—</span>
         </div>
       </template>
-
-      <template #cell-active="{ value }">
-        <StatusBadge :estado="value ? 'ACTIVO' : 'INACTIVO'" />
-      </template>
-
-      <template #cell-created_at="{ value }">
-        <span class="text-xs text-gray-500">{{ formatDate(value) }}</span>
-      </template>
-
-      <template v-if="perm.isAdmin()" #actions="{ item }">
-        <div class="flex gap-2 justify-end items-center">
+      <template #actions="{ item }">
+        <div class="flex justify-end gap-2">
           <button
-            @click="abrirModalEditar(item)"
-            class="text-xs px-2.5 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium"
-          >
-            Editar
-          </button>
+            @click="editar(item)"
+            class="text-blue-600 hover:text-blue-800 text-sm"
+          >Editar</button>
           <button
-            @click="solicitarToggleActivo(item)"
-            class="text-xs px-2.5 py-1 rounded font-medium transition"
-            :class="item.active
-              ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-              : 'bg-green-50 text-green-700 hover:bg-green-100'"
+            @click="toggleEstado(item)"
+            class="text-sm"
+            :class="item.activo ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800'"
           >
-            {{ item.active ? 'Desactivar' : 'Activar' }}
+            {{ item.activo ? 'Desactivar' : 'Activar' }}
           </button>
           <button
             v-if="perm.isSuperUser()"
@@ -83,6 +76,7 @@
       </template>
     </DataTable>
 
+<<<<<<< HEAD
     <!-- Modal Crear Usuario -->
     <Teleport to="body">
       <div v-if="mostrarModalCrear" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -215,10 +209,28 @@
               class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
               {{ guardando ? 'Creando...' : 'Crear Usuario' }}
+=======
+    <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showForm = false">
+      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4">
+        <h3 class="text-lg font-semibold mb-4">{{ editando ? 'Editar Usuario' : 'Nuevo Usuario' }}</h3>
+        <form @submit.prevent="guardar" class="space-y-3">
+          <input v-model="form.username" placeholder="Usuario" class="w-full px-3 py-2 border rounded text-sm" required />
+          <input v-model="form.email" type="email" placeholder="Email" class="w-full px-3 py-2 border rounded text-sm" required />
+          <input v-model="form.nombre" placeholder="Nombre completo" class="w-full px-3 py-2 border rounded text-sm" />
+          <select v-model="form.rol" class="w-full px-3 py-2 border rounded text-sm">
+            <option value="">Seleccionar rol...</option>
+            <option v-for="(label, val) in ROLE_LABELS" :key="val" :value="val">{{ label }}</option>
+          </select>
+          <div class="flex justify-end gap-3 mt-4">
+            <button type="button" @click="showForm = false" class="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200">Cancelar</button>
+            <button type="submit" class="px-4 py-2 text-sm text-white bg-blue-600 rounded hover:bg-blue-700" :disabled="saving">
+              {{ saving ? 'Guardando...' : 'Guardar' }}
+>>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
             </button>
           </div>
-        </div>
+        </form>
       </div>
+<<<<<<< HEAD
     </Teleport>
 
     <!-- Modal Editar Usuario -->
@@ -359,22 +371,28 @@
       @confirm="ejecutarAccionConfirmada"
       @cancel="confirmState.visible = false"
     />
+=======
+    </div>
+>>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
   </div>
 </template>
 
 <script setup>
+<<<<<<< HEAD
 import { ref, computed, onMounted } from 'vue'
 import { usuariosService } from '@/services/usuarios.service'
 import { rolesService } from '@/services/roles.service'
 import { useAuthStore } from '@/stores/auth'
+=======
+import { ref, onMounted } from 'vue'
+>>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
 import { usePermission } from '@/composables/usePermission'
-import { useToastStore } from '@/stores/toast'
-import { useFormValidation } from '@/composables/useFormValidation'
+import { usuariosService } from '@/services/usuarios.service'
 import { ROLE_LABELS } from '@/utils/constants'
 import DataTable from '@/components/common/DataTable.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
+<<<<<<< HEAD
 const auth = useAuthStore()
 const perm = usePermission()
 const toast = useToastStore()
@@ -413,19 +431,33 @@ const formEditar = ref({
   nationality: '',
   address: '',
 })
+=======
+const { can } = usePermission()
 
-const confirmState = ref({ visible: false, item: null, action: '' })
+const usuarios = ref([])
+const loading = ref(false)
+const showForm = ref(false)
+const saving = ref(false)
+const editando = ref(null)
 
-const columns = [
+const form = ref({ username: '', email: '', nombre: '', rol: '' })
+>>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
+
+const columnsUsuarios = [
   { key: 'username', label: 'Usuario' },
+<<<<<<< HEAD
   { key: 'nombreCompleto', label: 'Nombre' },
   { key: 'email', label: 'Email' },
   { key: 'telefono', label: 'Teléfono' },
+=======
+  { key: 'email', label: 'Email' },
+  { key: 'nombre', label: 'Nombre' },
+  { key: 'activo', label: 'Estado' },
+>>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
   { key: 'roles', label: 'Roles' },
-  { key: 'active', label: 'Estado' },
-  { key: 'created_at', label: 'Creado' },
 ]
 
+<<<<<<< HEAD
 const rolesAdicionalesDisponibles = computed(() => {
   return rolesDisponibles.value.filter(r => r.id !== formCrear.value.rolId)
 })
@@ -433,6 +465,11 @@ const rolesAdicionalesDisponibles = computed(() => {
 function formatDate(date) {
   return date ? new Date(date).toLocaleDateString('es-ES') : '—'
 }
+=======
+onMounted(() => {
+  cargar()
+})
+>>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
 
 const passwordPreview = computed(() => {
   const nc = formCrear.value.nombreCompleto.trim()
@@ -478,15 +515,20 @@ function parseNombreCompleto(fullName) {
 async function cargar() {
   loading.value = true
   try {
+<<<<<<< HEAD
     const raw = await usuariosService.listar()
     usuarios.value = raw.filter(u => u.id !== auth.userId)
   } catch (err) {
     console.error(err)
+=======
+    usuarios.value = await usuariosService.listar()
+>>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
   } finally {
     loading.value = false
   }
 }
 
+<<<<<<< HEAD
 async function cargarRoles() {
   try {
     rolesDisponibles.value = await rolesService.listar()
@@ -673,14 +715,32 @@ async function guardarEditar() {
 
     mostrarModalEditar.value = false
     toast.success('Usuario actualizado exitosamente')
+=======
+function editar(item) {
+  editando.value = item
+  form.value = { username: item.username, email: item.email, nombre: item.nombre || '', rol: '' }
+  showForm.value = true
+}
+
+async function guardar() {
+  saving.value = true
+  try {
+    if (editando.value) {
+      await usuariosService.actualizar(editando.value.id, form.value)
+    } else {
+      await usuariosService.crear(form.value)
+    }
+    showForm.value = false
+    editando.value = null
+    form.value = { username: '', email: '', nombre: '', rol: '' }
+>>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
     await cargar()
-  } catch (err) {
-    console.error(err)
   } finally {
-    guardando.value = false
+    saving.value = false
   }
 }
 
+<<<<<<< HEAD
 function solicitarToggleActivo(item) {
   confirmState.value = {
     visible: true,
@@ -703,9 +763,13 @@ async function ejecutarAccionConfirmada() {
   confirmState.value.visible = false
   if (!item) return
 
+=======
+async function toggleEstado(item) {
+>>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
   try {
-    if (action === 'desactivar') {
+    if (item.activo) {
       await usuariosService.desactivar(item.id)
+<<<<<<< HEAD
       toast.success(`Usuario '${item.username}' desactivado`)
     } else if (action === 'activar') {
       await usuariosService.activar(item.id)
@@ -713,12 +777,14 @@ async function ejecutarAccionConfirmada() {
     } else if (action === 'eliminar') {
       await usuariosService.eliminar(item.id)
       toast.success(`Usuario '${item.username}' eliminado`)
+=======
+    } else {
+      await usuariosService.activar(item.id)
+>>>>>>> 03eb51b93feb545ed552db28366500bfb571277a
     }
     await cargar()
-  } catch (err) {
-    console.error(err)
+  } catch (e) {
+    console.error(e)
   }
 }
-
-onMounted(cargar)
 </script>

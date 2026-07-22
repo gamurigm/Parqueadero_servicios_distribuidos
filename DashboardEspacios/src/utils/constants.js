@@ -1,4 +1,4 @@
-export const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+export const API_BASE = 'http://localhost:8000'
 
 export const ENDPOINTS = {
   LOGIN: '/usuarios/auth/login',
@@ -10,9 +10,9 @@ export const ENDPOINTS = {
   ROLES_USUARIO: '/usuarios/roles-Usuario',
   REGISTER: '/usuarios/auth/register',
   ZONAS: '/zonas/api/v1/zonas/',
-  TICKETS: '/tickets',
-  VEHICULOS: '/vehiculos/vehiculos',
-  AUDITORIA: '/audit/api/v1/audit',
+  TICKETS: '/tickets/api/v1/tickets',
+  VEHICULOS: '/vehiculos/api/v1/vehiculos',
+  AUDITORIA: '/audit/api/v1/audit/eventos',
   SSE_ESPACIOS: '/tickets/sse/espacios',
 }
 

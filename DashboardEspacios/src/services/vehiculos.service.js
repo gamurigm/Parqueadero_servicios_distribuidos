@@ -13,7 +13,7 @@ export const vehiculosService = {
   },
 
   async actualizar(id, payload) {
-    const { data } = await api.put(`${ENDPOINTS.VEHICULOS}/${id}`, payload)
+    const { data } = await api.patch(`${ENDPOINTS.VEHICULOS}/${id}`, payload)
     return data
   },
 

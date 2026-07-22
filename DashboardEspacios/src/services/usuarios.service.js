@@ -18,22 +18,17 @@ export const usuariosService = {
   },
 
   async actualizar(id, payload) {
-    const { data } = await api.put(`${ENDPOINTS.USUARIOS}/${id}`, payload)
-    return data
-  },
-
-  async eliminar(id) {
-    const { data } = await api.delete(`${ENDPOINTS.USUARIOS}/${id}`)
+    const { data } = await api.patch(`${ENDPOINTS.USUARIOS}/${id}`, payload)
     return data
   },
 
   async desactivar(id) {
-    const { data } = await api.patch(`${ENDPOINTS.USUARIOS}/${id}/activar-desactivar`)
+    const { data } = await api.patch(`${ENDPOINTS.USUARIOS}/${id}/desactivar`)
     return data
   },
 
   async activar(id) {
-    const { data } = await api.patch(`${ENDPOINTS.USUARIOS}/${id}/activar-desactivar`)
+    const { data } = await api.patch(`${ENDPOINTS.USUARIOS}/${id}/activar`)
     return data
   },
 
