@@ -1,0 +1,419 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opa-policies
+  namespace: app-parqueadero
+data:
+  common-authz.rego: |
+    package authz
+
+    import rego.v1
+
+    default allow = false
+
+    allow if {
+        has_role("super_user")
+    }
+
+    allow if {
+        has_role("admin")
+        not contains(input.resource, "delete")
+    }
+
+    has_role(role_name) if {
+        some i
+        input.user.roles[i] == role_name
+    }
+  audit-authz.rego: |
+    package authz.audit
+
+    import rego.v1
+
+    import data.authz.allow as global_allow
+    import data.authz.has_role
+
+    default allow = false
+
+    allow if {
+        global_allow
+    }
+
+    allow if {
+        input.resource == "audit.read"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "audit.detail"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "audit.read"
+        has_role("auditor")
+    }
+
+    allow if {
+        input.resource == "audit.detail"
+        has_role("auditor")
+    }
+  tickets-authz.rego: |
+    package authz.tickets
+
+    import rego.v1
+
+    import data.authz.has_role
+    import data.authz.allow as global_allow
+
+    default allow = false
+
+    allow if {
+        global_allow
+    }
+
+    allow if {
+        input.resource == "tickets.emitir"
+        has_role("empleado")
+    }
+
+    allow if {
+        input.resource == "tickets.pagar"
+        has_role("empleado")
+    }
+
+    allow if {
+        input.resource == "tickets.anular"
+        has_role("empleado")
+    }
+
+    allow if {
+        input.resource == "tickets.read"
+        has_role("empleado")
+    }
+
+    allow if {
+        input.resource == "tickets.delete"
+        has_role("super_user")
+    }
+  trazabilidad-authz.rego: |
+    package authz.trazabilidad
+
+    import rego.v1
+
+    import data.authz.allow as global_allow
+    import data.authz.has_role
+
+    default allow = false
+
+    allow if {
+        global_allow
+    }
+
+    allow if {
+        input.resource == "asignaciones.create"
+        has_role("empleado")
+    }
+
+    allow if {
+        input.resource == "asignaciones.read"
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "asignaciones.list"
+        has_role("propietario")
+    }
+
+    allow if {
+        input.resource == "asignaciones.fleet"
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "asignaciones.delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        input.resource == "asignaciones.physical_delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        input.resource == "trazabilidad.read"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "trazabilidad.physical_delete"
+        has_role("super_user")
+    }
+  usuarios-authz.rego: |
+    package authz.usuarios
+
+    import rego.v1
+
+    import data.authz.allow as global_allow
+    import data.authz.has_role
+
+    default allow = false
+
+    allow if {
+        global_allow
+    }
+
+    allow if {
+        input.resource == "usuarios.physical_delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        input.resource == "personas.physical_delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        input.resource == "roles.physical_delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        input.resource == "roles_usuario.physical_delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        input.resource == "usuarios.read"
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "usuarios.create"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "usuarios.update"
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "usuarios.update"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "usuarios.activate"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "usuarios.delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        input.resource == "personas.read"
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "personas.create"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "personas.update"
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "personas.update"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "personas.activate"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "personas.delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        startswith(input.resource, "roles.read")
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "roles.create"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "roles.update"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "roles.activate"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "roles.delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        startswith(input.resource, "roles-usuario.read")
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "roles-usuario.create"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "roles-usuario.update"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "roles-usuario.activate"
+        has_role("admin")
+    }
+
+    allow if {
+        input.resource == "roles-usuario.delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        input.resource == "auth.profile"
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "auth.logout"
+        input.user.id != ""
+    }
+  vehiculos-authz.rego: |
+    package authz.vehiculos
+
+    import rego.v1
+
+    import data.authz.allow as global_allow
+    import data.authz.has_role
+
+    default allow = false
+
+    allow if {
+        global_allow
+    }
+
+    allow if {
+        input.resource == "vehiculos.read"
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "vehiculos.list"
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "vehiculos.create"
+        has_role("propietario")
+    }
+
+    allow if {
+        input.resource == "vehiculos.update"
+        has_role("propietario")
+    }
+
+    allow if {
+        input.resource == "vehiculos.delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        input.resource == "vehiculos.physical_delete"
+        has_role("super_user")
+    }
+  zonas-authz.rego: |
+    package authz.zonas
+
+    import rego.v1
+
+    import data.authz.allow as global_allow
+    import data.authz.has_role
+
+    default allow = false
+
+    allow if {
+        global_allow
+    }
+
+    allow if {
+        input.resource == "zones.read"
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "zones.spaces.read"
+        input.user.id != ""
+    }
+
+    allow if {
+        input.resource == "zones.update"
+        has_role("encargado_zona")
+    }
+
+    allow if {
+        input.resource == "spaces.create"
+        has_role("encargado_zona")
+    }
+
+    allow if {
+        input.resource == "spaces.update"
+        has_role("encargado_zona")
+    }
+
+    allow if {
+        input.resource == "spaces.change-status"
+        has_role("encargado_zona")
+    }
+
+    allow if {
+        input.resource == "spaces.change-status"
+        has_role("empleado")
+    }
+
+    allow if {
+        input.resource == "spaces.activate"
+        has_role("encargado_zona")
+    }
+
+    allow if {
+        input.resource == "spaces.delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        input.resource == "zones.delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        input.resource == "spaces.physical_delete"
+        has_role("super_user")
+    }
+
+    allow if {
+        input.resource == "zones.physical_delete"
+        has_role("super_user")
+    }

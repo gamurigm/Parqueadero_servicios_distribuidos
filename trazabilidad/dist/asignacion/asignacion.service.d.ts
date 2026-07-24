@@ -15,11 +15,11 @@ export declare class AsignacionService {
     private utils;
     constructor(asignacionRepo: Repository<Asignacion>, trazabilidadService: TrazabilidadService, vehiculosClientService: VehiculosClientService, usuariosClientService: UsuariosClientService, eventPublisher: EventPublisher);
     private emitEvent;
-    crear(dto: CreateAsignacionDto, authHeader?: string, ip?: string, mac?: string): Promise<any>;
+    crear(dto: CreateAsignacionDto, authHeader?: string, ip?: string, mac?: string, username?: string): Promise<any>;
     listar(authHeader?: string): Promise<any[]>;
     buscarPorClave(userId: string, vehicleId: string, authHeader?: string): Promise<any>;
-    actualizar(userId: string, vehicleId: string, dto: UpdateAsignacionDto, authHeader?: string, ip?: string, mac?: string): Promise<any>;
-    eliminar(userId: string, vehicleId: string, authHeader?: string, ip?: string, mac?: string): Promise<{
+    actualizar(userId: string, vehicleId: string, dto: UpdateAsignacionDto, authHeader?: string, ip?: string, mac?: string, username?: string): Promise<any>;
+    eliminar(userId: string, vehicleId: string, authHeader?: string, ip?: string, mac?: string, username?: string): Promise<{
         message: string;
     }>;
     obtenerFlotaPorPropietario(userId: string, authHeader?: string): Promise<any[]>;

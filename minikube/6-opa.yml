@@ -16,9 +16,11 @@ spec:
       containers:
         - name: opa
           image: openpolicyagent/opa:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8181
           command:
+            - "opa"
             - "run"
             - "--server"
             - "--addr=0.0.0.0:8181"
@@ -26,12 +28,30 @@ spec:
             - "/policies"
           volumeMounts:
             - name: opa-policies
-              mountPath: /policies
+              mountPath: /policies/common-authz.rego
+              subPath: common-authz.rego
+            - name: opa-policies
+              mountPath: /policies/audit-authz.rego
+              subPath: audit-authz.rego
+            - name: opa-policies
+              mountPath: /policies/tickets-authz.rego
+              subPath: tickets-authz.rego
+            - name: opa-policies
+              mountPath: /policies/trazabilidad-authz.rego
+              subPath: trazabilidad-authz.rego
+            - name: opa-policies
+              mountPath: /policies/usuarios-authz.rego
+              subPath: usuarios-authz.rego
+            - name: opa-policies
+              mountPath: /policies/vehiculos-authz.rego
+              subPath: vehiculos-authz.rego
+            - name: opa-policies
+              mountPath: /policies/zonas-authz.rego
+              subPath: zonas-authz.rego
       volumes:
         - name: opa-policies
-          hostPath:
-            path: /opa/policies
-            type: DirectoryOrCreate
+          configMap:
+            name: opa-policies
 ---
 apiVersion: v1
 kind: Service

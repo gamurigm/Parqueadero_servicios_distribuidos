@@ -21,7 +21,11 @@ const jwt_auth_guard_1 = require("./auth/guards/jwt-auth.guard");
 const asignacion_entity_1 = require("./asignacion/entities/asignacion.entity");
 const trazabilidad_entity_1 = require("./trazabilidad/entities/trazabilidad.entity");
 const opa_module_1 = require("./opa/opa.module");
+const jwe_decrypt_middleware_1 = require("./jwe/jwe-decrypt.middleware");
 let AppModule = class AppModule {
+    configure(consumer) {
+        consumer.apply(jwe_decrypt_middleware_1.JweDecryptMiddleware).forRoutes('*');
+    }
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([

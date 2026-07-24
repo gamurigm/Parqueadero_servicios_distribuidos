@@ -18,6 +18,7 @@ import { AuditEvent, EventPublisher } from '../event-publisher.service';
 @Injectable()
 export class AuthService {
   private utils = new Utils();
+  private revokedJtis = new Set<string>();
 
   constructor(
     @InjectRepository(RefreshToken)
@@ -136,6 +137,7 @@ export class AuthService {
       aud: this.configService.get<string>('JWT_AUDIENCE', 'parqueadero-api'),
       jti: crypto.randomUUID(),
       username: user.username,
+      roles: roleNames,
     };
     const access_token = this.jwtService.sign(payload);
 
@@ -143,7 +145,6 @@ export class AuthService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    // Persistir roles en el refresh token para no tener que re-consultar en cada renovación
     const refreshToken = this.refreshTokenRepository.create({
       token: tokenString,
       usuarioId: user.id,
@@ -178,7 +179,7 @@ export class AuthService {
     };
   }
 
-  async refresh(refreshDto: RefreshDto) {
+  async refresh(refreshDto: RefreshDto, ip?: string) {
     const { refreshToken: token } = refreshDto;
 
     const refreshToken = await this.refreshTokenRepository.findOne({
@@ -203,6 +204,7 @@ export class AuthService {
       aud: this.configService.get<string>('JWT_AUDIENCE', 'parqueadero-api'),
       jti: crypto.randomUUID(),
       username: user.username,
+      roles: roleNames,
     };
     const access_token = this.jwtService.sign(payload);
 
@@ -224,7 +226,7 @@ export class AuthService {
     };
   }
 
-  async logout(refreshDto: RefreshDto, username?: string, ip?: string, mac?: string) {
+  async logout(refreshDto: RefreshDto, username?: string, ip?: string, mac?: string, jti?: string) {
     const { refreshToken: token } = refreshDto;
     const refreshToken = await this.refreshTokenRepository.findOne({ where: { token } });
     if (refreshToken) {
@@ -232,7 +234,8 @@ export class AuthService {
       await this.refreshTokenRepository.save(refreshToken);
     }
 
-    // Emitir evento de auditoría LOGOUT
+    if (jti) this.revokedJtis.add(jti);
+
     if (username) {
       this.emitAudit('LOGOUT', username, undefined, ip, mac).catch(() => {});
     }
@@ -242,5 +245,9 @@ export class AuthService {
 
   async getProfile(userId: string) {
     return this.usuarioService.findOne(userId);
+  }
+
+  async validateToken(jti: string): Promise<boolean> {
+    return !this.revokedJtis.has(jti);
   }
 }

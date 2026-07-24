@@ -20,7 +20,7 @@ spec:
             - containerPort: 1337
           env:
             - name: NODE_ENV
-              value: "production"
+              value: "development"
             - name: TOKEN_SECRET
               value: "asdnisaasc1654asd167as4da2s1684asd1fzx7sdw9qrgbnhju9"
 ---

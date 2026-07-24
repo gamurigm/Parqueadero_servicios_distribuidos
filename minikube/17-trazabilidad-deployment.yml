@@ -38,6 +38,7 @@ spec:
       containers:
         - name: trazabilidad
           image: trazabilidad:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3002
           env:
@@ -93,10 +94,9 @@ spec:
             - name: RABBITMQ_ROUTING_KEY
               value: "audit.event"
           readinessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 3002
-            initialDelaySeconds: 20
+            initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
           volumeMounts:

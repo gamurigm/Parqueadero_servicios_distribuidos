@@ -4,7 +4,6 @@ metadata:
   name: parqueadero-ingress
   namespace: app-parqueadero
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
     nginx.ingress.kubernetes.io/cors-allow-origin: "*"
@@ -26,8 +25,8 @@ spec:
                   number: 80
 
           # Usuarios (Kong)
-          - path: /usuarios(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /usuarios
+            pathType: Prefix
             backend:
               service:
                 name: kong-proxy
@@ -35,8 +34,8 @@ spec:
                   number: 8000
 
           # Vehiculos (Kong)
-          - path: /vehiculos(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /vehiculos
+            pathType: Prefix
             backend:
               service:
                 name: kong-proxy
@@ -44,8 +43,8 @@ spec:
                   number: 8000
 
           # Tickets (Kong)
-          - path: /tickets(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /tickets
+            pathType: Prefix
             backend:
               service:
                 name: kong-proxy
@@ -53,8 +52,8 @@ spec:
                   number: 8000
 
           # Trazabilidad (Kong)
-          - path: /trazabilidad(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /trazabilidad
+            pathType: Prefix
             backend:
               service:
                 name: kong-proxy
@@ -62,8 +61,8 @@ spec:
                   number: 8000
 
           # Zonas (Kong)
-          - path: /zonas(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /zonas
+            pathType: Prefix
             backend:
               service:
                 name: kong-proxy
@@ -71,8 +70,8 @@ spec:
                   number: 8000
 
           # Audit (Kong)
-          - path: /audit(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /audit
+            pathType: Prefix
             backend:
               service:
                 name: kong-proxy

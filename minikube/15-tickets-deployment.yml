@@ -38,6 +38,7 @@ spec:
       containers:
         - name: tickets
           image: tickets:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3003
           env:
@@ -109,10 +110,9 @@ spec:
             - name: RABBITMQ_ROUTING_KEY
               value: "audit.event"
           readinessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 3003
-            initialDelaySeconds: 20
+            initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
           volumeMounts:

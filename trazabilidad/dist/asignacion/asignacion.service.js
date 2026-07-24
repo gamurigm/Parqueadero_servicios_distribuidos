@@ -46,7 +46,7 @@ let AsignacionService = class AsignacionService {
         };
         await this.eventPublisher.publish(event);
     }
-    async crear(dto, authHeader, ip, mac) {
+    async crear(dto, authHeader, ip, mac, username) {
         const userId = this.utils.validateUUID(dto.userId);
         const vehicleId = this.utils.validateUUID(dto.vehicleId);
         const propietario = await this.usuariosClientService.validarPropietario(userId, authHeader);
@@ -71,7 +71,7 @@ let AsignacionService = class AsignacionService {
         }
         const asignacion = factory_asignacion_1.FactoryAsignacion.crear({ ...dto, userId, vehicleId });
         const saved = await this.asignacionRepo.save(asignacion);
-        await this.emitEvent('CREATE', saved, undefined, undefined, ip, mac);
+        await this.emitEvent('CREATE', saved, username, undefined, ip, mac);
         const propietarioNombre = this.obtenerNombrePropietario(propietario);
         const vehiculoInfo = this.obtenerEtiquetaVehiculo(vehicleId, vehiculoDetalle);
         await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.CREACION, saved.userId, saved.vehicleId, `Se creo asignacion del vehiculo ${vehiculoInfo} al propietario ${propietarioNombre}`, null, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
@@ -94,7 +94,7 @@ let AsignacionService = class AsignacionService {
         }
         return this.enriquecerAsignacion(asignacion, authHeader);
     }
-    async actualizar(userId, vehicleId, dto, authHeader, ip, mac) {
+    async actualizar(userId, vehicleId, dto, authHeader, ip, mac, username) {
         const uid = this.utils.validateUUID(userId);
         const vid = this.utils.validateUUID(vehicleId);
         const asignacion = await this.asignacionRepo.findOne({
@@ -122,7 +122,7 @@ let AsignacionService = class AsignacionService {
         if (dto.descripcion !== undefined)
             asignacion.descripcion = this.utils.sanitizeText(dto.descripcion);
         const saved = await this.asignacionRepo.save(asignacion);
-        await this.emitEvent('UPDATE', saved, undefined, undefined, ip, mac);
+        await this.emitEvent('UPDATE', saved, username, undefined, ip, mac);
         const propietario = await this.usuariosClientService.obtenerUsuario(saved.userId, authHeader);
         const vehiculoDetalle = await this.vehiculosClientService.getVehiculo(saved.vehicleId, authHeader);
         const propietarioNombre = this.obtenerNombrePropietario(propietario);
@@ -135,7 +135,7 @@ let AsignacionService = class AsignacionService {
         await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.MODIFICACION, saved.userId, saved.vehicleId, `Se modifico asignacion de ${propietarioNombre} sobre ${vehiculoInfo} - Cambios: ${cambios.join(', ')}`, payloadAnterior, trazabilidad_service_1.TrazabilidadService.serializarAsignacion(saved));
         return this.enriquecerAsignacion(saved, authHeader, propietario, vehiculoDetalle);
     }
-    async eliminar(userId, vehicleId, authHeader, ip, mac) {
+    async eliminar(userId, vehicleId, authHeader, ip, mac, username) {
         const uid = this.utils.validateUUID(userId);
         const vid = this.utils.validateUUID(vehicleId);
         const asignacion = await this.asignacionRepo.findOne({
@@ -150,7 +150,7 @@ let AsignacionService = class AsignacionService {
         const propietarioNombre = this.obtenerNombrePropietario(propietario);
         const vehiculoInfo = this.obtenerEtiquetaVehiculo(asignacion.vehicleId, vehiculoDetalle);
         await this.asignacionRepo.remove(asignacion);
-        await this.emitEvent('DELETE', { userId: uid, vehicleId: vid }, undefined, undefined, ip, mac);
+        await this.emitEvent('DELETE', { userId: uid, vehicleId: vid }, username, undefined, ip, mac);
         await this.trazabilidadService.registrar(trazabilidad_entity_1.TipoAccion.ELIMINACION, uid, vid, `Se elimino asignacion de ${propietarioNombre} sobre ${vehiculoInfo}`, payloadAnterior, null);
         return { message: `Asignacion de ${propietarioNombre} sobre ${vehiculoInfo} eliminada exitosamente` };
     }

@@ -28,7 +28,8 @@ let AsignacionController = class AsignacionController {
     }
     crear(dto, authHeader, req, mac) {
         const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
-        return this.asignacionService.crear(dto, authHeader, ip, mac || '');
+        const username = req?.user?.username;
+        return this.asignacionService.crear(dto, authHeader, ip, mac || '', username);
     }
     listar(authHeader) {
         return this.asignacionService.listar(authHeader);
@@ -50,11 +51,13 @@ let AsignacionController = class AsignacionController {
     }
     actualizar(userId, vehicleId, dto, authHeader, req, mac) {
         const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
-        return this.asignacionService.actualizar(userId, vehicleId, dto, authHeader, ip, mac || '');
+        const username = req?.user?.username;
+        return this.asignacionService.actualizar(userId, vehicleId, dto, authHeader, ip, mac || '', username);
     }
     eliminar(userId, vehicleId, authHeader, req, mac) {
         const ip = req?.ip || req?.socket?.remoteAddress || '0.0.0.0';
-        return this.asignacionService.eliminar(userId, vehicleId, authHeader, ip, mac || '');
+        const username = req?.user?.username;
+        return this.asignacionService.eliminar(userId, vehicleId, authHeader, ip, mac || '', username);
     }
 };
 exports.AsignacionController = AsignacionController;

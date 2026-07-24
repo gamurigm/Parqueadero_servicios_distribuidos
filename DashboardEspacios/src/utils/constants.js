@@ -1,4 +1,5 @@
-export const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+export const API_BASE = import.meta.env.VITE_API_BASE || (isLocal ? 'http://localhost:8000' : window.location.origin)
 
 export const ENDPOINTS = {
   LOGIN: '/usuarios/auth/login',

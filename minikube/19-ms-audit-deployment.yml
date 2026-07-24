@@ -38,6 +38,7 @@ spec:
       containers:
         - name: ms-audit
           image: ms-audit:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3006
           env:
@@ -75,6 +76,11 @@ spec:
                 secretKeyRef:
                   name: rabbitmq-credentials
                   key: RABBITMQ_DEFAULT_PASS
+            - name: RABBITMQ_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: RABBITMQ_DEFAULT_PASS
             - name: RABBITMQ_QUEUE
               value: "audit_queue"
             - name: RABBITMQ_EXCHANGE
@@ -88,10 +94,9 @@ spec:
             - name: USUARIOS_SERVICE_URL
               value: "http://usuarios:5000"
           readinessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 3006
-            initialDelaySeconds: 20
+            initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
           volumeMounts:

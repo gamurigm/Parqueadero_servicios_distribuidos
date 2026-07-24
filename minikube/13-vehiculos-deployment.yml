@@ -38,6 +38,7 @@ spec:
       containers:
         - name: vehiculos
           image: vehiculos:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           env:
@@ -93,10 +94,9 @@ spec:
             - name: TRAZABILIDAD_SERVICE_URL
               value: "http://trazabilidad:3002"
           readinessProbe:
-            httpGet:
-              path: /
+            tcpSocket:
               port: 3000
-            initialDelaySeconds: 20
+            initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
           volumeMounts:
