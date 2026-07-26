@@ -1,8 +1,10 @@
-import { IsNotEmpty, IsString, IsUUID } from "class-validator";
+import { IsNotEmpty, IsString, Matches } from "class-validator";
 import { ApiProperty } from '@nestjs/swagger';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export class CreateRolesUsuarioDto {
-    @IsUUID()
+    @Matches(UUID_REGEX, { message: 'id_user debe ser un UUID válido' })
     @IsNotEmpty()
     @IsString()
     @ApiProperty({
@@ -11,7 +13,7 @@ export class CreateRolesUsuarioDto {
     })
     id_user!: string;
 
-    @IsUUID()
+    @Matches(UUID_REGEX, { message: 'id_rol debe ser un UUID válido' })
     @IsNotEmpty()
     @IsString()
     @ApiProperty({

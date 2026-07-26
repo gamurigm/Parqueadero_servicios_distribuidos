@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * DTO para crear una nueva asignación vehículo-propietario.
@@ -10,7 +12,7 @@ export class CreateAsignacionDto {
         description: 'ID del propietario (UUID del microservicio de Usuarios)',
         example: 'a3f1b2c4-1234-4abc-89de-1234567890ab',
     })
-    @IsUUID()
+    @Matches(UUID_REGEX, { message: 'userId debe ser un UUID válido' })
     @IsNotEmpty()
     userId: string;
 
@@ -18,7 +20,7 @@ export class CreateAsignacionDto {
         description: 'ID del vehículo (UUID del microservicio de Vehículos)',
         example: 'b4e2c3d5-5678-4def-90ef-234567890bcd',
     })
-    @IsUUID()
+    @Matches(UUID_REGEX, { message: 'vehicleId debe ser un UUID válido' })
     @IsNotEmpty()
     vehicleId: string;
 

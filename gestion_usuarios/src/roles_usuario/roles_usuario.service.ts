@@ -288,9 +288,9 @@ export class RolesUsuarioService {
     };
   }
 
-  async remove(updateRolesUsuarioDto: UpdateRolesUsuarioDto) {
-    const idUser = this.validateRequiredUuid('id_user', updateRolesUsuarioDto.id_user);
-    const idRol = this.validateRequiredUuid('id_rol', updateRolesUsuarioDto.id_rol);
+  async remove(createRolesUsuarioDto: CreateRolesUsuarioDto) {
+    const idUser = this.validateRequiredUuid('id_user', createRolesUsuarioDto.id_user);
+    const idRol = this.validateRequiredUuid('id_rol', createRolesUsuarioDto.id_rol);
 
     const existe = await this.repositorioRolesUsuario.findOne({
       where: {

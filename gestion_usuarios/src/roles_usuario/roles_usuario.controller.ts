@@ -89,7 +89,7 @@ export class RolesUsuarioController {
   @ApiOperation({ summary: 'Eliminar una asignación de rol' })
   @ApiResponse({ status: 200, description: 'Asignación eliminada exitosamente' })
   @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
-  remove(@Body() updateRolesUsuarioDto: UpdateRolesUsuarioDto) {
-    return this.rolesUsuarioService.remove(updateRolesUsuarioDto);
+  remove(@Body() createRolesUsuarioDto: CreateRolesUsuarioDto) {
+    return this.rolesUsuarioService.remove(createRolesUsuarioDto);
   }
 }
