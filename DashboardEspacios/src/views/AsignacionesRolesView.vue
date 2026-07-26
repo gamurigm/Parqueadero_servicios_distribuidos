@@ -306,7 +306,7 @@ async function toggleEstadoRol(usuarioId, id_rol, activo) {
       gestion.value.roles = grouped[0].roles
     }
   } catch (err) {
-    console.error('Error cambiando estado:', err)
+    toast.error(err.response?.data?.message || err.message || 'Error al cambiar estado del rol')
   } finally {
     saving.value = false
   }
@@ -336,7 +336,7 @@ async function ejecutarEliminarRol() {
       gestion.value.roles = []
     }
   } catch (err) {
-    console.error('Error eliminando rol:', err)
+    toast.error(err.response?.data?.message || err.message || 'Error al eliminar el rol')
   } finally {
     saving.value = false
   }

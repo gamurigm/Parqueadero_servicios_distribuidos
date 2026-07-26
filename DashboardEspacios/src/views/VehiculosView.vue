@@ -429,11 +429,26 @@ function siguientePaso() {
 async function guardar() {
   guardando.value = true
   try {
-    const payload = {
-      tipo: form.tipo,
-      datos: { ...form.datos },
+    const datos = {
+      placa: form.datos.placa,
+      marca: form.datos.marca,
+      modelo: form.datos.modelo,
+      color: form.datos.color,
+      anio: form.datos.anio,
+      clasificacion: form.datos.clasificacion,
     }
-    if (payload.datos.tipo === '') delete payload.datos.tipo
+
+    if (form.tipo === 'auto') {
+      datos.numeroPuertas = form.datos.numeroPuertas
+      datos.capacidadMaletero = form.datos.capacidadMaletero
+    } else if (form.tipo === 'motocicleta') {
+      datos.tipo = form.datos.tipo
+    } else if (form.tipo === 'camioneta') {
+      datos.cabina = form.datos.cabina
+      datos.capacidadCarga = form.datos.capacidadCarga
+    }
+
+    const payload = { tipo: form.tipo, datos }
 
     await vehiculosService.crear(payload)
     toast.success(`Vehículo ${form.datos.placa.toUpperCase()} registrado`)

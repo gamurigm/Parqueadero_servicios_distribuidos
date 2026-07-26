@@ -318,7 +318,7 @@ async function toggleEstadoVehiculo(userId, vehicleId, estado) {
       gestion.value.vehiculos = grouped[0].vehiculos
     }
   } catch (err) {
-    console.error('Error cambiando estado:', err)
+    toast.error(err.response?.data?.message || err.message || 'Error al cambiar estado del vehículo')
   } finally {
     saving.value = false
   }
@@ -343,7 +343,7 @@ async function ejecutarEliminarVehiculo() {
       gestion.value.vehiculos = []
     }
   } catch (err) {
-    console.error('Error eliminando asignación:', err)
+    toast.error(err.response?.data?.message || err.message || 'Error al eliminar la asignación')
   } finally {
     saving.value = false
   }
