@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Put, UseGuards, Req, Headers } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Put, UseGuards, Req, Headers, Query } from '@nestjs/common';
 import { RolesUsuarioService } from './roles_usuario.service';
 import { CreateRolesUsuarioDto } from './dto/create-roles_usuario.dto';
 import { UpdateRolesUsuarioDto } from './dto/update-roles_usuario.dto';
@@ -39,8 +39,8 @@ export class RolesUsuarioController {
   @ApiOperation({ summary: 'Obtener una asignación específica por usuario y rol' })
   @ApiResponse({ status: 200, description: 'Asignación encontrada' })
   @ApiResponse({ status: 404, description: 'Asignación no encontrada' })
-  findOne(@Body() updateRolesUsuarioDto: UpdateRolesUsuarioDto) {
-    return this.rolesUsuarioService.findOne(updateRolesUsuarioDto);
+  findOne(@Query('id_user') id_user: string, @Query('id_rol') id_rol: string) {
+    return this.rolesUsuarioService.findOne({ id_user, id_rol });
   }
 
   @Get('roles/:id_rol')

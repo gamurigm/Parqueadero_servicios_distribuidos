@@ -4,7 +4,7 @@
       <h3 class="text-xl font-semibold text-gray-800">Asignaciones de Vehículos</h3>
     </div>
 
-    <DataTable :items="filteredList" :columns="columns" :loading="loading">
+    <DataTable :items="filteredList" :columns="columns" :loading="loading" :searchable="false">
       <template #filters>
         <div class="flex flex-wrap gap-3 mb-4">
           <input
@@ -93,19 +93,21 @@
               <button
                 v-if="can('admin') || can('empleado')"
                 @click="toggleEstadoVehiculo(gestion.userId, v.vehicleId, v.estado)"
-                class="text-xs px-2 py-0.5 rounded font-medium"
+                :disabled="saving"
+                class="text-xs px-2 py-0.5 rounded font-medium disabled:opacity-50"
                 :class="v.estado === 1
                   ? 'bg-orange-50 text-orange-700 hover:bg-orange-100'
                   : 'bg-green-50 text-green-700 hover:bg-green-100'"
               >
-                {{ v.estado === 1 ? 'Desactivar' : 'Activar' }}
+                {{ saving ? '...' : (v.estado === 1 ? 'Desactivar' : 'Activar') }}
               </button>
               <button
                 v-if="can('admin')"
                 @click="confirmarEliminarVehiculo(gestion.userId, v.vehicleId, v.placa)"
-                class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-700 hover:bg-red-100 font-medium"
+                :disabled="saving"
+                class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-700 hover:bg-red-100 font-medium disabled:opacity-50"
               >
-                X
+                {{ saving ? '...' : 'X' }}
               </button>
             </div>
           </div>
@@ -125,7 +127,7 @@
               :disabled="!nuevoVehiculoId || saving"
               class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm disabled:opacity-50"
             >
-              Agregar
+              {{ saving ? 'Guardando...' : 'Agregar' }}
             </button>
           </div>
           <input
@@ -155,12 +157,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
 import { asignacionesService } from '@/services/asignaciones.service'
 import { vehiculosService } from '@/services/vehiculos.service'
 import DataTable from '@/components/common/DataTable.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const auth = useAuthStore()
+const toast = useToastStore()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -284,6 +288,7 @@ async function agregarVehiculo() {
     const payload = { userId: gestion.value.userId, vehicleId: nuevoVehiculoId.value }
     if (nuevaDescripcion.value) payload.descripcion = nuevaDescripcion.value
     await asignacionesService.crearAsignacion(payload)
+    toast.success('Vehículo asignado correctamente')
     nuevoVehiculoId.value = ''
     nuevaDescripcion.value = ''
     await cargarDatos()
@@ -305,6 +310,7 @@ async function toggleEstadoVehiculo(userId, vehicleId, estado) {
     await asignacionesService.actualizarAsignacion(userId, vehicleId, {
       estado: estado === 1 ? 0 : 1,
     })
+    toast.success(estado === 1 ? 'Vehículo desactivado correctamente' : 'Vehículo activado correctamente')
     await cargarDatos()
     const updated = asignaciones.value.filter((a) => a.userId === gestion.value.userId)
     const grouped = groupByUsuario(updated)
@@ -327,6 +333,7 @@ async function ejecutarEliminarVehiculo() {
   saving.value = true
   try {
     await asignacionesService.eliminarAsignacion(confirm.value.userId, confirm.value.vehicleId)
+    toast.success('Asignación eliminada correctamente')
     await cargarDatos()
     const updated = asignaciones.value.filter((a) => a.userId === gestion.value.userId)
     const grouped = groupByUsuario(updated)

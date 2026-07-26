@@ -177,9 +177,9 @@ export class RolesUsuarioService {
     return assignments.map((assignment) => this.toAssignmentResponse(assignment));
   }
 
-  async findOne(updateRolesUsuarioDto: UpdateRolesUsuarioDto) {
-    const idUser = this.validateRequiredUuid('id_user', updateRolesUsuarioDto.id_user);
-    const idRol = this.validateRequiredUuid('id_rol', updateRolesUsuarioDto.id_rol);
+  async findOne(params: { id_user?: string; id_rol?: string }) {
+    const idUser = this.validateRequiredUuid('id_user', params.id_user);
+    const idRol = this.validateRequiredUuid('id_rol', params.id_rol);
 
     return this.findAssignment(idUser, idRol);
   }

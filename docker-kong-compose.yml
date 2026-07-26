@@ -125,7 +125,7 @@ services:
       POSTGRES_USER: kong
       POSTGRES_PASSWORD: kongpass
     ports:
-      - "5432:5432"
+      - "5439:5432"
     networks:
       - kong-net
     volumes:

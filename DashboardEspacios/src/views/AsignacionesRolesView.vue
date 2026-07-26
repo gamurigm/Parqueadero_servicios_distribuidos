@@ -4,7 +4,7 @@
       <h3 class="text-xl font-semibold text-gray-800">Asignaciones de Roles</h3>
     </div>
 
-    <DataTable :items="filteredList" :columns="columns" :loading="loading">
+    <DataTable :items="filteredList" :columns="columns" :loading="loading" :searchable="false">
       <template #filters>
         <div class="flex flex-wrap gap-3 mb-4">
           <input
@@ -100,19 +100,21 @@
               <button
                 v-if="can('admin')"
                 @click="toggleEstadoRol(gestion.usuarioId, r.id_rol, r.activo)"
-                class="text-xs px-2 py-0.5 rounded font-medium"
+                :disabled="saving"
+                class="text-xs px-2 py-0.5 rounded font-medium disabled:opacity-50"
                 :class="r.activo
                   ? 'bg-orange-50 text-orange-700 hover:bg-orange-100'
                   : 'bg-green-50 text-green-700 hover:bg-green-100'"
               >
-                {{ r.activo ? 'Desactivar' : 'Activar' }}
+                {{ saving ? '...' : (r.activo ? 'Desactivar' : 'Activar') }}
               </button>
               <button
                 v-if="can('super_user')"
                 @click="confirmarEliminarRol(gestion.usuarioId, r.id_rol, r.nombre)"
-                class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-700 hover:bg-red-100 font-medium"
+                :disabled="saving"
+                class="text-xs px-2 py-0.5 rounded bg-red-50 text-red-700 hover:bg-red-100 font-medium disabled:opacity-50"
               >
-                X
+                {{ saving ? '...' : 'X' }}
               </button>
             </div>
           </div>
@@ -130,7 +132,7 @@
               :disabled="!nuevoRolId || saving"
               class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm disabled:opacity-50"
             >
-              Agregar
+              {{ saving ? 'Guardando...' : 'Agregar' }}
             </button>
           </div>
           <p v-if="gestion.error" class="text-red-500 text-xs mt-2">{{ gestion.error }}</p>
@@ -153,12 +155,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
 import { asignacionesService } from '@/services/asignaciones.service'
 import { rolesService } from '@/services/roles.service'
 import DataTable from '@/components/common/DataTable.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const auth = useAuthStore()
+const toast = useToastStore()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -275,6 +279,7 @@ async function agregarRol() {
   gestion.value.error = ''
   try {
     await asignacionesService.asignarRol(gestion.value.usuarioId, nuevoRolId.value)
+    toast.success('Rol asignado correctamente')
     nuevoRolId.value = ''
     await cargarDatos()
     const updated = asignaciones.value.filter((a) => a.id_usuario === gestion.value.usuarioId)
@@ -293,6 +298,7 @@ async function toggleEstadoRol(usuarioId, id_rol, activo) {
   saving.value = true
   try {
     await asignacionesService.desactivarRol(usuarioId, id_rol)
+    toast.success(activo ? 'Rol desactivado correctamente' : 'Rol activado correctamente')
     await cargarDatos()
     const updated = asignaciones.value.filter((a) => a.id_usuario === gestion.value.usuarioId)
     const grouped = groupByUsuario(updated)
@@ -320,6 +326,7 @@ async function ejecutarEliminarRol() {
   saving.value = true
   try {
     await asignacionesService.eliminarRol(confirm.value.usuarioId, confirm.value.id_rol)
+    toast.success('Rol eliminado correctamente')
     await cargarDatos()
     const updated = asignaciones.value.filter((a) => a.id_usuario === gestion.value.usuarioId)
     const grouped = groupByUsuario(updated)
