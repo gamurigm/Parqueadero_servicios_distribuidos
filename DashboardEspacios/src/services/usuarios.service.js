@@ -23,12 +23,12 @@ export const usuariosService = {
   },
 
   async desactivar(id) {
-    const { data } = await api.patch(`${ENDPOINTS.USUARIOS}/${id}/desactivar`)
+    const { data } = await api.patch(`${ENDPOINTS.USUARIOS}/${id}/activar-desactivar`)
     return data
   },
 
   async activar(id) {
-    const { data } = await api.patch(`${ENDPOINTS.USUARIOS}/${id}/activar`)
+    const { data } = await api.patch(`${ENDPOINTS.USUARIOS}/${id}/activar-desactivar`)
     return data
   },
 
@@ -44,6 +44,11 @@ export const usuariosService = {
 
   async eliminarRol(usuarioId, rolId) {
     const { data } = await api.delete(ENDPOINTS.ROLES_USUARIO, { data: { id_user: usuarioId, id_rol: rolId } })
+    return data
+  },
+
+  async eliminar(id) {
+    const { data } = await api.delete(`${ENDPOINTS.USUARIOS}/${id}`)
     return data
   },
 }

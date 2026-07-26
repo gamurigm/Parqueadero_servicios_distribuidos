@@ -27,6 +27,13 @@
       <template v-if="perm.isAdmin()" #actions="{ item }">
         <div class="flex gap-2 justify-end">
           <button
+            @click="toggleEstado(item)"
+            class="text-xs px-2.5 py-1 rounded font-medium"
+            :class="item.activo ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-green-50 text-green-700 hover:bg-green-100'"
+          >
+            {{ item.activo ? 'Desactivar' : 'Activar' }}
+          </button>
+          <button
             @click="abrirModalEditar(item)"
             class="text-xs px-2.5 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium"
           >
@@ -68,16 +75,6 @@
                 rows="3"
                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               ></textarea>
-            </div>
-
-            <div v-if="editandoId" class="flex items-center gap-2">
-              <input
-                v-model="form.activo"
-                type="checkbox"
-                id="rolActivo"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <label for="rolActivo" class="text-sm text-gray-700">Rol Activo</label>
             </div>
           </div>
 
@@ -177,11 +174,20 @@ async function guardar() {
 
   guardando.value = true
   try {
+    const payload = {
+      nombre: form.value.nombre,
+      descripcion: form.value.descripcion || ''
+    }
+    
     if (editandoId.value) {
-      await rolesService.actualizar(editandoId.value, form.value)
+      payload.activo = form.value.activo
+    }
+    
+    if (editandoId.value) {
+      await rolesService.actualizar(editandoId.value, payload)
       toast.success('Rol actualizado correctamente')
     } else {
-      await rolesService.crear(form.value)
+      await rolesService.crear(payload)
       toast.success('Rol creado correctamente')
     }
     cerrarModal()
@@ -190,6 +196,15 @@ async function guardar() {
     console.error(err)
   } finally {
     guardando.value = false
+  }
+}
+async function toggleEstado(item) {
+  try {
+    await rolesService.activarDesactivar(item.id)
+    toast.success(`Estado del rol '${item.nombre}' actualizado correctamente`)
+    await cargar()
+  } catch (err) {
+    console.error(err)
   }
 }
 

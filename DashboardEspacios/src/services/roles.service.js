@@ -22,6 +22,11 @@ export const rolesService = {
     return data
   },
 
+  async activarDesactivar(id) {
+    const { data } = await api.patch(`${ENDPOINTS.ROLES}/${id}`)
+    return data
+  },
+
   async eliminar(id) {
     const { data } = await api.delete(`${ENDPOINTS.ROLES}/${id}`)
     return data
