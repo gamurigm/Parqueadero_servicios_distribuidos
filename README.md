@@ -377,68 +377,18 @@ Si `parqueadero.local` no resuelve, agregue el host con la IP de Minikube obteni
 
 ## Anexo: Informe de Pruebas Realizadas
 
-### Objetivo
+El informe actualizado esta disponible como archivo independiente en [`docs/informe-pruebas.md`](docs/informe-pruebas.md).
 
-Validar que la aplicacion sea funcional y replicable despues de levantar el stack completo: autenticacion, roles, carga de datos inicial, frontend, servicios por Kong y registro publico de usuarios.
+Resumen de la corrida del 2026-07-27:
 
-### Ambiente de pruebas
+| Area | Resultado |
+|------|-----------|
+| Frontend | `npm test` exitoso, 13 pruebas pasadas; `npm run build` exitoso. |
+| Tickets | `npm test` exitoso, 5 pruebas pasadas. |
+| Auditoria | `npm test` exitoso, 1 prueba pasada. |
+| Docker Compose | `docker compose -f docker-kong-compose.yml config --quiet` exitoso desde WSL. |
+| Seeds | `bash -n seed/run-seeds.sh` exitoso. |
+| Usuarios / Vehiculos / Zonas / Trazabilidad | Pruebas fallidas o ausentes; detalles y causas en el informe. |
+| Minikube | `kubectl` disponible, pero el API server local no respondio para `dry-run`. |
 
-- Rama: `main`.
-- Orquestacion: `docker-kong-compose.yml`.
-- Fecha de prueba: 2026-07-27.
-- Gateway de la verificacion local: `http://localhost:8020` por conflicto con otro Kong local. En un despliegue limpio el puerto por defecto es `http://localhost:8000`.
-- Frontend de la verificacion local: `http://localhost:5522`. En un despliegue limpio el puerto por defecto es `http://localhost:5500`.
-
-### Pruebas de construccion
-
-| Prueba | Comando | Resultado |
-|--------|---------|-----------|
-| Build frontend Vue | `cd DashboardEspacios && npm run build` | Exitoso |
-| Tests frontend | `cd DashboardEspacios && npm test` | Exitoso, `13/13` pruebas |
-| Build usuarios | `cd gestion_usuarios && npm run build` | Exitoso |
-| Validacion Compose | `docker compose -f docker-kong-compose.yml config --quiet` | Exitoso |
-| Sintaxis seed | `sh -n seed/run-seeds.sh` | Exitoso |
-| Validacion UUIDs seed | script Node sobre `seed/*.sql` | Exitoso, `90` UUIDs validos v4/RFC4122 |
-
-### Pruebas de carga inicial de datos
-
-Se valido que `db-seed` espere la creacion de tablas por los microservicios antes de insertar datos. Conteos obtenidos por API despues de login con `testadmin/Admin123!`:
-
-| Recurso | Resultado |
-|---------|-----------|
-| Usuarios | `9` registros |
-| Roles | `6` registros |
-| Roles asignados | `9` registros |
-| Vehiculos | `3` registros |
-| Zonas | `4` registros en ambiente probado |
-| Espacios | `27` registros en ambiente probado |
-| Tickets | `5` registros |
-| Asignaciones vehiculo/propietario | `3` registros |
-
-### Pruebas funcionales por API
-
-| Flujo | Resultado |
-|-------|-----------|
-| Login `testadmin/Admin123!` | `200 OK`, token JWT emitido con rol `admin` |
-| Listado de usuarios, roles y roles-Usuario | `200 OK` |
-| Listado de vehiculos | `200 OK` |
-| Listado de zonas y espacios | `200 OK` |
-| Listado de tickets | `200 OK` |
-| Listado de asignaciones | `200 OK` |
-| Registro publico sin `rolId` | `201 Created` |
-| Login del usuario registrado | `200 OK`, rol `propietario` |
-| Consulta de roles del usuario registrado | `200 OK`, asignacion `propietario` activa |
-
-### Pruebas funcionales de frontend
-
-- El frontend permite iniciar sesion con usuarios existentes.
-- El menu y las rutas se filtran por los roles reales del usuario autenticado.
-- El rol activo se actualiza al hacer login para evitar permisos visuales heredados de sesiones anteriores.
-- El registro publico no permite escoger rol; crea un usuario normal con rol `propietario`.
-- Los usuarios con roles administrativos pueden seguir gestionando usuarios y roles desde las pantallas autorizadas.
-
-### Observaciones
-
-- Si se vuelve a ejecutar el seed, los tokens existentes pueden invalidarse por limpieza de `active_tokens`; en ese caso se debe cerrar sesion y volver a iniciar sesion.
-- Para pruebas en maquinas con otros proyectos Docker corriendo, pueden aparecer conflictos de puertos. El despliegue replicable limpio usa los puertos documentados arriba.
-- Las credenciales y secretos incluidos son de ambiente academico/demostracion; para produccion se deben reemplazar passwords, `JWT_SECRET` y configuraciones sensibles.
+Estado general contra la rubrica: cumplimiento parcial. Los hallazgos principales son el dominio de Ingress distinto al solicitado, ausencia de `ms-sse` separado con propagacion RabbitMQ, rechazos de tickets sin auditoria, y diferencia entre estado `PAGADO` y el estado `RECAUDADO` pedido para el caso CP-06.
