@@ -14,4 +14,6 @@ export const TRAZABILIDAD_CLIENT = 'TRAZABILIDAD_CLIENT';
 
 export interface ITrazabilidadClient {
   registrarEvento(dto: RegistrarEventoDto, authHeader?: string): Promise<void>;
+  verificarAsignacionActiva(vehicleId: string, authHeader?: string): Promise<boolean>;
+  obtenerCedulaPropietario(vehicleId: string, authHeader?: string): Promise<string | undefined>;
 }

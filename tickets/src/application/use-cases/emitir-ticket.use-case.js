@@ -12,6 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 var EmitirTicketUseCase_1;
+var _a;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmitirTicketUseCase = void 0;
 const common_1 = require("@nestjs/common");
@@ -24,18 +25,22 @@ const ticket_code_generator_interface_1 = require("../ports/ticket-code-generato
 const trazabilidad_client_interface_1 = require("../ports/trazabilidad-client.interface");
 const ticket_entity_1 = require("../../domain/ticket.entity");
 const business_error_1 = require("../../domain/errors/business-error");
+const event_publisher_service_1 = require("../../event-publisher.service");
+const sse_service_1 = require("../../../../../../../../../../../../../src/sse/sse.service");
 let EmitirTicketUseCase = EmitirTicketUseCase_1 = class EmitirTicketUseCase {
-    constructor(ticketRepo, usuariosClient, vehiculosClient, zonasClient, codeGenerator, trazabilidadClient) {
+    constructor(ticketRepo, usuariosClient, vehiculosClient, zonasClient, codeGenerator, trazabilidadClient, eventPublisher, sseService) {
         this.ticketRepo = ticketRepo;
         this.usuariosClient = usuariosClient;
         this.vehiculosClient = vehiculosClient;
         this.zonasClient = zonasClient;
         this.codeGenerator = codeGenerator;
         this.trazabilidadClient = trazabilidadClient;
+        this.eventPublisher = eventPublisher;
+        this.sseService = sseService;
         this.logger = new common_1.Logger(EmitirTicketUseCase_1.name);
     }
     async execute(input) {
-        const { idEspacio, cedula, placa, idEmpleado, authHeader } = input;
+        const { idEspacio, cedula, placa, idEmpleado, username, authHeader, ip, mac } = input;
         const resolved = await this.resolverClaveCompuesta(cedula, placa, authHeader);
         const espacio = await this.zonasClient.obtenerEspacio(idEspacio, authHeader);
         if (!espacio) {
@@ -90,6 +95,20 @@ let EmitirTicketUseCase = EmitirTicketUseCase_1 = class EmitirTicketUseCase {
             entidadId: saved.id,
             usuarioEjecutor: idEmpleado,
             payloadNuevo: { id: saved.id, codigoTicket: saved.codigoTicket, placa: saved.placa, idEspacio },
+        }, authHeader);
+        const auditEvent = {
+            servicio: 'ms-tickets',
+            accion: 'CREATE',
+            entidad: 'TICKET',
+            usuario: username || 'system',
+            ip,
+            mac,
+            datos: { id: saved.id, codigoTicket: saved.codigoTicket, placa: saved.placa, idEspacio, estado: saved.estado },
+        };
+        await this.eventPublisher.publish(auditEvent);
+        await this.sseService.emitEvent('espacio-actualizado', {
+            id: saved.idEspacio,
+            estado: saved.estado,
         });
         return {
             id: saved.id,
@@ -144,6 +163,6 @@ exports.EmitirTicketUseCase = EmitirTicketUseCase = EmitirTicketUseCase_1 = __de
     __param(3, (0, common_1.Inject)(zonas_client_interface_1.ZONAS_CLIENT)),
     __param(4, (0, common_1.Inject)(ticket_code_generator_interface_1.TICKET_CODE_GENERATOR)),
     __param(5, (0, common_1.Inject)(trazabilidad_client_interface_1.TRAZABILIDAD_CLIENT)),
-    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object])
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, Object, event_publisher_service_1.EventPublisher, typeof (_a = typeof sse_service_1.SseService !== "undefined" && sse_service_1.SseService) === "function" ? _a : Object])
 ], EmitirTicketUseCase);
 //# sourceMappingURL=emitir-ticket.use-case.js.map

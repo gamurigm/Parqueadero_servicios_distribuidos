@@ -1,15 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Put, UseGuards, Req, Headers, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Put, Req, Headers, Query } from '@nestjs/common';
 import { RolesUsuarioService } from './roles_usuario.service';
 import { CreateRolesUsuarioDto } from './dto/create-roles_usuario.dto';
 import { UpdateRolesUsuarioDto } from './dto/update-roles_usuario.dto';
 import { ActiveDeactiveRolesUsuarioDto } from './dto/active-deactive-roles_usuario.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { Resource } from '../opa/decorators/resource.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('roles-usuario')
 @Controller('roles-Usuario')
-@UseGuards(JwtAuthGuard) 
 export class RolesUsuarioController {
   constructor(private readonly rolesUsuarioService: RolesUsuarioService) {}
 

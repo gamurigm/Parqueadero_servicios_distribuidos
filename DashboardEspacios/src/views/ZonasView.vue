@@ -281,7 +281,9 @@ async function guardarZona() {
     }
     mostrarModalZona.value = false
     await cargar()
-  } catch (err) { console.error(err) }
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.message || 'Error al guardar la zona')
+  }
   finally { guardando.value = false }
 }
 
@@ -295,7 +297,9 @@ async function ejecutarEliminacion() {
     await zonasService.eliminarZona(item.id)
     toast.success(`Zona '${item.nombre}' eliminada`)
     await cargar()
-  } catch (err) { console.error(err) }
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.message || 'Error al eliminar la zona')
+  }
 }
 
 onMounted(cargar)

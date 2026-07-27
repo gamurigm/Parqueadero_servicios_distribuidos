@@ -25,38 +25,57 @@ const anular_ticket_request_dto_1 = require("../dto/request/anular-ticket-reques
 const ticket_response_dto_1 = require("../dto/response/ticket-response.dto");
 const pago_response_dto_1 = require("../dto/response/pago-response.dto");
 const resource_decorator_1 = require("../../opa/decorators/resource.decorator");
+const sse_service_1 = require("../../sse/sse.service");
 let TicketsController = class TicketsController {
-    constructor(emitirUseCase, pagarUseCase, anularUseCase, ticketRepo) {
+    constructor(emitirUseCase, pagarUseCase, anularUseCase, ticketRepo, sseService) {
         this.emitirUseCase = emitirUseCase;
         this.pagarUseCase = pagarUseCase;
         this.anularUseCase = anularUseCase;
         this.ticketRepo = ticketRepo;
+        this.sseService = sseService;
     }
-    async emitir(dto, req) {
+    async emitir(dto, req, mac) {
+        const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
         const result = await this.emitirUseCase.execute({
             idEspacio: dto.idEspacio,
             cedula: dto.cedula,
             placa: dto.placa,
             idEmpleado: req.user.id,
+            username: req.user.username,
             authHeader: req.headers.authorization,
+            ip,
+            mac: mac || '',
         });
+        this.sseService.emitEvent('ticket.emitido', result);
         return result;
     }
-    async pagar(dto, req) {
-        return await this.pagarUseCase.execute({
+    async pagar(dto, req, mac) {
+        const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
+        const result = await this.pagarUseCase.execute({
             idTicket: dto.idTicket,
             codigoTicket: dto.codigoTicket,
             idEmpleado: req.user.id,
+            username: req.user.username,
             authHeader: req.headers.authorization,
+            ip,
+            mac: mac || '',
         });
+        this.sseService.emitEvent('ticket.pagado', result);
+        return result;
     }
-    async anular(dto, req) {
+    async anular(dto, req, mac) {
+        const ip = req.ip || req.socket?.remoteAddress || '0.0.0.0';
         const result = await this.anularUseCase.execute({
             idTicket: dto.idTicket,
             codigoTicket: dto.codigoTicket,
             idEmpleado: req.user.id,
+            username: req.user.username,
+            authHeader: req.headers.authorization,
             motivo: dto.motivo,
+            ip,
+            mac: mac || '',
         });
+        this.sseService.emitEvent('ticket.anulado', result);
         return result;
     }
     async listarTodos() {
@@ -77,6 +96,14 @@ let TicketsController = class TicketsController {
         }
         return ticket;
     }
+    async eliminar(id) {
+        const ticket = await this.ticketRepo.findById(id);
+        if (!ticket) {
+            throw new common_1.NotFoundException('Ticket no encontrado');
+        }
+        await this.ticketRepo.remove(id);
+        return { message: 'Ticket eliminado correctamente' };
+    }
 };
 exports.TicketsController = TicketsController;
 __decorate([
@@ -88,8 +115,9 @@ __decorate([
     (0, swagger_1.ApiResponse)({ status: 400, description: 'Error de validación o regla de negocio' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Headers)('x-mac-address')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [emitir_ticket_request_dto_1.EmitirTicketRequestDto, Object]),
+    __metadata("design:paramtypes", [emitir_ticket_request_dto_1.EmitirTicketRequestDto, Object, String]),
     __metadata("design:returntype", Promise)
 ], TicketsController.prototype, "emitir", null);
 __decorate([
@@ -102,8 +130,9 @@ __decorate([
     (0, swagger_1.ApiResponse)({ status: 404, description: 'Ticket no encontrado' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Headers)('x-mac-address')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [pagar_ticket_request_dto_1.PagarTicketRequestDto, Object]),
+    __metadata("design:paramtypes", [pagar_ticket_request_dto_1.PagarTicketRequestDto, Object, String]),
     __metadata("design:returntype", Promise)
 ], TicketsController.prototype, "pagar", null);
 __decorate([
@@ -115,8 +144,9 @@ __decorate([
     (0, swagger_1.ApiResponse)({ status: 400, description: 'Error de validación o regla de negocio' }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Headers)('x-mac-address')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [anular_ticket_request_dto_1.AnularTicketRequestDto, Object]),
+    __metadata("design:paramtypes", [anular_ticket_request_dto_1.AnularTicketRequestDto, Object, String]),
     __metadata("design:returntype", Promise)
 ], TicketsController.prototype, "anular", null);
 __decorate([
@@ -153,6 +183,18 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], TicketsController.prototype, "obtener", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, resource_decorator_1.Resource)('tickets.delete'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Eliminar un ticket (solo super_user)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Ticket eliminado exitosamente' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Ticket no encontrado' }),
+    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe({ version: '4' }))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], TicketsController.prototype, "eliminar", null);
 exports.TicketsController = TicketsController = __decorate([
     (0, swagger_1.ApiTags)('Tickets'),
     (0, swagger_1.ApiBearerAuth)(),
@@ -160,6 +202,6 @@ exports.TicketsController = TicketsController = __decorate([
     __param(3, (0, common_1.Inject)(ticket_repository_interface_1.TICKET_REPOSITORY)),
     __metadata("design:paramtypes", [emitir_ticket_use_case_1.EmitirTicketUseCase,
         pagar_ticket_use_case_1.PagarTicketUseCase,
-        anular_ticket_use_case_1.AnularTicketUseCase, Object])
+        anular_ticket_use_case_1.AnularTicketUseCase, Object, sse_service_1.SseService])
 ], TicketsController);
 //# sourceMappingURL=tickets.controller.js.map

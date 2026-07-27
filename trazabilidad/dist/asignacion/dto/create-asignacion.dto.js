@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateAsignacionDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 class CreateAsignacionDto {
 }
 exports.CreateAsignacionDto = CreateAsignacionDto;
@@ -20,7 +21,7 @@ __decorate([
         description: 'ID del propietario (UUID del microservicio de Usuarios)',
         example: 'a3f1b2c4-1234-4abc-89de-1234567890ab',
     }),
-    (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.Matches)(UUID_REGEX, { message: 'userId debe ser un UUID válido' }),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateAsignacionDto.prototype, "userId", void 0);
@@ -29,7 +30,7 @@ __decorate([
         description: 'ID del vehículo (UUID del microservicio de Vehículos)',
         example: 'b4e2c3d5-5678-4def-90ef-234567890bcd',
     }),
-    (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.Matches)(UUID_REGEX, { message: 'vehicleId debe ser un UUID válido' }),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateAsignacionDto.prototype, "vehicleId", void 0);

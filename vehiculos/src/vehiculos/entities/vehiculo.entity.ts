@@ -31,5 +31,8 @@ export abstract class Vehiculo {
     @Column({type : 'enum', enum : Clasificacion})
     clasificacion!: Clasificacion;
 
+    @Column({ name: 'tipo', insert: false, update: false })
+    tipo?: string;
+
     abstract obtenerTipo(): string;
 }

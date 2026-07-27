@@ -19,11 +19,15 @@ const ticket_repository_interface_1 = require("../ports/ticket-repository.interf
 const zonas_client_interface_1 = require("../ports/zonas-client.interface");
 const trazabilidad_client_interface_1 = require("../ports/trazabilidad-client.interface");
 const business_error_1 = require("../../domain/errors/business-error");
+const event_publisher_service_1 = require("../../event-publisher.service");
+const sse_service_1 = require("../../sse/sse.service");
 let AnularTicketUseCase = AnularTicketUseCase_1 = class AnularTicketUseCase {
-    constructor(ticketRepo, zonasClient, trazabilidadClient) {
+    constructor(ticketRepo, zonasClient, trazabilidadClient, eventPublisher, sseService) {
         this.ticketRepo = ticketRepo;
         this.zonasClient = zonasClient;
         this.trazabilidadClient = trazabilidadClient;
+        this.eventPublisher = eventPublisher;
+        this.sseService = sseService;
         this.logger = new common_1.Logger(AnularTicketUseCase_1.name);
     }
     async execute(input) {
@@ -38,7 +42,7 @@ let AnularTicketUseCase = AnularTicketUseCase_1 = class AnularTicketUseCase {
         let retries = 3;
         while (retries > 0) {
             try {
-                await this.zonasClient.marcarLibre(ticket.idEspacio);
+                await this.zonasClient.marcarLibre(ticket.idEspacio, input.authHeader);
                 break;
             }
             catch (error) {
@@ -62,6 +66,20 @@ let AnularTicketUseCase = AnularTicketUseCase_1 = class AnularTicketUseCase {
             usuarioEjecutor: input.idEmpleado,
             payloadAnterior: { estado: 'ACTIVO' },
             payloadNuevo: { estado: 'ANULADO', motivo: input.motivo },
+        }, input.authHeader);
+        const auditEvent = {
+            servicio: 'ms-tickets',
+            accion: 'UPDATE',
+            entidad: 'TICKET',
+            usuario: input.username || 'system',
+            ip: input.ip,
+            mac: input.mac,
+            datos: { id: updated.id, codigoTicket: updated.codigoTicket, estado: 'ANULADO', motivo: input.motivo },
+        };
+        await this.eventPublisher.publish(auditEvent);
+        await this.sseService.emitEvent('espacio-actualizado', {
+            id: ticket.idEspacio,
+            estado: 'DISPONIBLE',
         });
         return {
             id: updated.id,
@@ -77,6 +95,7 @@ exports.AnularTicketUseCase = AnularTicketUseCase = AnularTicketUseCase_1 = __de
     __param(0, (0, common_1.Inject)(ticket_repository_interface_1.TICKET_REPOSITORY)),
     __param(1, (0, common_1.Inject)(zonas_client_interface_1.ZONAS_CLIENT)),
     __param(2, (0, common_1.Inject)(trazabilidad_client_interface_1.TRAZABILIDAD_CLIENT)),
-    __metadata("design:paramtypes", [Object, Object, Object])
+    __metadata("design:paramtypes", [Object, Object, Object, event_publisher_service_1.EventPublisher,
+        sse_service_1.SseService])
 ], AnularTicketUseCase);
 //# sourceMappingURL=anular-ticket.use-case.js.map

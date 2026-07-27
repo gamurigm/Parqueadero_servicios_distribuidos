@@ -60,6 +60,9 @@ let TicketRepository = class TicketRepository {
         const saved = await this.repo.save(entity);
         return this.toDomain(saved);
     }
+    async remove(id) {
+        await this.repo.delete(id);
+    }
     toDomain(entity) {
         return new ticket_entity_2.Ticket(entity.id, entity.codigoTicket, entity.idEspacio, entity.cedula, entity.placa, ticket_status_enum_1.TicketStatus[entity.estado], entity.fechaIngreso, entity.idEmpleado, entity.fechaSalida, entity.valorRecaudado ? Number(entity.valorRecaudado) : undefined, entity.motivoAnulacion);
     }

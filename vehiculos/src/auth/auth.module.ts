@@ -23,8 +23,7 @@ import { OpaModule } from '../opa/opa.module';
         }
         return {
           publicKey: publicKey,
-          signOptions: { 
-            expiresIn: '15m',
+          signOptions: {
             algorithm: 'RS256',
           },
         };

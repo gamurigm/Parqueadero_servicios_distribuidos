@@ -46,7 +46,7 @@ export class OpaService {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input }),
-        signal: AbortSignal.timeout(500), // Timeout de 500ms
+        signal: AbortSignal.timeout(2000), // Timeout de 2s
       });
 
       if (!response.ok) {

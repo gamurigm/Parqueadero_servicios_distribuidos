@@ -8,6 +8,7 @@ import * as crypto from 'crypto';
 import { Utils } from '../utils/utils';
 import { Person } from '../persona/entities/persona.entity';
 import { RolesUsuarios } from '../roles_usuario/entities/roles_usuario.entity';
+import { RefreshToken } from '../auth/entities/refresh-token.entity';
 import { AuditEvent, EventPublisher } from '../event-publisher.service';
 
 @Injectable()
@@ -27,6 +28,8 @@ export class UsuarioService {
     private readonly personRepository: Repository<Person>,
     @InjectRepository(RolesUsuarios)
     private readonly rolesUsuarioRepository: Repository<RolesUsuarios>,
+    @InjectRepository(RefreshToken)
+    private readonly refreshTokenRepository: Repository<RefreshToken>,
     private readonly eventPublisher: EventPublisher,
   ) {
     this.utils = new Utils();
@@ -293,6 +296,8 @@ export class UsuarioService {
 
     if (rolesAsigned) throw new ConflictException('El usuario tiene roles activos asignados no se puede eliminar');
 
+    await this.rolesUsuarioRepository.delete({ id_usuario: idUser });
+    await this.refreshTokenRepository.delete({ usuario: { id: idUser } });
     await this.userRepository.delete(idUser);
 
     await this.emitEvent('DELETE', { id: idUser, username: userExist.username }, userExist.username, undefined, ip, mac);

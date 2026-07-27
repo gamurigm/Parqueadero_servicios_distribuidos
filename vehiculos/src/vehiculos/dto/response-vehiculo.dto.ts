@@ -1,5 +1,4 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { TipoMoto } from "../entities/tipos/motocicleta.entity";
 
 export class VehiculoResponseDto{
 
@@ -37,5 +36,5 @@ export class VehiculoResponseDto{
         capacidadCarga!: number;
 
         @ApiProperty()
-        tipo!: TipoMoto;
+        tipo!: string;
 }

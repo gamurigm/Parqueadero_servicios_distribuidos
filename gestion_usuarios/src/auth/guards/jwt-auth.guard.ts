@@ -76,7 +76,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     let userRoles = user.roles || [];
     if (!userRoles || userRoles.length === 0) {
       try {
-        const rolesUrl = `http://localhost:3000/roles-Usuario/usuarios/${user.id}`;
+        const rolesUrl = `${this.usuariosUrl}/roles-Usuario/usuarios/${user.id}`;
         const res = await fetch(rolesUrl, {
           headers: { Authorization: req.headers.authorization },
           signal: AbortSignal.timeout(1000),

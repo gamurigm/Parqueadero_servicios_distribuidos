@@ -74,6 +74,11 @@ export class EmitirTicketUseCase {
 
     const resolved = await this.resolverClaveCompuesta(cedula, placa, authHeader);
 
+    const tieneAsignacion = await this.trazabilidadClient.verificarAsignacionActiva(resolved.vehicleId, authHeader);
+    if (!tieneAsignacion) {
+      throw new BusinessError(`El vehiculo con placa ${resolved.placa} no tiene un propietario asignado activamente en trazabilidad`);
+    }
+
     const espacio = await this.zonasClient.obtenerEspacio(idEspacio, authHeader);
     if (!espacio) {
       throw new BusinessError(`El espacio ${idEspacio} no existe`);
@@ -104,7 +109,7 @@ export class EmitirTicketUseCase {
     try {
       saved = await this.ticketRepo.save(ticket);
     } catch (error) {
-      if (error.message?.includes('duplicate key') || error.message?.includes('unique')) {
+      if (error) {
         const codigoRetry = this.codeGenerator.generar(idEspacio, espacio.tipo);
         saved = await this.ticketRepo.save(
           Ticket.activo(uuid(), codigoRetry, idEspacio, resolved.cedula, resolved.placa, idEmpleado),
@@ -122,7 +127,7 @@ export class EmitirTicketUseCase {
       } catch (error) {
         retries--;
         if (retries === 0) {
-          this.logger.error(`Error crítico al marcar espacio ${idEspacio} como ocupado: ${error.message}. Inconsistencia temporal.`);
+          this.logger.error(`Error crítico al marcar espacio ${idEspacio} como ocupado: ${error}. Inconsistencia temporal.`);
         } else {
           this.logger.warn(`Fallo al marcar ocupado, reintentando... quedan ${retries} intentos`);
           await new Promise(resolve => setTimeout(resolve, 1000)); // 1s backoff
@@ -174,7 +179,7 @@ export class EmitirTicketUseCase {
     cedula?: string,
     placa?: string,
     authHeader?: string,
-  ): Promise<{ cedula?: string; placa: string }> {
+  ): Promise<{ cedula?: string; placa: string; vehicleId?: string }> {
     if (placa) {
       const vehiculo = await this.vehiculosClient.buscarPorPlaca(placa, authHeader);
       if (!vehiculo) {
@@ -197,10 +202,14 @@ export class EmitirTicketUseCase {
           throw new BusinessError(`La placa ${placaResuelta} no esta asociada a la cedula ${cedula}`);
         }
 
-        return { cedula, placa: placaResuelta };
+        return { cedula, placa: placaResuelta, vehicleId: vehiculo.id };
       }
 
-      return { cedula: vehiculo.cedulaPropietario, placa: placaResuelta };
+      if (!vehiculo.cedulaPropietario) {
+        const cedulaFromTrazabilidad = await this.trazabilidadClient.obtenerCedulaPropietario(vehiculo.id, authHeader);
+        return { cedula: cedulaFromTrazabilidad, placa: placaResuelta, vehicleId: vehiculo.id };
+      }
+      return { cedula: vehiculo.cedulaPropietario, placa: placaResuelta, vehicleId: vehiculo.id };
     }
 
     if (cedula) {
@@ -213,7 +222,9 @@ export class EmitirTicketUseCase {
           `La cédula ${cedula} tiene ${vehiculos.length} vehículos. Debe especificar la placa`,
         );
       }
-      return { cedula, placa: vehiculos[0].placa };
+      const placaUnica = vehiculos[0].placa;
+      const vehiculoDetalle = await this.vehiculosClient.buscarPorPlaca(placaUnica, authHeader);
+      return { cedula, placa: placaUnica, vehicleId: vehiculoDetalle?.id };
     }
 
     throw new BusinessError('Debe proporcionar al menos cédula o placa');

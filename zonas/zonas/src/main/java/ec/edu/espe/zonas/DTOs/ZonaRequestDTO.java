@@ -33,7 +33,7 @@ public class ZonaRequestDTO {
     private String nombre;
 
     @Size(max = 500, message = "La descripción no puede exceder los 500 caracteres")
-    @Pattern(regexp = "^[a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ.,;:()-]*$", message = "La descripción contiene caracteres inválidos")
+    @Pattern(regexp = "^[a-zA-Z0-9 áéíóúÁÉÍÓÚñÑ.,;:()\\/#@!_-]*$", message = "La descripción contiene caracteres inválidos")
     @Schema(description = "Descripción de la zona",
             example = "Zona ubicada en el sector norte del estacionamiento",
             maxLength = 500)

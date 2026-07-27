@@ -61,6 +61,14 @@
         <span class="font-mono font-medium">${{ (item.valorRecaudado || 0).toFixed(2) }}</span>
       </template>
 
+      <template #cell-cedula="{ item }">
+        <span>{{ cedulaMap[item.placa] || item.cedula || '—' }}</span>
+      </template>
+
+      <template #cell-idEspacio="{ item }">
+        <span>{{ obtenerCodigoEspacio(item.idEspacio) }}</span>
+      </template>
+
       <template #cell-fechaIngreso="{ item }">
         <span class="text-xs text-gray-500">{{ formatFecha(item.fechaIngreso) }}</span>
       </template>
@@ -100,7 +108,12 @@
       <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg mx-4">
         <h3 class="text-lg font-semibold mb-4">Emitir Ticket</h3>
         <form @submit.prevent="emitir" class="space-y-3">
-          <input v-model="ticketForm.placa" placeholder="Placa del vehículo" class="w-full px-3 py-2 border rounded text-sm" required />
+          <select v-model="ticketForm.placa" class="w-full px-3 py-2 border rounded text-sm" required>
+            <option value="">Seleccionar vehículo asignado...</option>
+            <option v-for="v in vehiculosAsignados" :key="v.vehicleId" :value="v.placa">
+              {{ v.placa }} — {{ v.propietarioNombre || v.propietarioCedula }}
+            </option>
+          </select>
           <select v-model="ticketForm.id_espacio" class="w-full px-3 py-2 border rounded text-sm" required>
             <option value="">Seleccionar espacio...</option>
             <option v-for="esp in espacios" :key="esp.id" :value="esp.id">
@@ -165,6 +178,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ticketsService } from '@/services/tickets.service'
 import { zonasService } from '@/services/zonas.service'
+import { asignacionesService } from '@/services/asignaciones.service'
 import DataTable from '@/components/common/DataTable.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -174,6 +188,7 @@ const auth = useAuthStore()
 
 const tickets = ref([])
 const espacios = ref([])
+const vehiculosAsignados = ref([])
 const loading = ref(true)
 const saving = ref(false)
 const showForm = ref(false)
@@ -183,6 +198,7 @@ const motivoError = ref('')
 const itemAnular = ref(null)
 
 const ticketForm = ref({ placa: '', id_espacio: '' })
+const cedulaMap = ref({})
 
 const filtroPlaca = ref('')
 const filtroCedula = ref('')
@@ -212,7 +228,7 @@ const filteredList = computed(() => {
   }
   if (filtroCedula.value) {
     const q = filtroCedula.value.toLowerCase()
-    list = list.filter((t) => (t.cedula || '').toLowerCase().includes(q))
+    list = list.filter((t) => (cedulaMap.value[t.placa] || t.cedula || '').toLowerCase().includes(q))
   }
   if (filtroEstado.value) {
     list = list.filter((t) => t.estado === filtroEstado.value)
@@ -250,6 +266,7 @@ const perm = {
 onMounted(() => {
   cargar()
   cargarEspacios()
+  cargarVehiculosAsignados()
 })
 
 async function cargar() {
@@ -267,6 +284,37 @@ async function cargarEspacios() {
   } catch (e) {
     console.error(e)
   }
+}
+
+async function cargarVehiculosAsignados() {
+  try {
+    const asignaciones = await asignacionesService.listarAsignacionesVehiculos()
+    const activos = Array.isArray(asignaciones)
+      ? asignaciones.filter((a) => a.estado === 1 || a.estadoTexto === 'Activo')
+      : []
+    vehiculosAsignados.value = activos
+      .filter((a) => a.vehiculo?.placa)
+      .map((a) => ({
+        vehicleId: a.vehicleId,
+        placa: a.vehiculo.placa,
+        propietarioCedula: a.propietario?.cedula || '',
+        propietarioNombre: a.propietario?.nombreCompleto || '',
+      }))
+    const map = {}
+    activos.forEach((a) => {
+      if (a.vehiculo?.placa) {
+        map[a.vehiculo.placa] = a.propietario?.cedula || ''
+      }
+    })
+    cedulaMap.value = map
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+function obtenerCodigoEspacio(idEspacio) {
+  const esp = espacios.value.find((e) => e.id === idEspacio)
+  return esp ? (esp.zona_nombre || '') + ' - #' + (esp.numero || esp.codigo || idEspacio.slice(0, 8)) : idEspacio.slice(0, 8) + '...'
 }
 
 async function emitir() {

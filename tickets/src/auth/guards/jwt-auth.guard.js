@@ -22,6 +22,7 @@ let JwtAuthGuard = class JwtAuthGuard extends (0, passport_1.AuthGuard)('jwt') {
         super();
         this.reflector = reflector;
         this.opaService = opaService;
+        this.usuariosUrl = process.env.USUARIOS_SERVICE_URL || 'http://usuarios:5000';
     }
     async canActivate(context) {
         const isPublic = this.reflector.getAllAndOverride(exports.IS_PUBLIC_KEY, [
@@ -36,6 +37,22 @@ let JwtAuthGuard = class JwtAuthGuard extends (0, passport_1.AuthGuard)('jwt') {
         }
         const req = context.switchToHttp().getRequest();
         const user = req.user;
+        try {
+            const resp = await fetch(`${this.usuariosUrl}/auth/validate-token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jti: user.jti }),
+                signal: AbortSignal.timeout(3000),
+            });
+            const data = await resp.json();
+            if (!data.valid) {
+                throw new common_1.UnauthorizedException('Token revocado o inválido');
+            }
+        }
+        catch (err) {
+            if (err instanceof common_1.UnauthorizedException)
+                throw err;
+        }
         const overrideResource = this.reflector.getAllAndOverride(resource_decorator_1.RESOURCE_KEY, [
             context.getHandler(),
             context.getClass(),
@@ -53,6 +70,24 @@ let JwtAuthGuard = class JwtAuthGuard extends (0, passport_1.AuthGuard)('jwt') {
             DELETE: 'delete',
         };
         const defaultAction = methodMap[req.method] || 'read';
+        let userRoles = user.roles || [];
+        if (!userRoles || userRoles.length === 0) {
+            try {
+                const rolesUrl = `http://gestion-usuarios:3000/roles-Usuario/usuarios/${user.id}`;
+                const res = await fetch(rolesUrl, {
+                    headers: { Authorization: req.headers.authorization },
+                    signal: AbortSignal.timeout(1000),
+                });
+                if (res.ok) {
+                    const assignments = await res.json();
+                    userRoles = assignments
+                        .filter((a) => a.activo && a.rol?.activo)
+                        .map((a) => a.rol.nombre);
+                }
+            }
+            catch (err) {
+            }
+        }
         const input = {
             token: {
                 iss: user.iss,
@@ -62,8 +97,8 @@ let JwtAuthGuard = class JwtAuthGuard extends (0, passport_1.AuthGuard)('jwt') {
             },
             user: {
                 id: user.id,
-                username: user.username,
-                roles: user.roles || [],
+                username: user.username || user.id,
+                roles: userRoles,
             },
             resource: overrideResource || `${defaultResource}.${defaultAction}`,
             action: overrideAction || defaultAction,

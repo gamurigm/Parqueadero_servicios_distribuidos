@@ -38,7 +38,9 @@ export class EventPublisher implements OnModuleInit, OnModuleDestroy {
     }
 
     async onModuleInit() {
-        await this.connect();
+        this.connect().catch((err) => {
+            this.logger.warn(`Conexion inicial a RabbitMQ en segundo plano: ${err.message}`);
+        });
     }
 
     private async connect(): Promise<void> {

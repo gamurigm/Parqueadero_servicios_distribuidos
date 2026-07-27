@@ -29,6 +29,8 @@ const vehiculos_client_interface_1 = require("../../application/ports/vehiculos-
 const zonas_client_interface_1 = require("../../application/ports/zonas-client.interface");
 const ticket_code_generator_interface_1 = require("../../application/ports/ticket-code-generator.interface");
 const tarifa_provider_interface_1 = require("../../application/ports/tarifa-provider.interface");
+const event_publisher_service_1 = require("../../event-publisher.service");
+const sse_module_1 = require("../../sse/sse.module");
 let TicketsModule = class TicketsModule {
 };
 exports.TicketsModule = TicketsModule;
@@ -40,6 +42,7 @@ exports.TicketsModule = TicketsModule = __decorate([
             vehiculos_client_module_1.VehiculosClientModule,
             zonas_client_module_1.ZonasClientModule,
             trazabilidad_client_module_1.TrazabilidadClientModule,
+            sse_module_1.SseModule,
         ],
         controllers: [tickets_controller_1.TicketsController],
         providers: [
@@ -52,6 +55,7 @@ exports.TicketsModule = TicketsModule = __decorate([
             emitir_ticket_use_case_1.EmitirTicketUseCase,
             pagar_ticket_use_case_1.PagarTicketUseCase,
             anular_ticket_use_case_1.AnularTicketUseCase,
+            event_publisher_service_1.EventPublisher,
         ],
     })
 ], TicketsModule);

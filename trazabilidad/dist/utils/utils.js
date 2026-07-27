@@ -20,6 +20,20 @@ class Utils {
         if (typeof value !== 'string') {
             throw new common_1.BadRequestException(name + ' no fue definido');
         }
+        const isDescription = name.toLowerCase().includes('descripcion') || name.toLowerCase().includes('descripción');
+        if (isDescription) {
+            let cleaned = value.trim().toLowerCase();
+            cleaned = cleaned
+                .replace(/á/g, 'a')
+                .replace(/é/g, 'e')
+                .replace(/í/g, 'i')
+                .replace(/ó/g, 'o')
+                .replace(/ú/g, 'u')
+                .replace(/ü/g, 'u');
+            cleaned = cleaned.replace(/\s+/g, ' ');
+            cleaned = cleaned.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+            return cleaned;
+        }
         let cleaned = value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
         cleaned = cleaned.replace(/<[^>]*>/g, '');
         cleaned = cleaned.replace(/['";\\]/g, '');

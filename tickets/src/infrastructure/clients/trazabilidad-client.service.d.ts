@@ -7,5 +7,5 @@ export declare class TrazabilidadClientService implements ITrazabilidadClient {
     private readonly logger;
     private readonly trazabilidadUrl;
     constructor(httpService: HttpService, configService: ConfigService);
-    registrarEvento(dto: RegistrarEventoDto): Promise<void>;
+    registrarEvento(dto: RegistrarEventoDto, authHeader?: string): Promise<void>;
 }

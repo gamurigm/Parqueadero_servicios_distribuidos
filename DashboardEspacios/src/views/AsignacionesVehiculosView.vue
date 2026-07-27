@@ -160,6 +160,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { asignacionesService } from '@/services/asignaciones.service'
 import { vehiculosService } from '@/services/vehiculos.service'
+import { usuariosService } from '@/services/usuarios.service'
 import DataTable from '@/components/common/DataTable.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
@@ -171,6 +172,8 @@ const saving = ref(false)
 
 const asignaciones = ref([])
 const vehiculos = ref([])
+const usuarios = ref([])
+const rolesAsignaciones = ref([])
 
 const filtroPropietario = ref('')
 const filtroPlaca = ref('')
@@ -193,8 +196,59 @@ const vehiculosDisponibles = computed(() => {
   return vehiculos.value.filter((v) => !idsAsignados.has(v.id))
 })
 
+const propietariosIds = computed(() => {
+  const ids = new Set()
+  for (const a of rolesAsignaciones.value) {
+    if (a.rol?.nombre === 'propietario' && a.activo) {
+      ids.add(a.id_usuario)
+    }
+  }
+  return ids
+})
+
+const listaCompleta = computed(() => {
+  const map = new Map()
+  for (const a of asignaciones.value) {
+    const key = a.userId
+    if (!map.has(key)) {
+      map.set(key, { vehiculos: [], totalVehiculos: 0, activos: 0 })
+    }
+    const g = map.get(key)
+    g.vehiculos.push({
+      vehicleId: a.vehicleId,
+      placa: a.vehiculo?.placa || null,
+      marca: a.vehiculo?.marca || null,
+      modelo: a.vehiculo?.modelo || null,
+      tipo: a.vehiculo?.tipo || null,
+      estado: a.estado,
+      descripcion: a.descripcion,
+      fechaAsignacion: a.fechaAsignacion,
+    })
+    g.totalVehiculos++
+    if (a.estado === 1) g.activos++
+  }
+  return usuarios.value
+    .filter((u) => propietariosIds.value.has(u.id))
+    .map((u) => {
+      const existing = map.get(u.id)
+      return {
+        userId: u.id,
+        propietario: {
+          id: u.id,
+          username: u.username,
+          nombreCompleto: u.nombreCompleto
+            || [u.persona?.firstName, u.persona?.middleName, u.persona?.lastName].filter(Boolean).join(' ')
+            || u.username,
+        },
+        vehiculos: existing ? existing.vehiculos : [],
+        totalVehiculos: existing ? existing.totalVehiculos : 0,
+        activos: existing ? existing.activos : 0,
+      }
+    })
+})
+
 const filteredList = computed(() => {
-  let list = groupByUsuario(asignaciones.value)
+  let list = listaCompleta.value
   if (filtroPropietario.value) {
     const q = filtroPropietario.value.toLowerCase()
     list = list.filter((g) => {
@@ -213,36 +267,6 @@ function can(rol) {
   return auth.roles.includes('super_user') || auth.roles.includes(rol)
 }
 
-function groupByUsuario(flat) {
-  const map = new Map()
-  for (const a of flat) {
-    const key = a.userId
-    if (!map.has(key)) {
-      map.set(key, {
-        userId: key,
-        propietario: a.propietario || { username: key },
-        vehiculos: [],
-        totalVehiculos: 0,
-        activos: 0,
-      })
-    }
-    const g = map.get(key)
-    g.vehiculos.push({
-      vehicleId: a.vehicleId,
-      placa: a.vehiculo?.placa || null,
-      marca: a.vehiculo?.marca || null,
-      modelo: a.vehiculo?.modelo || null,
-      tipo: a.vehiculo?.tipo || null,
-      estado: a.estado,
-      descripcion: a.descripcion,
-      fechaAsignacion: a.fechaAsignacion,
-    })
-    g.totalVehiculos++
-    if (a.estado === 1) g.activos++
-  }
-  return Array.from(map.values())
-}
-
 function limpiarFiltros() {
   filtroPropietario.value = ''
   filtroPlaca.value = ''
@@ -251,12 +275,17 @@ function limpiarFiltros() {
 async function cargarDatos() {
   loading.value = true
   try {
-    const [asignacionesRes, vehiculosRes] = await Promise.all([
+    const [asignacionesRes, vehiculosRes, usuariosRes, rolesAsignacionesRes] = await Promise.all([
       asignacionesService.listarAsignacionesVehiculos(),
       vehiculosService.listar(),
+      usuariosService.listar(),
+      asignacionesService.listarRolesUsuario(),
     ])
     asignaciones.value = Array.isArray(asignacionesRes) ? asignacionesRes : asignacionesRes.data || []
     vehiculos.value = Array.isArray(vehiculosRes) ? vehiculosRes : vehiculosRes.data || []
+    const usuariosRaw = Array.isArray(usuariosRes) ? usuariosRes : usuariosRes.data || []
+    usuarios.value = usuariosRaw
+    rolesAsignaciones.value = Array.isArray(rolesAsignacionesRes) ? rolesAsignacionesRes : rolesAsignacionesRes.data || []
   } catch (err) {
     console.error('Error cargando datos:', err)
   } finally {
@@ -280,6 +309,22 @@ function cerrarGestion() {
   gestion.value.show = false
 }
 
+async function refrescarGestionVehiculos() {
+  const todas = await asignacionesService.listarAsignacionesVehiculos()
+  asignaciones.value = Array.isArray(todas) ? todas : todas.data || []
+  const userAssignments = asignaciones.value.filter((a) => a.userId === gestion.value.userId)
+  gestion.value.vehiculos = userAssignments.map((a) => ({
+    vehicleId: a.vehicleId,
+    placa: a.vehiculo?.placa || null,
+    marca: a.vehiculo?.marca || null,
+    modelo: a.vehiculo?.modelo || null,
+    tipo: a.vehiculo?.tipo || null,
+    estado: a.estado,
+    descripcion: a.descripcion,
+    fechaAsignacion: a.fechaAsignacion,
+  }))
+}
+
 async function agregarVehiculo() {
   if (!nuevoVehiculoId.value || !gestion.value.userId) return
   saving.value = true
@@ -291,12 +336,7 @@ async function agregarVehiculo() {
     toast.success('Vehículo asignado correctamente')
     nuevoVehiculoId.value = ''
     nuevaDescripcion.value = ''
-    await cargarDatos()
-    const updated = asignaciones.value.filter((a) => a.userId === gestion.value.userId)
-    const grouped = groupByUsuario(updated)
-    if (grouped.length > 0) {
-      gestion.value.vehiculos = grouped[0].vehiculos
-    }
+    await refrescarGestionVehiculos()
   } catch (err) {
     gestion.value.error = err.response?.data?.message || err.message || 'Error al asignar vehículo'
   } finally {
@@ -311,12 +351,7 @@ async function toggleEstadoVehiculo(userId, vehicleId, estado) {
       estado: estado === 1 ? 0 : 1,
     })
     toast.success(estado === 1 ? 'Vehículo desactivado correctamente' : 'Vehículo activado correctamente')
-    await cargarDatos()
-    const updated = asignaciones.value.filter((a) => a.userId === gestion.value.userId)
-    const grouped = groupByUsuario(updated)
-    if (grouped.length > 0) {
-      gestion.value.vehiculos = grouped[0].vehiculos
-    }
+    await refrescarGestionVehiculos()
   } catch (err) {
     toast.error(err.response?.data?.message || err.message || 'Error al cambiar estado del vehículo')
   } finally {
@@ -334,14 +369,7 @@ async function ejecutarEliminarVehiculo() {
   try {
     await asignacionesService.eliminarAsignacion(confirm.value.userId, confirm.value.vehicleId)
     toast.success('Asignación eliminada correctamente')
-    await cargarDatos()
-    const updated = asignaciones.value.filter((a) => a.userId === gestion.value.userId)
-    const grouped = groupByUsuario(updated)
-    if (grouped.length > 0) {
-      gestion.value.vehiculos = grouped[0].vehiculos
-    } else {
-      gestion.value.vehiculos = []
-    }
+    await refrescarGestionVehiculos()
   } catch (err) {
     toast.error(err.response?.data?.message || err.message || 'Error al eliminar la asignación')
   } finally {

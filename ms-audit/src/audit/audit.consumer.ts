@@ -26,7 +26,7 @@ export class AuditConsumer implements OnModuleInit {
         const host = this.configService.get('RABBITMQ_HOST');
         const port = this.configService.get('RABBITMQ_PORT');
         const user = this.configService.get('RABBITMQ_USER');
-        const pass = this.configService.get('RABBITMQ_PASS');
+        const pass = this.configService.get('RABBITMQ_PASSWORD');
         const url = `amqp://${user}:${pass}@${host}:${port}`;
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {

@@ -41,7 +41,7 @@ import { EventPublisher } from '../event-publisher.service';
           privateKey: privateKey,
           signOptions: {
             algorithm: 'RS256',
-            expiresIn: config.get<any>('JWT_EXPIRATION', '15m'),
+            expiresIn: config.get<any>('JWT_EXPIRATION', '8h'),
           },
         };
       },

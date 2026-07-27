@@ -6,6 +6,7 @@ declare const JwtAuthGuard_base: import("@nestjs/passport").Type<import("@nestjs
 export declare class JwtAuthGuard extends JwtAuthGuard_base {
     private reflector;
     private opaService;
+    private readonly usuariosUrl;
     constructor(reflector: Reflector, opaService: OpaService);
     canActivate(context: ExecutionContext): Promise<boolean>;
 }

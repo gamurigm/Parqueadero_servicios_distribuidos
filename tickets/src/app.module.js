@@ -19,7 +19,12 @@ const opa_module_1 = require("./opa/opa.module");
 const trazabilidad_client_module_1 = require("./infrastructure/clients/trazabilidad-client.module");
 const infrastructure_services_module_1 = require("./infrastructure/services/infrastructure-services.module");
 const ticket_entity_1 = require("./infrastructure/persistence/ticket.entity");
+const sse_module_1 = require("./sse/sse.module");
+const jwe_decrypt_middleware_1 = require("./jwe/jwe-decrypt.middleware");
 let AppModule = class AppModule {
+    configure(consumer) {
+        consumer.apply(jwe_decrypt_middleware_1.JweDecryptMiddleware).forRoutes('*');
+    }
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
@@ -53,6 +58,7 @@ exports.AppModule = AppModule = __decorate([
             opa_module_1.OpaModule,
             trazabilidad_client_module_1.TrazabilidadClientModule,
             infrastructure_services_module_1.InfrastructureServicesModule,
+            sse_module_1.SseModule,
         ],
         providers: [
             { provide: core_1.APP_GUARD, useClass: jwt_auth_guard_1.JwtAuthGuard },

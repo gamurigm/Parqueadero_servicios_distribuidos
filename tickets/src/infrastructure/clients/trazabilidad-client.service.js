@@ -22,10 +22,11 @@ let TrazabilidadClientService = TrazabilidadClientService_1 = class Trazabilidad
         this.logger = new common_1.Logger(TrazabilidadClientService_1.name);
         this.trazabilidadUrl = this.configService.get('TRAZABILIDAD_SERVICE_URL', 'http://trazabilidad:3002');
     }
-    async registrarEvento(dto) {
+    async registrarEvento(dto, authHeader) {
         try {
             const url = `${this.trazabilidadUrl}/trazabilidad/registrar`;
-            await (0, rxjs_1.firstValueFrom)(this.httpService.post(url, dto));
+            const headers = authHeader ? { Authorization: authHeader } : undefined;
+            await (0, rxjs_1.firstValueFrom)(this.httpService.post(url, dto, { headers }));
         }
         catch (error) {
             this.logger.error(`Error enviando evento de trazabilidad a ${this.trazabilidadUrl}: ${error.message}`);

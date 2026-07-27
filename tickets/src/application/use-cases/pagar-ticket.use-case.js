@@ -21,13 +21,17 @@ const tarifa_provider_interface_1 = require("../ports/tarifa-provider.interface"
 const vehiculos_client_interface_1 = require("../ports/vehiculos-client.interface");
 const trazabilidad_client_interface_1 = require("../ports/trazabilidad-client.interface");
 const business_error_1 = require("../../domain/errors/business-error");
+const event_publisher_service_1 = require("../../event-publisher.service");
+const sse_service_1 = require("../../sse/sse.service");
 let PagarTicketUseCase = PagarTicketUseCase_1 = class PagarTicketUseCase {
-    constructor(ticketRepo, zonasClient, tarifaProvider, vehiculosClient, trazabilidadClient) {
+    constructor(ticketRepo, zonasClient, tarifaProvider, vehiculosClient, trazabilidadClient, eventPublisher, sseService) {
         this.ticketRepo = ticketRepo;
         this.zonasClient = zonasClient;
         this.tarifaProvider = tarifaProvider;
         this.vehiculosClient = vehiculosClient;
         this.trazabilidadClient = trazabilidadClient;
+        this.eventPublisher = eventPublisher;
+        this.sseService = sseService;
         this.logger = new common_1.Logger(PagarTicketUseCase_1.name);
     }
     async execute(input) {
@@ -79,6 +83,20 @@ let PagarTicketUseCase = PagarTicketUseCase_1 = class PagarTicketUseCase {
             usuarioEjecutor: input.idEmpleado,
             payloadAnterior: { estado: 'ACTIVO' },
             payloadNuevo: { estado: 'PAGADO', valorRecaudado: valor, fechaSalida },
+        }, input.authHeader);
+        const auditEvent = {
+            servicio: 'ms-tickets',
+            accion: 'UPDATE',
+            entidad: 'TICKET',
+            usuario: input.username || 'system',
+            ip: input.ip,
+            mac: input.mac,
+            datos: { id: updated.id, codigoTicket: updated.codigoTicket, estado: 'PAGADO', valorRecaudado: valor, horasCobradas, tarifaPorHora },
+        };
+        await this.eventPublisher.publish(auditEvent);
+        await this.sseService.emitEvent('espacio-actualizado', {
+            id: ticket.idEspacio,
+            estado: 'DISPONIBLE',
         });
         return {
             id: updated.id,
@@ -100,6 +118,7 @@ exports.PagarTicketUseCase = PagarTicketUseCase = PagarTicketUseCase_1 = __decor
     __param(2, (0, common_1.Inject)(tarifa_provider_interface_1.TARIFA_PROVIDER)),
     __param(3, (0, common_1.Inject)(vehiculos_client_interface_1.VEHICULOS_CLIENT)),
     __param(4, (0, common_1.Inject)(trazabilidad_client_interface_1.TRAZABILIDAD_CLIENT)),
-    __metadata("design:paramtypes", [Object, Object, Object, Object, Object])
+    __metadata("design:paramtypes", [Object, Object, Object, Object, Object, event_publisher_service_1.EventPublisher,
+        sse_service_1.SseService])
 ], PagarTicketUseCase);
 //# sourceMappingURL=pagar-ticket.use-case.js.map

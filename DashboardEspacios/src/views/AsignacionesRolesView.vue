@@ -158,6 +158,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { asignacionesService } from '@/services/asignaciones.service'
 import { rolesService } from '@/services/roles.service'
+import { usuariosService } from '@/services/usuarios.service'
 import DataTable from '@/components/common/DataTable.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
@@ -169,6 +170,7 @@ const saving = ref(false)
 
 const asignaciones = ref([])
 const roles = ref([])
+const usuarios = ref([])
 
 const filtroUsuario = ref('')
 const filtroRol = ref('')
@@ -190,8 +192,44 @@ const rolesDisponibles = computed(() => {
   return roles.value.filter((r) => !idsAsignados.has(r.id))
 })
 
+const listaCompleta = computed(() => {
+  const map = new Map()
+  for (const a of asignaciones.value) {
+    const key = a.id_usuario
+    if (!map.has(key)) {
+      map.set(key, { roles: [], totalRoles: 0, activos: 0 })
+    }
+    const g = map.get(key)
+    g.roles.push({
+      id_rol: a.id_rol,
+      nombre: a.rol?.nombre || '—',
+      activo: a.activo,
+      assignedAt: a.assignedAt,
+    })
+    g.totalRoles++
+    if (a.activo) g.activos++
+  }
+  return usuarios.value.map((u) => {
+    const existing = map.get(u.id)
+    return {
+      id_usuario: u.id,
+      usuario: {
+        id: u.id,
+        username: u.username,
+        nombreCompleto: u.nombreCompleto || u.persona
+          ? [u.persona?.firstName, u.persona?.middleName, u.persona?.lastName].filter(Boolean).join(' ')
+          : u.username,
+        active: u.active,
+      },
+      roles: existing ? existing.roles : [],
+      totalRoles: existing ? existing.totalRoles : 0,
+      activos: existing ? existing.activos : 0,
+    }
+  })
+})
+
 const filteredList = computed(() => {
-  let list = groupByUsuario(asignaciones.value)
+  let list = listaCompleta.value
   if (filtroUsuario.value) {
     const q = filtroUsuario.value.toLowerCase()
     list = list.filter((g) => {
@@ -211,32 +249,6 @@ function can(rol) {
   return auth.roles.includes('super_user') || authRoles.value.includes(rol)
 }
 
-function groupByUsuario(flat) {
-  const map = new Map()
-  for (const a of flat) {
-    const key = a.id_usuario
-    if (!map.has(key)) {
-      map.set(key, {
-        id_usuario: key,
-        usuario: a.usuario || { username: a.id_usuario },
-        roles: [],
-        totalRoles: 0,
-        activos: 0,
-      })
-    }
-    const g = map.get(key)
-    g.roles.push({
-      id_rol: a.id_rol,
-      nombre: a.rol?.nombre || '—',
-      activo: a.activo,
-      assignedAt: a.assignedAt,
-    })
-    g.totalRoles++
-    if (a.activo) g.activos++
-  }
-  return Array.from(map.values())
-}
-
 function limpiarFiltros() {
   filtroUsuario.value = ''
   filtroRol.value = ''
@@ -245,12 +257,15 @@ function limpiarFiltros() {
 async function cargarDatos() {
   loading.value = true
   try {
-    const [asignacionesRes, rolesRes] = await Promise.all([
+    const [asignacionesRes, rolesRes, usuariosRes] = await Promise.all([
       asignacionesService.listarRolesUsuario(),
       rolesService.listar(),
+      usuariosService.listar(),
     ])
     asignaciones.value = Array.isArray(asignacionesRes) ? asignacionesRes : asignacionesRes.data || []
     roles.value = Array.isArray(rolesRes) ? rolesRes : rolesRes.data || []
+    const usuariosRaw = Array.isArray(usuariosRes) ? usuariosRes : usuariosRes.data || []
+    usuarios.value = usuariosRaw
   } catch (err) {
     console.error('Error cargando datos:', err)
   } finally {
@@ -273,6 +288,18 @@ function cerrarGestion() {
   gestion.value.show = false
 }
 
+async function refrescarGestionRoles() {
+  const todas = await asignacionesService.listarRolesUsuario()
+  asignaciones.value = Array.isArray(todas) ? todas : todas.data || []
+  const userRoles = asignaciones.value.filter((a) => a.id_usuario === gestion.value.usuarioId)
+  gestion.value.roles = userRoles.map((a) => ({
+    id_rol: a.id_rol,
+    nombre: a.rol?.nombre || '—',
+    activo: a.activo,
+    assignedAt: a.assignedAt,
+  }))
+}
+
 async function agregarRol() {
   if (!nuevoRolId.value || !gestion.value.usuarioId) return
   saving.value = true
@@ -281,12 +308,7 @@ async function agregarRol() {
     await asignacionesService.asignarRol(gestion.value.usuarioId, nuevoRolId.value)
     toast.success('Rol asignado correctamente')
     nuevoRolId.value = ''
-    await cargarDatos()
-    const updated = asignaciones.value.filter((a) => a.id_usuario === gestion.value.usuarioId)
-    const grouped = groupByUsuario(updated)
-    if (grouped.length > 0) {
-      gestion.value.roles = grouped[0].roles
-    }
+    await refrescarGestionRoles()
   } catch (err) {
     gestion.value.error = err.response?.data?.message || err.message || 'Error al asignar rol'
   } finally {
@@ -299,12 +321,7 @@ async function toggleEstadoRol(usuarioId, id_rol, activo) {
   try {
     await asignacionesService.desactivarRol(usuarioId, id_rol)
     toast.success(activo ? 'Rol desactivado correctamente' : 'Rol activado correctamente')
-    await cargarDatos()
-    const updated = asignaciones.value.filter((a) => a.id_usuario === gestion.value.usuarioId)
-    const grouped = groupByUsuario(updated)
-    if (grouped.length > 0) {
-      gestion.value.roles = grouped[0].roles
-    }
+    await refrescarGestionRoles()
   } catch (err) {
     toast.error(err.response?.data?.message || err.message || 'Error al cambiar estado del rol')
   } finally {
@@ -327,14 +344,7 @@ async function ejecutarEliminarRol() {
   try {
     await asignacionesService.eliminarRol(confirm.value.usuarioId, confirm.value.id_rol)
     toast.success('Rol eliminado correctamente')
-    await cargarDatos()
-    const updated = asignaciones.value.filter((a) => a.id_usuario === gestion.value.usuarioId)
-    const grouped = groupByUsuario(updated)
-    if (grouped.length > 0) {
-      gestion.value.roles = grouped[0].roles
-    } else {
-      gestion.value.roles = []
-    }
+    await refrescarGestionRoles()
   } catch (err) {
     toast.error(err.response?.data?.message || err.message || 'Error al eliminar el rol')
   } finally {

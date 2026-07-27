@@ -13,6 +13,7 @@ export declare class TicketRepository implements ITicketRepository {
     findActivoByPlaca(placa: string): Promise<Ticket | null>;
     save(ticket: Ticket): Promise<Ticket>;
     update(ticket: Ticket): Promise<Ticket>;
+    remove(id: string): Promise<void>;
     private toDomain;
     private toEntity;
 }

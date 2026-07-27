@@ -200,6 +200,10 @@ public class EspacioServicioImpl implements EspacioServicio {
             throw new IllegalArgumentException("El espacio ya se encuentra en estado: " + estado);
         }
 
+        if (espacio.getEstado() == EstadoEspacio.OCUPADO) {
+            throw new IllegalStateException("No se puede cambiar manualmente el estado de un espacio OCUPADO. El estado es gestionado por el sistema de tickets.");
+        }
+
         String estadoAnterior = espacio.getEstado().name();
         espacio.setEstado(estado);
         espacio.setFechaModificacion(LocalDateTime.now());

@@ -14,6 +14,9 @@
         <button @click="espaciosStore.fetchEspacios()" class="btn btn-refresh">
           Refrescar
         </button>
+        <button v-if="puedeGestionarEspacios" @click="abrirModalCrearEspacio" class="btn btn-primary btn-sm">
+          + Nuevo Espacio
+        </button>
       </div>
     </div>
 
@@ -116,6 +119,10 @@
                     <option value="INACTIVO">Inactivo</option>
                   </select>
                 </div>
+                <div v-if="puedeGestionarEspacios" class="espacio-acciones" @click.stop>
+                  <button @click="abrirModalEditarEspacio(esp)" class="btn-icon btn-icon-edit" title="Editar espacio">✏️</button>
+                  <button @click="solicitarEliminarEspacio(esp)" class="btn-icon btn-icon-delete" title="Eliminar espacio">🗑️</button>
+                </div>
               </div>
             </div>
           </div>
@@ -128,6 +135,53 @@
       <span v-if="espaciosStore.lastUpdate" class="font-semibold">{{ formatDate(espaciosStore.lastUpdate) }}</span>
       <span v-else>--</span>
     </footer>
+
+    <div v-if="modalEspacio.visible" class="modal-overlay" @click.self="modalEspacio.visible = false">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3>{{ modalEspacio.editando ? 'Editar Espacio' : 'Nuevo Espacio' }}</h3>
+          <button @click="modalEspacio.visible = false" class="modal-close">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Zona *</label>
+            <select v-model="formEspacio.idZona" class="form-input" required>
+              <option value="" disabled>Seleccione una zona</option>
+              <option v-for="z in zonas" :key="z.id" :value="z.id">{{ z.nombre }} ({{ z.codigo }})</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Descripción</label>
+            <input v-model="formEspacio.descripcion" type="text" placeholder="Espacio principal" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Tipo de Espacio</label>
+            <select v-model="formEspacio.tipoEspacio" class="form-input">
+              <option value="AUTO">Auto</option>
+              <option value="MOTO">Moto</option>
+              <option value="BUSETA">Buseta</option>
+              <option value="DISCAPACITADOS">Discapacitados</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="modalEspacio.visible = false" class="btn btn-ghost">Cancelar</button>
+          <button @click="guardarEspacio" :disabled="guardandoEspacio" class="btn btn-primary">
+            {{ guardandoEspacio ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <ConfirmDialog
+      :visible="confirmDelete.visible"
+      titulo="Eliminar Espacio"
+      :mensaje="`¿Estás seguro de eliminar el espacio '${confirmDelete.item?.codigo || confirmDelete.item?.id}'?`"
+      confirmText="Eliminar"
+      :danger="true"
+      @confirm="ejecutarEliminarEspacio"
+      @cancel="confirmDelete.visible = false"
+    />
   </div>
 </template>
 
@@ -135,11 +189,14 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useEspaciosStore } from '@/stores/espacios'
 import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
 import { zonasService } from '@/services/zonas.service'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const espaciosStore = useEspaciosStore()
 const authStore = useAuthStore()
+const toast = useToastStore()
 const filtroEstado = ref(null)
 
 const estadoFiltros = [
@@ -209,7 +266,82 @@ async function cambiarEstadoEspacio(esp, nuevoEstado) {
     await zonasService.cambiarEstado(esp.id, nuevoEstado)
     await espaciosStore.fetchEspacios()
   } catch (err) {
-    console.error('Error cambiando estado:', err)
+    toast.error(err.response?.data?.message || err.message || 'Error al cambiar estado del espacio')
+  }
+}
+
+const puedeGestionarEspacios = computed(() => {
+  return authStore.roles.some((r) => ['super_user', 'admin', 'encargado_zona'].includes(r))
+})
+
+const zonas = ref([])
+const guardandoEspacio = ref(false)
+const modalEspacio = ref({ visible: false, editando: false, espacioId: null })
+const formEspacio = ref({ idZona: '', descripcion: '', tipoEspacio: 'AUTO' })
+const confirmDelete = ref({ visible: false, item: null })
+
+async function cargarZonas() {
+  try {
+    const data = await zonasService.listarZonas()
+    zonas.value = Array.isArray(data) ? data : (data?.content || [])
+  } catch (err) {
+    console.error('Error cargando zonas:', err)
+  }
+}
+
+function abrirModalCrearEspacio() {
+  modalEspacio.value = { visible: true, editando: false, espacioId: null }
+  formEspacio.value = { idZona: '', descripcion: '', tipoEspacio: 'AUTO' }
+  cargarZonas()
+}
+
+function abrirModalEditarEspacio(esp) {
+  modalEspacio.value = { visible: true, editando: true, espacioId: esp.id }
+  formEspacio.value = {
+    idZona: esp.idZona || esp.zona_id || '',
+    descripcion: esp.descripcion || '',
+    tipoEspacio: esp.tipoEspacio || esp.tipo || 'AUTO',
+  }
+  cargarZonas()
+}
+
+async function guardarEspacio() {
+  if (!formEspacio.value.idZona) {
+    toast.error('Debe seleccionar una zona')
+    return
+  }
+  guardandoEspacio.value = true
+  try {
+    if (modalEspacio.value.editando) {
+      await zonasService.actualizarEspacio(modalEspacio.value.espacioId, formEspacio.value)
+      toast.success('Espacio actualizado correctamente')
+    } else {
+      await zonasService.crearEspacio(formEspacio.value)
+      toast.success('Espacio creado correctamente')
+    }
+    modalEspacio.value.visible = false
+    await espaciosStore.fetchEspacios()
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.message || 'Error al guardar el espacio')
+  } finally {
+    guardandoEspacio.value = false
+  }
+}
+
+function solicitarEliminarEspacio(esp) {
+  confirmDelete.value = { visible: true, item: esp }
+}
+
+async function ejecutarEliminarEspacio() {
+  const esp = confirmDelete.value.item
+  confirmDelete.value.visible = false
+  if (!esp) return
+  try {
+    await zonasService.eliminarEspacio(esp.id)
+    toast.success(`Espacio '${esp.codigo || esp.id}' eliminado`)
+    await espaciosStore.fetchEspacios()
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.message || 'Error al eliminar el espacio')
   }
 }
 
@@ -581,4 +713,53 @@ onUnmounted(() => {
   border-color: #6366f1;
   box-shadow: 0 0 0 1px #6366f1;
 }
+
+.btn-primary.btn-sm {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn-primary.btn-sm:hover {
+  background: #4f46e5;
+}
+
+.espacio-acciones {
+  display: flex;
+  gap: 0.2rem;
+  justify-content: center;
+  margin-top: 0.3rem;
+}
+.btn-icon {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.25rem;
+  cursor: pointer;
+  font-size: 0.65rem;
+  line-height: 1;
+}
+.btn-icon-edit { color: #6366f1; }
+.btn-icon-edit:hover { background: #eef2ff; border-color: #6366f1; }
+.btn-icon-delete { color: #ef4444; }
+.btn-icon-delete:hover { background: #fef2f2; border-color: #ef4444; }
+
+.modal-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.25); padding: 1rem; }
+.modal-box { background: #fff; border-radius: 0.75rem; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid #e2e8f0; }
+.modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 600; }
+.modal-close { border: none; background: none; font-size: 1.25rem; cursor: pointer; color: #94a3b8; }
+.modal-body { padding: 1.5rem; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid #e2e8f0; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 0.8rem; font-weight: 500; color: #374151; margin-bottom: 0.35rem; }
+.form-input { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; transition: border-color 0.15s; box-sizing: border-box; }
+.form-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,0.15); }
+.btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; cursor: pointer; border: none; }
+.btn-ghost { background: #f1f5f9; color: #475569; }
+.btn-ghost:hover { background: #e2e8f0; }
 </style>

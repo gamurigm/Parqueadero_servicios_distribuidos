@@ -20,8 +20,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         }
         return {
           publicKey: publicKey,
-          signOptions: { 
-            expiresIn: '15m',
+          signOptions: {
             algorithm: 'RS256',
           },
         };
