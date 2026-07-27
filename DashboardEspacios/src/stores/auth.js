@@ -43,8 +43,15 @@ export const useAuthStore = defineStore('auth', () => {
     const data = await authService.login(username, password)
     token.value = data.access_token
     user.value = data.user
+    const loginRoles = (data.user?.roles || []).map(r => typeof r === 'string' ? r : (r.nombre || r.name || ''))
+    activeRole.value = loginRoles[0] || ''
     localStorage.setItem('dashboard_token', data.access_token)
     localStorage.setItem('dashboard_user', JSON.stringify(data.user))
+    if (activeRole.value) {
+      localStorage.setItem('dashboard_active_role', activeRole.value)
+    } else {
+      localStorage.removeItem('dashboard_active_role')
+    }
     return data
   }
 

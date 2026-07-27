@@ -63,7 +63,6 @@ services:
       - kong-net
     volumes:
       - usuarios_postgres_data:/var/lib/postgresql/data
-      - ./gestion_usuarios/seed:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin_user -d UsuariosDB"]
       interval: 10s
@@ -697,6 +696,34 @@ services:
     networks:
       - kong-net
     restart: unless-stopped
+
+  # Carga datos de demostracion despues de que los microservicios creen sus tablas
+  db-seed:
+    image: postgres:16-alpine
+    container_name: db-seed
+    networks:
+      - kong-net
+    volumes:
+      - ./seed:/seed:ro
+    environment:
+      USUARIOS_DB_PASSWORD: xasmdno123XAW2342as
+      VEHICULOS_DB_PASSWORD: xasmdnoasd65168zcs
+      ZONAS_DB_PASSWORD: xas52sf6zxc123XAW25asdzxkmas
+      TRAZABILIDAD_DB_PASSWORD: xasmdno123XAW2342as
+      TICKETS_DB_PASSWORD: t1ck3tsP4ssX2342as
+    depends_on:
+      usuarios:
+        condition: service_started
+      vehiculos:
+        condition: service_started
+      zonas:
+        condition: service_started
+      trazabilidad:
+        condition: service_started
+      tickets:
+        condition: service_started
+    command: ["sh", "/seed/run-seeds.sh"]
+    restart: "no"
 
 volumes:
   usuarios_postgres_data:
