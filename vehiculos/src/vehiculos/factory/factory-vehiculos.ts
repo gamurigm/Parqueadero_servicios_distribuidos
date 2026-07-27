@@ -24,16 +24,19 @@ export class FactoryVehiculos {
       case 'auto':
         const auto = new Auto();
         Object.assign(auto, datosSanitizados);
+        auto.tipo = tipo;
         vehiculo = auto;
         break;
       case 'motocicleta':
         const moto = new Motocicleta();
         Object.assign(moto, datosSanitizados);
+        moto.tipo = tipo;
         vehiculo = moto;
         break;
       case 'camioneta':
         const camion = new Camioneta();
         Object.assign(camion, datosSanitizados);
+        camion.tipo = tipo;
         vehiculo = camion;
         break;
       default:
@@ -106,8 +109,9 @@ export class FactoryVehiculos {
       }
     }
 
-    if (datos.tipoMoto !== undefined) {
-      const tipoMotoStr = datos.tipoMoto;
+    const tipoMotoRaw = datos.tipoMoto ?? datos.tipo;
+    if (tipoMotoRaw !== undefined) {
+      const tipoMotoStr = tipoMotoRaw;
       const tipoMotoSanitizado = this.sanitizarEnumValue(
         'tipoMoto', 
         tipoMotoStr, 
