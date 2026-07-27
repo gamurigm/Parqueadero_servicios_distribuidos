@@ -1,11 +1,10 @@
 import { IsString, MinLength, IsNotEmpty, IsOptional, IsEmail, IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-
 export class RegisterAuthDto {
   @IsString()
   @IsNotEmpty()
-  @ApiProperty({ example: '1722233445', description: 'Cédula de identidad' })
+  @ApiProperty({ example: '1722233445', description: 'Cedula de identidad' })
   cedula!: string;
 
   @IsString()
@@ -20,12 +19,12 @@ export class RegisterAuthDto {
 
   @IsString()
   @IsNotEmpty()
-  @ApiProperty({ example: 'Pérez', description: 'Apellidos del usuario' })
+  @ApiProperty({ example: 'Perez', description: 'Apellidos del usuario' })
   lastName!: string;
 
   @IsEmail()
   @IsNotEmpty()
-  @ApiProperty({ example: 'juan.perez@gmail.com', description: 'Correo electrónico' })
+  @ApiProperty({ example: 'juan.perez@gmail.com', description: 'Correo electronico' })
   email!: string;
 
   @IsString()
@@ -35,21 +34,24 @@ export class RegisterAuthDto {
 
   @IsString()
   @MinLength(10)
-  @ApiProperty({ example: '0987654321', description: 'Número de celular (10 dígitos)' })
+  @ApiProperty({ example: '0987654321', description: 'Numero de celular (10 digitos)' })
   phone!: string;
 
   @IsString()
   @IsNotEmpty()
-  @ApiProperty({ example: 'Calle Principal 123', description: 'Dirección' })
+  @ApiProperty({ example: 'Calle Principal 123', description: 'Direccion' })
   address!: string;
 
-  @IsUUID('all', { message: 'rolId debe ser un UUID válido' })
-  @IsNotEmpty()
-  @ApiProperty({ example: 'f311601b-6143-4fd0-aea7-8536c7c6e2fa', description: 'ID (UUID) del rol a asignar al usuario' })
-  rolId!: string;
+  @IsOptional()
+  @IsUUID('all', { message: 'rolId debe ser un UUID valido' })
+  @ApiPropertyOptional({
+    example: 'f311601b-6143-4fd0-aea7-8536c7c6e2fa',
+    description: 'ID (UUID) del rol a asignar. Si se omite, se asigna propietario.',
+  })
+  rolId?: string;
 
   @IsString()
   @MinLength(6)
-  @ApiProperty({ example: 'Password123', description: 'Contraseña (mínimo 6 caracteres)', minLength: 6 })
+  @ApiProperty({ example: 'Password123', description: 'Contrasena (minimo 6 caracteres)', minLength: 6 })
   password!: string;
 }

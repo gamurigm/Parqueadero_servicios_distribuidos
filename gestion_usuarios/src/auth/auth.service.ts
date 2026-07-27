@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -14,6 +14,7 @@ import { PersonaService } from '../persona/persona.service';
 import { UsuarioService } from '../usuario/usuario.service';
 import { RolesUsuarioService } from '../roles_usuario/roles_usuario.service';
 import { AuditEvent, EventPublisher } from '../event-publisher.service';
+import { Role } from '../roles/entities/role.entity';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,8 @@ export class AuthService {
     private readonly refreshTokenRepository: Repository<RefreshToken>,
     @InjectRepository(RolesUsuarios)
     private readonly rolesUsuarioRepository: Repository<RolesUsuarios>,
+    @InjectRepository(Role)
+    private readonly roleRepository: Repository<Role>,
     private readonly personaService: PersonaService,
     private readonly usuarioService: UsuarioService,
     private readonly rolesUsuarioService: RolesUsuarioService,
@@ -48,10 +51,21 @@ export class AuthService {
   }
 
   async register(registerAuthDto: RegisterAuthDto, ip?: string, mac?: string) {
-    const { cedula, firstName, middleName, lastName, email, nationality, phone, address, rolId } = registerAuthDto;
+    const { cedula, firstName, middleName, lastName, email, nationality, phone, address, rolId, password } = registerAuthDto;
 
     // Validar rolId como UUID (las demás entradas las valida PersonaService internamente)
-    const rolIdValidado = this.utils.validateUUID(rolId);
+    let rolIdValidado: string;
+    if (rolId) {
+      rolIdValidado = this.utils.validateUUID(rolId);
+    } else {
+      const propietario = await this.roleRepository.findOne({
+        where: { nombre: 'propietario', activo: true },
+      });
+      if (!propietario) {
+        throw new BadRequestException('No existe un rol propietario activo para registro publico');
+      }
+      rolIdValidado = propietario.id;
+    }
 
     // 1. Crear Persona con los datos reales del DTO
     // PersonaService sanitiza: dni, firstName, middleName, lastName, email, phone, address, nationality
@@ -66,16 +80,6 @@ export class AuthService {
       address,
       tipo: 'natural',
     }, ip, mac);
-
-    // Generar contraseña: username + DDMMYYYY + caracteres especiales si es corta
-    const hoy = new Date();
-    const dd = String(hoy.getDate()).padStart(2, '0');
-    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
-    const yyyy = hoy.getFullYear();
-    let password = `${savedPerson.username}${dd}${mm}${yyyy}`;
-    if (password.length < 8) {
-      password += '#!';
-    }
 
     // 2. Crear Usuario — UsuarioService valida UUID del id y sanitiza username, hashea la contraseña
     const savedUser = await this.usuarioService.create({

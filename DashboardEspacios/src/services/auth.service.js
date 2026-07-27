@@ -7,6 +7,11 @@ export const authService = {
     return data
   },
 
+  async register(payload) {
+    const { data } = await api.post(ENDPOINTS.REGISTER, payload)
+    return data
+  },
+
   async profile() {
     const { data } = await api.get(ENDPOINTS.PROFILE)
     return data
