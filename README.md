@@ -165,3 +165,175 @@ practica_clase/
         ├── src/
         └── zonas.dockerfile
 ```
+
+---
+
+## Anexo: Despliegue Replicable
+
+El proyecto esta preparado para levantarse completo con Docker Compose: bases de datos, microservicios, OPA, RabbitMQ, Kong, Swagger UI, frontend y carga inicial de datos.
+
+### Requisitos del entorno
+
+- Git.
+- Docker Desktop o Docker Engine con Docker Compose v2.
+- Puertos libres en la maquina host:
+  - `8000`, `9001`, `8443`, `8444` para Kong.
+  - `5500` para el frontend.
+  - `8085` para Swagger UI.
+  - `1337` para Konga.
+  - `3001`, `5000`, `8081`, `3002`, `3003`, `3004` para acceso directo a microservicios.
+  - `5436`, `5437`, `5438`, `5439`, `5440`, `5441`, `5450`, `5672`, `15672`, `8181` para infraestructura.
+
+Si alguno de esos puertos esta ocupado, detenga el servicio que lo usa o cambie el mapeo de puertos en `docker-kong-compose.yml`.
+
+### Pasos de despliegue desde cero
+
+```bash
+git clone https://github.com/gamurigm/Parqueadero_servicios_distribuidos.git
+cd Parqueadero_servicios_distribuidos
+
+# Construir todas las imagenes
+docker compose -f docker-kong-compose.yml build
+
+# Levantar toda la plataforma
+docker compose -f docker-kong-compose.yml up -d
+
+# Revisar estado de servicios
+docker compose -f docker-kong-compose.yml ps
+
+# Revisar la carga inicial de datos
+docker compose -f docker-kong-compose.yml logs db-seed
+```
+
+El servicio `init-keys` genera las llaves JWT compartidas y el servicio `db-seed` carga datos de demostracion despues de que los microservicios creen sus tablas. Para reiniciar desde cero, incluyendo bases limpias:
+
+```bash
+docker compose -f docker-kong-compose.yml down -v
+docker compose -f docker-kong-compose.yml up -d --build
+```
+
+### URLs de uso
+
+| Componente | URL |
+|------------|-----|
+| Frontend | http://localhost:5500 |
+| Kong Gateway | http://localhost:8000 |
+| Swagger UI unificado | http://localhost:8085 |
+| Konga | http://localhost:1337 |
+| OPA | http://localhost:8181 |
+| RabbitMQ Management | http://localhost:15672 |
+
+### Rutas principales via Kong
+
+| Modulo | Ruta |
+|--------|------|
+| Usuarios/Auth/Roles | `http://localhost:8000/usuarios` |
+| Vehiculos | `http://localhost:8000/vehiculos` |
+| Zonas/Espacios | `http://localhost:8000/zonas` |
+| Trazabilidad/Asignaciones | `http://localhost:8000/trazabilidad` |
+| Tickets | `http://localhost:8000/tickets` |
+| Auditoria | `http://localhost:8000/audit` |
+
+### Usuarios de prueba incluidos
+
+| Usuario | Contrasena | Rol |
+|---------|------------|-----|
+| `testadmin` | `Admin123!` | `admin` |
+| `admin1` | `Admin123!` | `admin` |
+| `superusr` | `Super123!` | `super_user` |
+| `super1` | `Super123!` | `super_user` |
+| `jpropiet` | `Prop123!` | `propietario` |
+| `mgomez` | `Prop123!` | `propietario` |
+| `emple1` | `Zona123!` | `empleado` |
+| `ezona1` | `Zona123!` | `encargado_zona` |
+| `auditor1` | `Audit123!` | `auditor` |
+
+El registro publico desde la UI crea usuarios con rol `propietario`. La asignacion de otros roles debe hacerse desde la administracion por un usuario con permisos.
+
+### Verificacion rapida por consola
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8000/usuarios/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testadmin","password":"Admin123!"}' \
+  | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/usuarios/usuario
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/usuarios/roles
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/vehiculos/vehiculos
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/zonas/api/v1/zonas/
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/tickets
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/trazabilidad/asignaciones
+```
+
+En PowerShell se puede usar `curl.exe` para evitar el alias de `Invoke-WebRequest`.
+
+---
+
+## Anexo: Informe de Pruebas Realizadas
+
+### Objetivo
+
+Validar que la aplicacion sea funcional y replicable despues de levantar el stack completo: autenticacion, roles, carga de datos inicial, frontend, servicios por Kong y registro publico de usuarios.
+
+### Ambiente de pruebas
+
+- Rama: `main`.
+- Orquestacion: `docker-kong-compose.yml`.
+- Fecha de prueba: 2026-07-27.
+- Gateway de la verificacion local: `http://localhost:8020` por conflicto con otro Kong local. En un despliegue limpio el puerto por defecto es `http://localhost:8000`.
+- Frontend de la verificacion local: `http://localhost:5522`. En un despliegue limpio el puerto por defecto es `http://localhost:5500`.
+
+### Pruebas de construccion
+
+| Prueba | Comando | Resultado |
+|--------|---------|-----------|
+| Build frontend Vue | `cd DashboardEspacios && npm run build` | Exitoso |
+| Tests frontend | `cd DashboardEspacios && npm test` | Exitoso, `13/13` pruebas |
+| Build usuarios | `cd gestion_usuarios && npm run build` | Exitoso |
+| Validacion Compose | `docker compose -f docker-kong-compose.yml config --quiet` | Exitoso |
+| Sintaxis seed | `sh -n seed/run-seeds.sh` | Exitoso |
+| Validacion UUIDs seed | script Node sobre `seed/*.sql` | Exitoso, `90` UUIDs validos v4/RFC4122 |
+
+### Pruebas de carga inicial de datos
+
+Se valido que `db-seed` espere la creacion de tablas por los microservicios antes de insertar datos. Conteos obtenidos por API despues de login con `testadmin/Admin123!`:
+
+| Recurso | Resultado |
+|---------|-----------|
+| Usuarios | `9` registros |
+| Roles | `6` registros |
+| Roles asignados | `9` registros |
+| Vehiculos | `3` registros |
+| Zonas | `4` registros en ambiente probado |
+| Espacios | `27` registros en ambiente probado |
+| Tickets | `5` registros |
+| Asignaciones vehiculo/propietario | `3` registros |
+
+### Pruebas funcionales por API
+
+| Flujo | Resultado |
+|-------|-----------|
+| Login `testadmin/Admin123!` | `200 OK`, token JWT emitido con rol `admin` |
+| Listado de usuarios, roles y roles-Usuario | `200 OK` |
+| Listado de vehiculos | `200 OK` |
+| Listado de zonas y espacios | `200 OK` |
+| Listado de tickets | `200 OK` |
+| Listado de asignaciones | `200 OK` |
+| Registro publico sin `rolId` | `201 Created` |
+| Login del usuario registrado | `200 OK`, rol `propietario` |
+| Consulta de roles del usuario registrado | `200 OK`, asignacion `propietario` activa |
+
+### Pruebas funcionales de frontend
+
+- El frontend permite iniciar sesion con usuarios existentes.
+- El menu y las rutas se filtran por los roles reales del usuario autenticado.
+- El rol activo se actualiza al hacer login para evitar permisos visuales heredados de sesiones anteriores.
+- El registro publico no permite escoger rol; crea un usuario normal con rol `propietario`.
+- Los usuarios con roles administrativos pueden seguir gestionando usuarios y roles desde las pantallas autorizadas.
+
+### Observaciones
+
+- Si se vuelve a ejecutar el seed, los tokens existentes pueden invalidarse por limpieza de `active_tokens`; en ese caso se debe cerrar sesion y volver a iniciar sesion.
+- Para pruebas en maquinas con otros proyectos Docker corriendo, pueden aparecer conflictos de puertos. El despliegue replicable limpio usa los puertos documentados arriba.
+- Las credenciales y secretos incluidos son de ambiente academico/demostracion; para produccion se deben reemplazar passwords, `JWT_SECRET` y configuraciones sensibles.
