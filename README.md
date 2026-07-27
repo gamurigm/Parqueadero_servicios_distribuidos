@@ -270,6 +270,111 @@ En PowerShell se puede usar `curl.exe` para evitar el alias de `Invoke-WebReques
 
 ---
 
+## Anexo: Guia de Despliegue en Minikube (Windows)
+
+Esta guia tambien queda disponible como archivo independiente en `guia_despliegue_minikube.md`.
+
+Esta guia detalla el proceso completo para limpiar el cluster de Minikube local, volver a crearlo asignando mas recursos para evitar fallos de memoria en el Ingress, construir las imagenes Docker internamente e importar los scripts de base de datos (seeds).
+
+### Prerrequisitos
+
+1. Terminal de PowerShell ejecutada como Administrador, necesaria para `minikube delete`, `minikube start` y `minikube tunnel`.
+2. Estar ubicado en la raiz del proyecto:
+
+```powershell
+cd ".\Parqueadero_servicios_distribuidos"
+```
+
+### Paso 1: Reconfigurar y recrear Minikube
+
+Para solucionar problemas de inestabilidad y reinicios (`Exit Code: 137`) en el Ingress Controller por falta de memoria/CPU, recree el cluster asignandole recursos suficientes.
+
+```powershell
+minikube delete
+minikube start --driver=docker --cpus 4 --memory 8192
+minikube addons enable ingress
+```
+
+### Paso 2: Configurar entorno y construir imagenes Docker
+
+Como no se usa un registro de imagenes externo, los builds deben quedar dentro del Docker daemon de Minikube.
+
+```powershell
+minikube -p minikube docker-env | Invoke-Expression
+
+docker build -t dashboard-espacios:latest -f .\DashboardEspacios\Dockerfile .\DashboardEspacios\
+docker build -t usuarios:latest -f .\gestion_usuarios\usuarios.dockerfile .\gestion_usuarios\
+docker build -t vehiculos:latest -f .\vehiculos\vehiculos.dockerfile .\vehiculos\
+docker build -t zonas:latest -f .\zonas\zonas\zonas.dockerfile .\zonas\zonas\
+docker build -t tickets:latest -f .\tickets\tickets.dockerfile .\tickets\
+docker build -t trazabilidad:latest -f .\trazabilidad\trazabilidad.dockerfile .\trazabilidad\
+docker build -t ms-audit:latest -f .\ms-audit\ms-audit.dockerfile .\ms-audit\
+```
+
+### Paso 3: Desplegar recursos en Kubernetes
+
+Los manifiestos estan en `minikube/` y crean el namespace `app-parqueadero`, secretos, configmaps, volumenes, bases de datos, RabbitMQ, OPA, Kong, Swagger UI, Konga, microservicios, frontend e Ingress.
+
+```powershell
+kubectl apply -f .\minikube\
+kubectl get pods -n app-parqueadero -w
+```
+
+Cuando todos los pods muestren estado `Running` y contenedores listos (`1/1` o `2/2`), detenga la visualizacion con `Ctrl + C`.
+
+### Paso 4: Cargar datos iniciales
+
+Copie cada script SQL al pod de base de datos correspondiente y ejecutelo con `psql`.
+
+```powershell
+kubectl cp .\seed\01_usuarios.sql app-parqueadero/usuarios-db-0:/tmp/01_usuarios.sql
+kubectl exec -it usuarios-db-0 -n app-parqueadero -- psql -U admin_user -d UsuariosDB -f /tmp/01_usuarios.sql
+
+kubectl cp .\seed\02_vehiculos.sql app-parqueadero/vehiculos-db-0:/tmp/02_vehiculos.sql
+kubectl exec -it vehiculos-db-0 -n app-parqueadero -- psql -U admin_user -d VehiculoDB -f /tmp/02_vehiculos.sql
+
+kubectl cp .\seed\03_asignaciones.sql app-parqueadero/trazabilidad-db-0:/tmp/03_asignaciones.sql
+kubectl exec -it trazabilidad-db-0 -n app-parqueadero -- psql -U admin_user -d TrazabilidadDB -f /tmp/03_asignaciones.sql
+
+kubectl cp .\seed\04_zonas_espacios.sql app-parqueadero/zonas-db-0:/tmp/04_zonas_espacios.sql
+kubectl exec -it zonas-db-0 -n app-parqueadero -- psql -U admin_user -d ZonasDB -f /tmp/04_zonas_espacios.sql
+
+kubectl cp .\seed\05_tickets.sql app-parqueadero/tickets-db-0:/tmp/05_tickets.sql
+kubectl exec -it tickets-db-0 -n app-parqueadero -- psql -U admin_user -d TicketsDB -f /tmp/05_tickets.sql
+```
+
+### Paso 5: Levantar puertos y tuneles
+
+Abra el tunel de Ingress en una terminal de PowerShell como Administrador:
+
+```powershell
+minikube tunnel
+```
+
+En otra terminal, redireccione el puerto de Kong Gateway:
+
+```powershell
+kubectl port-forward -n app-parqueadero service/kong-proxy 8000:8000
+```
+
+El Ingress usa el host `parqueadero.local` y las rutas principales pasan por Kong:
+
+| Componente | Ruta |
+|------------|------|
+| Frontend | `http://parqueadero.local/` |
+| Usuarios/Auth/Roles | `http://parqueadero.local/usuarios` |
+| Vehiculos | `http://parqueadero.local/vehiculos` |
+| Zonas/Espacios | `http://parqueadero.local/zonas` |
+| Trazabilidad/Asignaciones | `http://parqueadero.local/trazabilidad` |
+| Tickets | `http://parqueadero.local/tickets` |
+| Auditoria | `http://parqueadero.local/audit` |
+| Swagger UI | `http://parqueadero.local/swagger` |
+| Konga | `http://parqueadero.local/konga` |
+
+Si `parqueadero.local` no resuelve, agregue el host con la IP de Minikube obtenida mediante `minikube ip` en el archivo `hosts` de Windows.
+
+---
+
 ## Anexo: Informe de Pruebas Realizadas
 
 ### Objetivo
